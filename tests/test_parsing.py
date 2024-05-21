@@ -1,7 +1,7 @@
 from typing import Callable, Any
 import pytest
 
-from svdsuite.parse import SVDParser, SVDParserException
+from svdsuite.parse import SVDParser, SVDParserException, _to_int  # type: ignore
 from svdsuite.svd_model import (
     SVDAddressBlock,
     SVDCluster,
@@ -85,6 +85,29 @@ class TestParserInstantiation:
         parser = SVDParser.for_xml_content(file_content)
 
         assert isinstance(parser, SVDParser)
+
+
+class TestToInt:
+    @pytest.mark.parametrize(
+        "test_input,expected",
+        [
+            ("+5", 5),
+            ("+0x5", 5),
+            ("+0X5", 5),
+            ("+0xaAbB", 43707),
+            ("+0x9f", 159),
+            ("5", 5),
+            ("0x5", 5),
+            ("0X5", 5),
+            ("0xaAbB", 43707),
+            ("0x9f", 159),
+            ("+#101", 5),
+            pytest.param(None, None),
+            pytest.param("+!", None, marks=pytest.mark.xfail(strict=True, raises=NotImplementedError)),
+        ],
+    )
+    def test_to_int(self, test_input: str, expected: int):
+        assert _to_int(test_input) == expected
 
 
 class TestDeviceParsing:

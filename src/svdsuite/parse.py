@@ -76,7 +76,13 @@ def _to_int(value: None | str, base: int = 0) -> None | int:
     if value is None:
         return None
 
-    return int(value, base)
+    # transfer binary value to a string int function can handle
+    value = value.replace("#", "0b")
+
+    try:
+        return int(value, base)
+    except ValueError as exc:
+        raise NotImplementedError(f"can't parse value '{value}' in function _to_int") from exc
 
 
 class SVDParserException(Exception):
