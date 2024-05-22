@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "SVDSuite"
+dynamic = ["version"]
+description = "A Python package to parse, process, manipulate, validate, and generate CMSIS SVD files"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+keywords = ["CMSIS", "SVD", "Embedded Systems", "ARM", "Cortex-M", "Microcontroller"]
+authors = [
+  { name = "Christian Kudera" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+  "Topic :: Software Development :: Embedded Systems",
+  "Topic :: Scientific/Engineering",
+  "Typing :: Typed",
+]
+dependencies = ["lxml>=4.9.3"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.1.1"]
+
+[project.urls]
+Documentation = "https://github.com/ARMify-Project/SVDSuite?tab=readme-ov-file"
+Issues = "https://github.com/ARMify-Project/SVDSuite/issues"
+Source = "https://github.com/ARMify-Project/SVDSuite"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"svdsuite" = ["py.typed", "*.xsd"]
+
+[tool.setuptools_scm]
+write_to = "src/svdsuite/_version.py"
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+
+[tool.pylint.MASTER]
+extension-pkg-whitelist="lxml"
+init-hook="import sys; sys.path.append('./src')"
