@@ -401,5 +401,3 @@ To run tests, run the following command:
 This project was made possible with funding from [NGI Zero Entrust Fund](https://nlnet.nl/thema/NGI0Entrust.html). NGI Zero Entrust Fund is part of the European Commission's [Next Generation Internet](https://www.ngi.eu/) initiative.
 
 Project webpage: https://nlnet.nl/project/ARMify/
-
-## References
