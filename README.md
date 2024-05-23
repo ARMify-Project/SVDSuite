@@ -201,37 +201,17 @@ from svdsuite import (
 
 # Create an example device. Alternatevily, you can parse a CMSIS-SVD file and manipulate it.
 device = SVDDevice(
-    size=None,
-    access=None,
-    protection=None,
-    reset_value=None,
-    reset_mask=None,
     xs_no_namespace_schema_location="CMSIS-SVD.xsd",
     schema_version="1.3",
-    vendor=None,
-    vendor_id=None,
     name="STM32F0",
-    series=None,
     version="1.0",
     description="STM32F0 device",
-    license_text=None,
     cpu=SVDCPU(
         name=CPUNameType.CM52,
         revision="r0p0",
         endian=EndianType.LITTLE,
-        mpu_present=False,
-        fpu_present=False,
-        fpu_dp=False,
-        dsp_present=False,
-        icache_present=False,
-        dcache_present=False,
-        itcm_present=False,
-        dtcm_present=False,
-        vtor_present=False,
         nvic_prio_bits=2,
         vendor_systick_config=False,
-        device_num_interrupts=6,
-        sau_num_regions=2,
         sau_regions_config=SVDSauRegionsConfig(
             enabled=True,
             protection_when_disabled=ProtectionStringType.SECURE,
@@ -246,36 +226,13 @@ device = SVDDevice(
             ],
         ),
     ),
-    header_system_filename=None,
-    header_definitions_prefix=None,
     address_unit_bits=8,
     width=32,
     peripherals=[
         SVDPeripheral(
-            size=None,
-            access=None,
-            protection=None,
-            reset_value=None,
-            reset_mask=None,
-            dim=None,
-            dim_increment=None,
-            dim_index=None,
-            dim_name=None,
-            dim_array_index=None,
             name="Timer1",
-            version="1.0",
             description="Timer 1 is a standard timer",
-            alternate_peripheral="Timer1_Alt",
-            group_name="group_name",
-            prepend_to_name="prepend",
-            append_to_name="append",
-            header_struct_name="headerstruct",
-            disable_condition="discond",
             base_address=1073750016,
-            address_blocks=[],
-            interrupts=[],
-            registers_clusters=[],
-            derived_from="test",
         )
     ],
 )
@@ -300,19 +257,8 @@ Output:
     <name>CM52</name>
     <revision>r0p0</revision>
     <endian>little</endian>
-    <mpuPresent>false</mpuPresent>
-    <fpuPresent>false</fpuPresent>
-    <fpuDP>false</fpuDP>
-    <dspPresent>false</dspPresent>
-    <icachePresent>false</icachePresent>
-    <dcachePresent>false</dcachePresent>
-    <itcmPresent>false</itcmPresent>
-    <dtcmPresent>false</dtcmPresent>
-    <vtorPresent>false</vtorPresent>
     <nvicPrioBits>2</nvicPrioBits>
     <vendorSystickConfig>false</vendorSystickConfig>
-    <deviceNumInterrupts>6</deviceNumInterrupts>
-    <sauNumRegions>2</sauNumRegions>
     <sauRegionsConfig enabled="true" protectionWhenDisabled="s">
       <region enabled="true" name="Region1">
         <base>0x1000</base>
@@ -324,16 +270,9 @@ Output:
   <addressUnitBits>8</addressUnitBits>
   <width>32</width>
   <peripherals>
-    <peripheral derivedFrom="test">
+    <peripheral>
       <name>Timer1</name>
-      <version>1.0</version>
       <description>Timer 1 is a standard timer</description>
-      <alternatePeripheral>Timer1_Alt</alternatePeripheral>
-      <groupName>group_name</groupName>
-      <prependToName>prepend</prependToName>
-      <appendToName>append</appendToName>
-      <headerStructName>headerstruct</headerStructName>
-      <disableCondition>discond</disableCondition>
       <baseAddress>0x40002000</baseAddress>
     </peripheral>
   </peripherals>

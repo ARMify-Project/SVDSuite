@@ -1,6 +1,6 @@
 from typing import List, Tuple, Union
 from enum import Enum
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import lxml.etree
 
 
@@ -193,10 +193,10 @@ class EnumUsageType(Enum):
             raise NotImplementedError from exc
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SVDSauRegion:
-    enabled: None | bool
-    name: None | str
+    enabled: None | bool = None
+    name: None | str = None
     base: int
     limit: int
     access: SauAccessType
@@ -217,11 +217,11 @@ class SVDSauRegion:
         return element
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SVDSauRegionsConfig:
-    enabled: None | bool
-    protection_when_disabled: None | ProtectionStringType
-    regions: List[SVDSauRegion]
+    enabled: None | bool = None
+    protection_when_disabled: None | ProtectionStringType = None
+    regions: List[SVDSauRegion] = field(default_factory=list)
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("sauRegionsConfig")
@@ -242,25 +242,25 @@ class SVDSauRegionsConfig:
         return element
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SVDCPU:
     name: CPUNameType
     revision: str
     endian: EndianType
-    mpu_present: None | bool
-    fpu_present: None | bool
-    fpu_dp: None | bool
-    dsp_present: None | bool
-    icache_present: None | bool
-    dcache_present: None | bool
-    itcm_present: None | bool
-    dtcm_present: None | bool
-    vtor_present: None | bool
+    mpu_present: None | bool = None
+    fpu_present: None | bool = None
+    fpu_dp: None | bool = None
+    dsp_present: None | bool = None
+    icache_present: None | bool = None
+    dcache_present: None | bool = None
+    itcm_present: None | bool = None
+    dtcm_present: None | bool = None
+    vtor_present: None | bool = None
     nvic_prio_bits: int
     vendor_systick_config: bool
-    device_num_interrupts: None | int
-    sau_num_regions: None | int
-    sau_regions_config: None | SVDSauRegionsConfig
+    device_num_interrupts: None | int = None
+    sau_num_regions: None | int = None
+    sau_regions_config: None | SVDSauRegionsConfig = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("cpu")
@@ -311,12 +311,12 @@ class SVDCPU:
         return element
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SVDEnumeratedValueMap:
     name: str
-    description: None | str
-    value: None | str  # int value, but can contain 'do not care' bits represented by >x<
-    is_default: None | bool
+    description: None | str = None
+    value: None | str = None  # int value, but can contain 'do not care' bits represented by >x<
+    is_default: None | bool = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("enumeratedValue")
@@ -335,9 +335,9 @@ class SVDEnumeratedValueMap:
         return element
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SVDDimArrayIndex:
-    header_enum_name: None | str
+    header_enum_name: None | str = None
     enumerated_values_map: List[SVDEnumeratedValueMap]
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
@@ -356,30 +356,30 @@ class SVDDimArrayIndex:
         return element
 
 
-@dataclass
+@dataclass(kw_only=True)
 class _SVDDimElementGroup:
-    dim: None | int
-    dim_increment: None | int
-    dim_index: None | str
-    dim_name: None | str
-    dim_array_index: None | SVDDimArrayIndex
+    dim: None | int = None
+    dim_increment: None | int = None
+    dim_index: None | str = None
+    dim_name: None | str = None
+    dim_array_index: None | SVDDimArrayIndex = None
 
 
-@dataclass
+@dataclass(kw_only=True)
 class _SVDRegisterPropertiesGroup:
-    size: None | int
-    access: None | AccessType
-    protection: None | ProtectionStringType
-    reset_value: None | int
-    reset_mask: None | int
+    size: None | int = None
+    access: None | AccessType = None
+    protection: None | ProtectionStringType = None
+    reset_value: None | int = None
+    reset_mask: None | int = None
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SVDAddressBlock:
     offset: int
     size: int
     usage: EnumeratedTokenType
-    protection: None | ProtectionStringType
+    protection: None | ProtectionStringType = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("addressBlock")
@@ -394,10 +394,10 @@ class SVDAddressBlock:
         return element
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SVDInterrupt:
     name: str
-    description: None | str
+    description: None | str = None
     value: int
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
@@ -413,11 +413,11 @@ class SVDInterrupt:
         return element
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SVDWriteConstraint:
-    write_as_read: None | bool
-    use_enumerated_values: None | bool
-    range_: None | Tuple[int, int]
+    write_as_read: None | bool = None
+    use_enumerated_values: None | bool = None
+    range_: None | Tuple[int, int] = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("writeConstraint")
@@ -441,13 +441,13 @@ class SVDWriteConstraint:
         return element
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SVDEnumeratedValue:
-    name: None | str
-    header_enum_name: None | str
-    usage: None | EnumUsageType
+    name: None | str = None
+    header_enum_name: None | str = None
+    usage: None | EnumUsageType = None
     enumerated_values_map: List[SVDEnumeratedValueMap]
-    derived_from: None | str
+    derived_from: None | str = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("enumeratedValues")
@@ -474,21 +474,21 @@ class SVDEnumeratedValue:
         return element
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SVDField(_SVDDimElementGroup):
     name: str
-    description: None | str
-    bit_offset: None | int
-    bit_width: None | int
-    lsb: None | int
-    msb: None | int
-    bit_range: None | str
-    access: None | AccessType
-    modified_write_values: None | ModifiedWriteValuesType
-    write_constraint: None | SVDWriteConstraint
-    read_action: None | ReadActionType
-    enumerated_values: List[SVDEnumeratedValue]
-    derived_from: None | str
+    description: None | str = None
+    bit_offset: None | int = None
+    bit_width: None | int = None
+    lsb: None | int = None
+    msb: None | int = None
+    bit_range: None | str = None
+    access: None | AccessType = None
+    modified_write_values: None | ModifiedWriteValuesType = None
+    write_constraint: None | SVDWriteConstraint = None
+    read_action: None | ReadActionType = None
+    enumerated_values: List[SVDEnumeratedValue] = field(default_factory=list)
+    derived_from: None | str = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("field")
@@ -545,20 +545,20 @@ class SVDField(_SVDDimElementGroup):
         return element
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SVDRegister(_SVDDimElementGroup, _SVDRegisterPropertiesGroup):
     name: str
-    display_name: None | str
-    description: None | str
-    alternate_group: None | str
-    alternate_register: None | str
+    display_name: None | str = None
+    description: None | str = None
+    alternate_group: None | str = None
+    alternate_register: None | str = None
     address_offset: int
-    data_type: None | DataTypeType
-    modified_write_values: None | ModifiedWriteValuesType
-    write_constraint: None | SVDWriteConstraint
-    read_action: None | ReadActionType
-    fields: List[SVDField]
-    derived_from: None | str
+    data_type: None | DataTypeType = None
+    modified_write_values: None | ModifiedWriteValuesType = None
+    write_constraint: None | SVDWriteConstraint = None
+    read_action: None | ReadActionType = None
+    fields: List[SVDField] = field(default_factory=list)
+    derived_from: None | str = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("register")
@@ -635,15 +635,15 @@ class SVDRegister(_SVDDimElementGroup, _SVDRegisterPropertiesGroup):
         return element
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SVDCluster(_SVDDimElementGroup, _SVDRegisterPropertiesGroup):
     name: str
-    description: None | str
-    alternate_cluster: None | str
-    header_struct_name: None | str
+    description: None | str = None
+    alternate_cluster: None | str = None
+    header_struct_name: None | str = None
     address_offset: int
-    registers_clusters: List[Union[SVDRegister, "SVDCluster"]]
-    derived_from: None | str
+    registers_clusters: List[Union[SVDRegister, "SVDCluster"]] = field(default_factory=list)
+    derived_from: None | str = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("cluster")
@@ -700,22 +700,22 @@ class SVDCluster(_SVDDimElementGroup, _SVDRegisterPropertiesGroup):
         return element
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SVDPeripheral(_SVDDimElementGroup, _SVDRegisterPropertiesGroup):
     name: str
-    version: None | str
-    description: None | str
-    alternate_peripheral: None | str
-    group_name: None | str
-    prepend_to_name: None | str
-    append_to_name: None | str
-    header_struct_name: None | str
-    disable_condition: None | str
+    version: None | str = None
+    description: None | str = None
+    alternate_peripheral: None | str = None
+    group_name: None | str = None
+    prepend_to_name: None | str = None
+    append_to_name: None | str = None
+    header_struct_name: None | str = None
+    disable_condition: None | str = None
     base_address: int
-    address_blocks: List[SVDAddressBlock]
-    interrupts: List[SVDInterrupt]
-    registers_clusters: List[SVDRegister | SVDCluster]
-    derived_from: None | str
+    address_blocks: List[SVDAddressBlock] = field(default_factory=list)
+    interrupts: List[SVDInterrupt] = field(default_factory=list)
+    registers_clusters: List[SVDRegister | SVDCluster] = field(default_factory=list)
+    derived_from: None | str = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("peripheral")
@@ -798,23 +798,23 @@ class SVDPeripheral(_SVDDimElementGroup, _SVDRegisterPropertiesGroup):
         return element
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SVDDevice(_SVDRegisterPropertiesGroup):
     xs_no_namespace_schema_location: str
     schema_version: str
-    vendor: None | str
-    vendor_id: None | str
+    vendor: None | str = None
+    vendor_id: None | str = None
     name: str
-    series: None | str
+    series: None | str = None
     version: str
     description: str
-    license_text: None | str
-    cpu: None | SVDCPU
-    header_system_filename: None | str
-    header_definitions_prefix: None | str
+    license_text: None | str = None
+    cpu: None | SVDCPU = None
+    header_system_filename: None | str = None
+    header_definitions_prefix: None | str = None
     address_unit_bits: int
     width: int
-    peripherals: List[SVDPeripheral]
+    peripherals: List[SVDPeripheral] = field(default_factory=list)
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         _xs = "http://www.w3.org/2001/XMLSchema-instance"
