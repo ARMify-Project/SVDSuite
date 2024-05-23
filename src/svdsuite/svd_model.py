@@ -627,8 +627,8 @@ class SVDRegister(_SVDDimElementGroup, _SVDRegisterPropertiesGroup):
         if self.fields:
             fields_element = lxml.etree.Element("fields")
 
-            for field in self.fields:
-                fields_element.append(field.to_xml())
+            for field_ in self.fields:
+                fields_element.append(field_.to_xml())
 
             element.append(fields_element)
 
