@@ -106,7 +106,7 @@ class SVDParser:
         self._tree = tree
         self._root = self._tree.getroot()
 
-    def get_device(self) -> SVDDevice:
+    def get_parsed_device(self) -> SVDDevice:
         return self._parse_device(self._root)
 
     @overload

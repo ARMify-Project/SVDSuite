@@ -86,7 +86,7 @@ parser = SVDParser.for_xml_str(svd_str)
 # parser = SVDParser.for_xml_content(svd_str.encode())
 
 # Get the SVDDevice object
-device = parser.get_device()
+device = parser.get_parsed_device()
 
 # Print the device object
 pprint.pprint(device)

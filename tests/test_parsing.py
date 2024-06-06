@@ -35,7 +35,7 @@ def fixture_get_device(get_test_svd_file_content: Callable[[str], bytes]) -> Cal
         file_content = get_test_svd_file_content("parser_testfile.svd")
 
         parser = SVDParser.for_xml_content(file_content)
-        return parser.get_device()
+        return parser.get_parsed_device()
 
     return _
 
@@ -48,7 +48,7 @@ def fixture_get_device_with_element_modification(
         file_content = modify_test_svd_file_and_get_content("parser_testfile.svd", xpath, None, test_input)
 
         parser = SVDParser.for_xml_content(file_content)
-        return parser.get_device()
+        return parser.get_parsed_device()
 
     return _
 
@@ -61,7 +61,7 @@ def fixture_get_device_with_attribute_modification(
         file_content = modify_test_svd_file_and_get_content("parser_testfile.svd", xpath, attribute, test_input)
 
         parser = SVDParser.for_xml_content(file_content)
-        return parser.get_device()
+        return parser.get_parsed_device()
 
     return _
 
