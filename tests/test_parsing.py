@@ -73,7 +73,7 @@ class TestParserInstantiation:
 
         assert isinstance(parser, SVDParser)
 
-    def test_cls_for_xml_str(self, get_test_svd_file_content: Callable[[str], bytes]):
+    def test_for_xml_str(self, get_test_svd_file_content: Callable[[str], bytes]):
         file_content = get_test_svd_file_content("parser_testfile.svd")
         file_str = file_content.decode()
         parser = SVDParser.for_xml_str(file_str)

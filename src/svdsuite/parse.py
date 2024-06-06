@@ -94,8 +94,8 @@ class SVDParser:
     def for_xml_file(cls, path: str):
         return cls(lxml.etree.parse(path))
 
-    @classmethod
-    def for_xml_str(cls, xml_str: str):
+    @staticmethod
+    def for_xml_str(xml_str: str):
         return SVDParser.for_xml_content(xml_str.encode())
 
     @classmethod
