@@ -7,6 +7,7 @@ import lxml.etree
 class SVDSchemaVersion(Enum):
     V1_3_9 = "1.3.9"
     V1_3_10 = "1.3.10"
+    V1_3_11 = "1.3.11"
 
     @staticmethod
     def get_latest() -> "SVDSchemaVersion":
