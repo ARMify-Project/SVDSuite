@@ -69,7 +69,7 @@
     <peripheral derivedFrom="teststr">
       <dim>4</dim>
       <dimIncrement>0x400</dimIncrement>
-      <dimIndex>0</dimIndex>
+      <dimIndex>0,1,2,3</dimIndex>
       <dimName>Timer</dimName>
       <dimArrayIndex>
         <headerEnumName>FSMC_EnumArray</headerEnumName>
@@ -200,7 +200,7 @@
               <isDefault>1</isDefault>
             </enumeratedValue>
           </dimArrayIndex>
-          <name>TimerCtrl0</name>
+          <name>TimerCtrl%s</name>
           <displayName>TimerCtrl0</displayName>
           <description>Timer Control Register</description>
           <alternateGroup>AltGroup</alternateGroup>
@@ -242,7 +242,7 @@
                   <isDefault>1</isDefault>
                 </enumeratedValue>
               </dimArrayIndex>
-              <name>BIT1</name>
+              <name>BIT%s</name>
               <description>test</description>
               <bitOffset>3</bitOffset>
               <bitWidth>5</bitWidth>

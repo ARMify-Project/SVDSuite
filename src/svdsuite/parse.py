@@ -29,6 +29,8 @@ from svdsuite.svd_model import (
     SVDWriteConstraint,
 )
 
+from svdsuite.dim import resolve_dim
+
 
 @overload
 def _to_bool(value: str, default: None = None) -> bool: ...
@@ -105,9 +107,22 @@ class SVDParser:
     def __init__(self, tree: lxml.etree._ElementTree) -> None:  # pyright: ignore[reportPrivateUsage]
         self._tree = tree
         self._root = self._tree.getroot()
+        self._peripheral_scope: dict[str, SVDPeripheral] = {}
+        self._cluster_scope: dict[str, SVDCluster] = {}
+        self._register_scope: dict[str, SVDRegister] = {}
+        self._field_scope: dict[str, SVDField] = {}
 
     def get_parsed_device(self) -> SVDDevice:
         return self._parse_device(self._root)
+
+    def _add_dimable_obj_to_scope[
+        T: (SVDPeripheral, SVDCluster, SVDRegister, SVDField)
+    ](self, scope: dict[str, T], obj: T):  # pylint: disable=undefined-variable
+        scope[obj.name] = obj
+
+        if obj.dim is not None:
+            for name_resolved in resolve_dim(obj.name, obj.dim, obj.dim_index):
+                scope[name_resolved] = obj
 
     @overload
     def _parse_element_text(
@@ -348,34 +363,36 @@ class SVDParser:
 
             size, access, protection, reset_value, reset_mask = self._parse_register_properties(peripheral_element)
 
-            peripherals.append(
-                SVDPeripheral(
-                    name=name,
-                    version=version,
-                    description=description,
-                    alternate_peripheral=alternate_peripheral,
-                    group_name=group_name,
-                    prepend_to_name=prepend_to_name,
-                    append_to_name=append_to_name,
-                    header_struct_name=header_struct_name,
-                    disable_condition=disable_condition,
-                    base_address=base_address,
-                    address_blocks=address_blocks,
-                    interrupts=interrupts,
-                    registers_clusters=registers_clusters,
-                    dim=dim,
-                    dim_increment=dim_increment,
-                    dim_index=dim_index,
-                    dim_name=dim_name,
-                    dim_array_index=dim_array_index,
-                    size=size,
-                    access=access,
-                    protection=protection,
-                    reset_value=reset_value,
-                    reset_mask=reset_mask,
-                    derived_from=derived_from,
-                )
+            peripheral = SVDPeripheral(
+                name=name,
+                version=version,
+                description=description,
+                alternate_peripheral=alternate_peripheral,
+                group_name=group_name,
+                prepend_to_name=prepend_to_name,
+                append_to_name=append_to_name,
+                header_struct_name=header_struct_name,
+                disable_condition=disable_condition,
+                base_address=base_address,
+                address_blocks=address_blocks,
+                interrupts=interrupts,
+                registers_clusters=registers_clusters,
+                dim=dim,
+                dim_increment=dim_increment,
+                dim_index=dim_index,
+                dim_name=dim_name,
+                dim_array_index=dim_array_index,
+                size=size,
+                access=access,
+                protection=protection,
+                reset_value=reset_value,
+                reset_mask=reset_mask,
+                derived_from=derived_from,
             )
+
+            self._add_dimable_obj_to_scope(self._peripheral_scope, peripheral)
+
+            peripherals.append(peripheral)
 
         return peripherals
 
@@ -419,7 +436,7 @@ class SVDParser:
         if read_action is not None:
             read_action = ReadActionType.from_str(read_action)
 
-        return SVDRegister(
+        register = SVDRegister(
             name=name,
             display_name=display_name,
             description=description,
@@ -443,6 +460,10 @@ class SVDParser:
             reset_mask=reset_mask,
             derived_from=derived_from,
         )
+
+        self._add_dimable_obj_to_scope(self._register_scope, register)
+
+        return register
 
     def _parse_fields(
         self, register_element: lxml.etree._Element  # pyright: ignore[reportPrivateUsage]
@@ -477,28 +498,30 @@ class SVDParser:
             if read_action is not None:
                 read_action = ReadActionType.from_str(read_action)
 
-            fields.append(
-                SVDField(
-                    name=name,
-                    description=description,
-                    bit_offset=bit_offset,
-                    bit_width=bit_width,
-                    lsb=lsb,
-                    msb=msb,
-                    bit_range=bit_range,
-                    access=access,
-                    modified_write_values=modified_write_values,
-                    write_constraint=write_constraint,
-                    read_action=read_action,
-                    enumerated_values=enumerated_values,
-                    dim=dim,
-                    dim_increment=dim_increment,
-                    dim_index=dim_index,
-                    dim_name=dim_name,
-                    dim_array_index=dim_array_index,
-                    derived_from=derived_from,
-                )
+            field = SVDField(
+                name=name,
+                description=description,
+                bit_offset=bit_offset,
+                bit_width=bit_width,
+                lsb=lsb,
+                msb=msb,
+                bit_range=bit_range,
+                access=access,
+                modified_write_values=modified_write_values,
+                write_constraint=write_constraint,
+                read_action=read_action,
+                enumerated_values=enumerated_values,
+                dim=dim,
+                dim_increment=dim_increment,
+                dim_index=dim_index,
+                dim_name=dim_name,
+                dim_array_index=dim_array_index,
+                derived_from=derived_from,
             )
+
+            self._add_dimable_obj_to_scope(self._field_scope, field)
+
+            fields.append(field)
 
         return fields
 
@@ -584,7 +607,7 @@ class SVDParser:
 
         size, access, protection, reset_value, reset_mask = self._parse_register_properties(cluster_element)
 
-        return SVDCluster(
+        cluster = SVDCluster(
             name=name,
             description=description,
             alternate_cluster=alternate_cluster,
@@ -603,6 +626,10 @@ class SVDParser:
             reset_mask=reset_mask,
             derived_from=derived_from,
         )
+
+        self._add_dimable_obj_to_scope(self._cluster_scope, cluster)
+
+        return cluster
 
     def _parse_registers_clusters(
         self, parent_element: None | lxml.etree._Element  # pyright: ignore[reportPrivateUsage]

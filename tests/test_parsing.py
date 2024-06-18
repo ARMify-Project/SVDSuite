@@ -950,7 +950,7 @@ class TestPeripheralParsing:
     @pytest.mark.parametrize(
         "test_input,expected",
         [
-            ("Timer1", "Timer1"),
+            ("Timer%s", "Timer%s"),
             pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
         ],
     )
@@ -1578,7 +1578,7 @@ class TestClusterParsing:
     @pytest.mark.parametrize(
         "test_input,expected",
         [
-            ("Cluster", "Cluster"),
+            ("Cluster%s", "Cluster%s"),
             pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
         ],
     )
@@ -1811,7 +1811,7 @@ class TestRegisterParsing:
         assert isinstance(device.peripherals[0].registers_clusters[1], SVDRegister)
         assert device.peripherals[0].registers_clusters[1].derived_from == expected
 
-    @pytest.mark.parametrize("test_input,expected", [("100", 100), ("0x64", 100), pytest.param(None, None)])
+    @pytest.mark.parametrize("test_input,expected", [("4", 4), ("0x4", 4), pytest.param(None, None)])
     def test_dim(
         self,
         get_device_with_element_modification: Callable[[str, None | str], SVDDevice],
@@ -1843,7 +1843,7 @@ class TestRegisterParsing:
         assert isinstance(device.peripherals[0].registers_clusters[1], SVDRegister)
         assert device.peripherals[0].registers_clusters[1].dim_increment == expected
 
-    @pytest.mark.parametrize("test_input,expected", [("Test", "Test"), pytest.param(None, None)])
+    @pytest.mark.parametrize("test_input,expected", [("0,1,2,3", "0,1,2,3"), pytest.param(None, None)])
     def test_dim_index(
         self,
         get_device_with_element_modification: Callable[[str, None | str], SVDDevice],
@@ -1886,7 +1886,7 @@ class TestRegisterParsing:
     @pytest.mark.parametrize(
         "test_input,expected",
         [
-            ("Register", "Register"),
+            ("Register%s", "Register%s"),
             pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
         ],
     )
@@ -2315,7 +2315,7 @@ class TestFieldParsing:
         assert len(device.peripherals[0].registers_clusters[1].fields) > 0
         assert device.peripherals[0].registers_clusters[1].fields[0].derived_from == expected
 
-    @pytest.mark.parametrize("test_input,expected", [("100", 100), ("0x64", 100), pytest.param(None, None)])
+    @pytest.mark.parametrize("test_input,expected", [("4", 4), ("0x4", 4), pytest.param(None, None)])
     def test_dim(
         self,
         get_device_with_element_modification: Callable[[str, None | str], SVDDevice],
@@ -2349,7 +2349,7 @@ class TestFieldParsing:
         assert len(device.peripherals[0].registers_clusters[1].fields) > 0
         assert device.peripherals[0].registers_clusters[1].fields[0].dim_increment == expected
 
-    @pytest.mark.parametrize("test_input,expected", [("Test", "Test"), pytest.param(None, None)])
+    @pytest.mark.parametrize("test_input,expected", [("0,1,2,3", "0,1,2,3"), pytest.param(None, None)])
     def test_dim_index(
         self,
         get_device_with_element_modification: Callable[[str, None | str], SVDDevice],
@@ -2396,7 +2396,7 @@ class TestFieldParsing:
     @pytest.mark.parametrize(
         "test_input,expected",
         [
-            ("Field", "Field"),
+            ("Field%s", "Field%s"),
             pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
         ],
     )
