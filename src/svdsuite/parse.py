@@ -210,7 +210,7 @@ class SVDParser:
         size, access, protection, reset_value, reset_mask = self._parse_register_properties(device_element)
         peripherals = self._parse_peripherals(device_element)
 
-        return SVDDevice(
+        device = SVDDevice(
             xs_no_namespace_schema_location=xs_no_namesp,
             schema_version=schema_version,
             vendor=vendor,
@@ -232,6 +232,11 @@ class SVDParser:
             reset_mask=reset_mask,
             peripherals=peripherals,
         )
+
+        for peripheral in device.peripherals:
+            peripheral.parent = device
+
+        return device
 
     def _parse_register_properties(
         self, element: lxml.etree._Element  # pyright: ignore[reportPrivateUsage]

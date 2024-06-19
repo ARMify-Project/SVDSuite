@@ -357,6 +357,7 @@ class TestDeviceParsing:
 
         assert len(device.peripherals) > 0
         assert isinstance(device.peripherals[0], SVDPeripheral)
+        assert device.peripherals[0].parent == device
 
 
 class TestCPUParsing:

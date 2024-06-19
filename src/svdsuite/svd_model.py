@@ -552,6 +552,7 @@ class SVDPeripheral(_SVDDimElementGroup, _SVDRegisterPropertiesGroup):
     interrupts: List[SVDInterrupt] = field(default_factory=list)
     registers_clusters: List[SVDRegister | SVDCluster] = field(default_factory=list)
     derived_from: None | str = None
+    parent: "None | SVDDevice" = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("peripheral")
