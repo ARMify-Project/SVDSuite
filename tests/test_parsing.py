@@ -946,6 +946,7 @@ class TestPeripheralParsing:
         assert len(device.peripherals) > 0
         assert isinstance(device.peripherals[0], SVDPeripheral)
         assert device.peripherals[0].dim_array_index is not None
+        assert device.peripherals[0].dim_array_index.parent == device.peripherals[0]
 
     @pytest.mark.parametrize(
         "test_input,expected",
@@ -1589,6 +1590,10 @@ class TestClusterParsing:
         assert len(device.peripherals[0].registers_clusters) > 0
         assert isinstance(device.peripherals[0].registers_clusters[0], SVDCluster)
         assert device.peripherals[0].registers_clusters[0].dim_array_index is not None
+        assert (
+            device.peripherals[0].registers_clusters[0].dim_array_index.parent
+            == device.peripherals[0].registers_clusters[0]
+        )
 
     @pytest.mark.parametrize(
         "test_input,expected",
@@ -1897,6 +1902,10 @@ class TestRegisterParsing:
         assert len(device.peripherals[0].registers_clusters) > 0
         assert isinstance(device.peripherals[0].registers_clusters[1], SVDRegister)
         assert device.peripherals[0].registers_clusters[1].dim_array_index is not None
+        assert (
+            device.peripherals[0].registers_clusters[1].dim_array_index.parent
+            == device.peripherals[0].registers_clusters[1]
+        )
 
     @pytest.mark.parametrize(
         "test_input,expected",
@@ -2407,6 +2416,10 @@ class TestFieldParsing:
         assert len(device.peripherals[0].registers_clusters[1].fields) > 0
         assert isinstance(device.peripherals[0].registers_clusters[1].fields[0], SVDField)
         assert device.peripherals[0].registers_clusters[1].fields[0].dim_array_index is not None
+        assert (
+            device.peripherals[0].registers_clusters[1].fields[0].dim_array_index.parent
+            == device.peripherals[0].registers_clusters[1].fields[0]
+        )
 
     @pytest.mark.parametrize(
         "test_input,expected",

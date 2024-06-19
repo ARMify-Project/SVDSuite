@@ -390,6 +390,9 @@ class SVDParser:
                 derived_from=derived_from,
             )
 
+            if peripheral.dim_array_index is not None:
+                peripheral.dim_array_index.parent = peripheral
+
             self._add_dimable_obj_to_scope(self._peripheral_scope, peripheral)
 
             peripherals.append(peripheral)
@@ -461,6 +464,9 @@ class SVDParser:
             derived_from=derived_from,
         )
 
+        if register.dim_array_index is not None:
+            register.dim_array_index.parent = register
+
         self._add_dimable_obj_to_scope(self._register_scope, register)
 
         return register
@@ -518,6 +524,9 @@ class SVDParser:
                 dim_array_index=dim_array_index,
                 derived_from=derived_from,
             )
+
+            if field.dim_array_index is not None:
+                field.dim_array_index.parent = field
 
             self._add_dimable_obj_to_scope(self._field_scope, field)
 
@@ -629,6 +638,9 @@ class SVDParser:
             reset_mask=reset_mask,
             derived_from=derived_from,
         )
+
+        if cluster.dim_array_index is not None:
+            cluster.dim_array_index.parent = cluster
 
         self._add_dimable_obj_to_scope(self._cluster_scope, cluster)
 

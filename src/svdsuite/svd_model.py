@@ -169,6 +169,7 @@ class SVDEnumeratedValueMap:
 class SVDDimArrayIndex:
     header_enum_name: None | str = None
     enumerated_values_map: List[SVDEnumeratedValueMap]
+    parent: "None | SVDPeripheral | SVDCluster | SVDRegister | SVDField" = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("dimArrayIndex")
