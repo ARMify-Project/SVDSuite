@@ -399,19 +399,6 @@ class SVDParser:
 
         return peripherals
 
-    def _parse_registers(
-        self, parent_element: None | lxml.etree._Element  # pyright: ignore[reportPrivateUsage]
-    ) -> List[SVDRegister]:
-        if parent_element is None:
-            return []
-
-        registers: List[SVDRegister] = []
-        for register_element in parent_element.findall("register"):
-            register = self._parse_register(register_element)
-            registers.append(register)
-
-        return registers
-
     def _parse_register(self, register_element: lxml.etree._Element):  # pyright: ignore[reportPrivateUsage]
         derived_from = self._parse_element_attribute("derivedFrom", register_element, optional=True)
         name = self._parse_element_text("name", register_element, optional=False)
