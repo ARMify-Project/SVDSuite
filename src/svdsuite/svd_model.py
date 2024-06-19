@@ -231,6 +231,7 @@ class SVDInterrupt:
     name: str
     description: None | str = None
     value: int
+    parent: "None | SVDPeripheral" = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("interrupt")

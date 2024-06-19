@@ -1200,6 +1200,8 @@ class TestPeripheralParsing:
         assert device.peripherals[0].interrupts[1].name == "TIM1"
         assert device.peripherals[0].interrupts[1].description == "This is a second description"
         assert device.peripherals[0].interrupts[1].value == 4
+        assert device.peripherals[0].interrupts[0].parent == device.peripherals[0]
+        assert device.peripherals[0].interrupts[1].parent == device.peripherals[0]
 
     def test_registers_clusters(self, get_device: Callable[[], SVDDevice]):
         device = get_device()
