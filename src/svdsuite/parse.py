@@ -395,6 +395,9 @@ class SVDParser:
                 derived_from=derived_from,
             )
 
+            for address_block in peripheral.address_blocks:
+                address_block.parent = peripheral
+
             for register_cluster in peripheral.registers_clusters:
                 register_cluster.parent = peripheral
 

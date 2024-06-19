@@ -1183,6 +1183,8 @@ class TestPeripheralParsing:
         assert device.peripherals[0].address_blocks[1].offset == 0x400
         assert device.peripherals[0].address_blocks[1].size == 0x800
         assert device.peripherals[0].address_blocks[1].protection == ProtectionStringType.NON_SECURE
+        assert device.peripherals[0].address_blocks[0].parent == device.peripherals[0]
+        assert device.peripherals[0].address_blocks[1].parent == device.peripherals[0]
 
     def test_interrupts(self, get_device: Callable[[], SVDDevice]):
         device = get_device()

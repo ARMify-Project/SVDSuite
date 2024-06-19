@@ -211,6 +211,7 @@ class SVDAddressBlock:
     size: int
     usage: EnumeratedTokenType
     protection: None | ProtectionStringType = None
+    parent: "None | SVDPeripheral" = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("addressBlock")
