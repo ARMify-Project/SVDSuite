@@ -233,6 +233,9 @@ class SVDParser:
             peripherals=peripherals,
         )
 
+        if device.cpu is not None:
+            device.cpu.parent = device
+
         for peripheral in device.peripherals:
             peripheral.parent = device
 

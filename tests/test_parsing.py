@@ -220,6 +220,7 @@ class TestDeviceParsing:
         device = get_device()
 
         assert isinstance(device.cpu, SVDCPU)
+        assert device.cpu.parent == device
 
     @pytest.mark.parametrize("test_input,expected", [("asd", "asd"), pytest.param(None, None)])
     def test_header_system_filename(

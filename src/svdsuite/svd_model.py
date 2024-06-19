@@ -92,6 +92,7 @@ class SVDCPU:
     device_num_interrupts: None | int = None
     sau_num_regions: None | int = None
     sau_regions_config: None | SVDSauRegionsConfig = None
+    parent: "None | SVDDevice" = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("cpu")
