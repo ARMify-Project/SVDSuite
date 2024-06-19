@@ -464,6 +464,9 @@ class SVDParser:
             derived_from=derived_from,
         )
 
+        if register.write_constraint is not None:
+            register.write_constraint.parent = register
+
         for field in register.fields:
             field.parent = register
 
@@ -527,6 +530,9 @@ class SVDParser:
                 dim_array_index=dim_array_index,
                 derived_from=derived_from,
             )
+
+            if field.write_constraint is not None:
+                field.write_constraint.parent = field
 
             for enumerated_value in field.enumerated_values:
                 enumerated_value.parent = field

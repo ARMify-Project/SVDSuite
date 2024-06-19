@@ -2201,6 +2201,10 @@ class TestRegisterParsing:
         assert len(device.peripherals[0].registers_clusters) > 0
         assert isinstance(device.peripherals[0].registers_clusters[1], SVDRegister)
         assert isinstance(device.peripherals[0].registers_clusters[1].write_constraint, SVDWriteConstraint)
+        assert (
+            device.peripherals[0].registers_clusters[1].write_constraint.parent
+            == device.peripherals[0].registers_clusters[1]
+        )
 
     @pytest.mark.parametrize(
         "test_input,expected",
@@ -2621,6 +2625,10 @@ class TestFieldParsing:
         assert isinstance(device.peripherals[0].registers_clusters[1], SVDRegister)
         assert len(device.peripherals[0].registers_clusters[1].fields) > 0
         assert isinstance(device.peripherals[0].registers_clusters[1].fields[0].write_constraint, SVDWriteConstraint)
+        assert (
+            device.peripherals[0].registers_clusters[1].fields[0].write_constraint.parent
+            == device.peripherals[0].registers_clusters[1].fields[0]
+        )
 
     @pytest.mark.parametrize(
         "test_input,expected",

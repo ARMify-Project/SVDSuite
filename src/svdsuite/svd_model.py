@@ -249,6 +249,7 @@ class SVDWriteConstraint:
     write_as_read: None | bool = None
     use_enumerated_values: None | bool = None
     range_: None | Tuple[int, int] = None
+    parent: "None | SVDField | SVDRegister" = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("writeConstraint")
