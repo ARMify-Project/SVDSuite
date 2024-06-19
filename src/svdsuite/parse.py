@@ -591,20 +591,6 @@ class SVDParser:
             range_=range_,
         )
 
-    def _parse_clusters(
-        self, parent_element: None | lxml.etree._Element  # pyright: ignore[reportPrivateUsage]
-    ) -> List[SVDCluster]:
-        if parent_element is None:
-            return []
-
-        clusters: List[SVDCluster] = []
-        for cluster_element in parent_element.findall("cluster"):
-            cluster = self._parse_cluster(cluster_element)
-
-            clusters.append(cluster)
-
-        return clusters
-
     def _parse_cluster(self, cluster_element: lxml.etree._Element):  # pyright: ignore[reportPrivateUsage]
         derived_from = self._parse_element_attribute("derivedFrom", cluster_element, optional=True)
         name = self._parse_element_text("name", cluster_element, optional=False)
