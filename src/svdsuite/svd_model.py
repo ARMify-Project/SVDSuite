@@ -321,6 +321,7 @@ class SVDField(_SVDDimElementGroup):
     read_action: None | ReadActionType = None
     enumerated_values: List[SVDEnumeratedValue] = field(default_factory=list)
     derived_from: None | str = None
+    parent: "None | SVDRegister" = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("field")

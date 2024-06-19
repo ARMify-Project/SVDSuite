@@ -464,6 +464,9 @@ class SVDParser:
             derived_from=derived_from,
         )
 
+        for field in register.fields:
+            field.parent = register
+
         if register.dim_array_index is not None:
             register.dim_array_index.parent = register
 
