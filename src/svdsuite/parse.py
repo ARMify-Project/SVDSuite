@@ -525,6 +525,9 @@ class SVDParser:
                 derived_from=derived_from,
             )
 
+            for enumerated_value in field.enumerated_values:
+                enumerated_value.parent = field
+
             if field.dim_array_index is not None:
                 field.dim_array_index.parent = field
 

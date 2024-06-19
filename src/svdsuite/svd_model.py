@@ -279,6 +279,7 @@ class SVDEnumeratedValue:
     usage: None | EnumUsageType = None
     enumerated_values_map: List[SVDEnumeratedValueMap]
     derived_from: None | str = None
+    parent: "None | SVDField" = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("enumeratedValues")

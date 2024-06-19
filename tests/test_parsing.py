@@ -2656,6 +2656,10 @@ class TestFieldParsing:
         assert isinstance(
             device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0], SVDEnumeratedValue
         )
+        assert (
+            device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0].parent
+            == device.peripherals[0].registers_clusters[1].fields[0]
+        )
 
 
 class TestEnumeratedValueParsing:
