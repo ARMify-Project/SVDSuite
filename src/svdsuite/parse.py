@@ -390,6 +390,9 @@ class SVDParser:
                 derived_from=derived_from,
             )
 
+            for register_cluster in peripheral.registers_clusters:
+                register_cluster.parent = peripheral
+
             if peripheral.dim_array_index is not None:
                 peripheral.dim_array_index.parent = peripheral
 
@@ -623,6 +626,9 @@ class SVDParser:
             reset_mask=reset_mask,
             derived_from=derived_from,
         )
+
+        for register_cluster in cluster.registers_clusters:
+            register_cluster.parent = cluster
 
         if cluster.dim_array_index is not None:
             cluster.dim_array_index.parent = cluster

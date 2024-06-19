@@ -1206,6 +1206,8 @@ class TestPeripheralParsing:
         assert len(device.peripherals[0].registers_clusters) == 2
         assert isinstance(device.peripherals[0].registers_clusters[0], SVDCluster)
         assert isinstance(device.peripherals[0].registers_clusters[1], SVDRegister)
+        assert device.peripherals[0].registers_clusters[0].parent == device.peripherals[0]
+        assert device.peripherals[0].registers_clusters[1].parent == device.peripherals[0]
 
 
 class TestDimArrayIndexParsing:
@@ -1806,6 +1808,18 @@ class TestClusterParsing:
         assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[0], SVDRegister)
         assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[1], SVDCluster)
         assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[2], SVDRegister)
+        assert (
+            device.peripherals[0].registers_clusters[0].registers_clusters[0].parent
+            == device.peripherals[0].registers_clusters[0]
+        )
+        assert (
+            device.peripherals[0].registers_clusters[0].registers_clusters[1].parent
+            == device.peripherals[0].registers_clusters[0]
+        )
+        assert (
+            device.peripherals[0].registers_clusters[0].registers_clusters[2].parent
+            == device.peripherals[0].registers_clusters[0]
+        )
 
 
 class TestRegisterParsing:

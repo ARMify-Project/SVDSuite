@@ -393,6 +393,7 @@ class SVDRegister(_SVDDimElementGroup, _SVDRegisterPropertiesGroup):
     read_action: None | ReadActionType = None
     fields: List[SVDField] = field(default_factory=list)
     derived_from: None | str = None
+    parent: "None | SVDCluster  | SVDPeripheral" = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("register")
@@ -478,6 +479,7 @@ class SVDCluster(_SVDDimElementGroup, _SVDRegisterPropertiesGroup):
     address_offset: int
     registers_clusters: List[Union[SVDRegister, "SVDCluster"]] = field(default_factory=list)
     derived_from: None | str = None
+    parent: "None | SVDCluster | SVDPeripheral" = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("cluster")
