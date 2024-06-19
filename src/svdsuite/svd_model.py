@@ -52,6 +52,7 @@ class SVDSauRegionsConfig:
     enabled: None | bool = None
     protection_when_disabled: None | ProtectionStringType = None
     regions: List[SVDSauRegion] = field(default_factory=list)
+    parent: "None | SVDCPU" = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("sauRegionsConfig")

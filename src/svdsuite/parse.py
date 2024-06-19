@@ -281,7 +281,7 @@ class SVDParser:
         sau_num_regions = _to_int(self._parse_element_text("sauNumRegions", cpu_element, optional=True))
         sau_regions_config = self._parse_sau_regions_config(cpu_element)
 
-        return SVDCPU(
+        cpu = SVDCPU(
             name=name,
             revision=revision,
             endian=endian,
@@ -300,6 +300,11 @@ class SVDParser:
             sau_num_regions=sau_num_regions,
             sau_regions_config=sau_regions_config,
         )
+
+        if cpu.sau_regions_config is not None:
+            cpu.sau_regions_config.parent = cpu
+
+        return cpu
 
     def _parse_sau_regions_config(
         self, cpu_element: lxml.etree._Element  # pyright: ignore[reportPrivateUsage]

@@ -704,6 +704,7 @@ class TestCPUParsing:
 
         assert device.cpu is not None
         assert isinstance(device.cpu.sau_regions_config, SVDSauRegionsConfig)
+        assert device.cpu.sau_regions_config.parent == device.cpu
 
 
 class TestSauRegionsConfigParsing:
