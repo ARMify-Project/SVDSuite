@@ -318,11 +318,16 @@ class SVDParser:
         if protection_when_disabled is not None:
             protection_when_disabled = ProtectionStringType.from_str(protection_when_disabled)
 
-        return SVDSauRegionsConfig(
+        sau_regions_config = SVDSauRegionsConfig(
             enabled=enabled,
             protection_when_disabled=protection_when_disabled,
             regions=regions,
         )
+
+        for region in sau_regions_config.regions:
+            region.parent = sau_regions_config
+
+        return sau_regions_config
 
     def _parse_sau_regions(
         self, config_element: lxml.etree._Element  # pyright: ignore[reportPrivateUsage]

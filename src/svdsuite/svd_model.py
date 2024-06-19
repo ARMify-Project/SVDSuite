@@ -29,6 +29,7 @@ class SVDSauRegion:
     base: int
     limit: int
     access: SauAccessType
+    parent: "None | SVDSauRegionsConfig" = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("region")

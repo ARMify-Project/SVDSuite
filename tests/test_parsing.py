@@ -770,6 +770,8 @@ class TestSauRegionsConfigParsing:
         assert device.cpu.sau_regions_config.regions[1].base == 0x10005000
         assert device.cpu.sau_regions_config.regions[1].limit == 0x10007000
         assert device.cpu.sau_regions_config.regions[1].access == SauAccessType.NON_SECURE_CALLABLE
+        assert device.cpu.sau_regions_config.regions[0].parent == device.cpu.sau_regions_config
+        assert device.cpu.sau_regions_config.regions[1].parent == device.cpu.sau_regions_config
 
 
 class TestSauRegionParsing:
