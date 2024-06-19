@@ -539,15 +539,18 @@ class SVDParser:
             if usage is not None:
                 usage = EnumUsageType.from_str(usage)
 
-            enumerated_values.append(
-                SVDEnumeratedValue(
-                    name=name,
-                    header_enum_name=header_enum_name,
-                    usage=usage,
-                    enumerated_values_map=enumerated_values_map,
-                    derived_from=derived_from,
-                )
+            enumerated_value = SVDEnumeratedValue(
+                name=name,
+                header_enum_name=header_enum_name,
+                usage=usage,
+                enumerated_values_map=enumerated_values_map,
+                derived_from=derived_from,
             )
+
+            for enumerated_value_map in enumerated_value.enumerated_values_map:
+                enumerated_value_map.parent = enumerated_value
+
+            enumerated_values.append(enumerated_value)
 
         return enumerated_values
 
@@ -705,7 +708,14 @@ class SVDParser:
         header_enum_name = self._parse_element_text("headerEnumName", dim_array_index_element, optional=True)
         enumerated_values_map = self._parse_enumerated_values_map(dim_array_index_element)
 
-        return SVDDimArrayIndex(header_enum_name=header_enum_name, enumerated_values_map=enumerated_values_map)
+        dim_array_index = SVDDimArrayIndex(
+            header_enum_name=header_enum_name, enumerated_values_map=enumerated_values_map
+        )
+
+        for enumerated_value_map in dim_array_index.enumerated_values_map:
+            enumerated_value_map.parent = dim_array_index
+
+        return dim_array_index
 
     def _parse_enumerated_values_map(
         self,

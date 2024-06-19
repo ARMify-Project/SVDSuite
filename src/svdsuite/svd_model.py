@@ -146,6 +146,7 @@ class SVDEnumeratedValueMap:
     description: None | str = None
     value: None | str = None  # int value, but can contain 'do not care' bits represented by >x<
     is_default: None | bool = None
+    parent: "None | SVDEnumeratedValue | SVDDimArrayIndex" = None
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("enumeratedValue")

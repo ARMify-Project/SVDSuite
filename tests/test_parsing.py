@@ -1247,6 +1247,21 @@ class TestDimArrayIndexParsing:
         assert device.peripherals[0].dim_array_index.enumerated_values_map[1].value is None
         assert device.peripherals[0].dim_array_index.enumerated_values_map[1].is_default is True
 
+    def test_enumerated_values_map_parent(self, get_device: Callable[[], SVDDevice]):
+        device = get_device()
+
+        assert len(device.peripherals) > 0
+        assert isinstance(device.peripherals[0], SVDPeripheral)
+        assert device.peripherals[0].dim_array_index is not None
+        assert len(device.peripherals[0].dim_array_index.enumerated_values_map) == 2
+        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values_map[0], SVDEnumeratedValueMap)
+        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values_map[1], SVDEnumeratedValueMap)
+
+        dim_array_index = device.peripherals[0].dim_array_index
+
+        assert dim_array_index.enumerated_values_map[0].parent == dim_array_index
+        assert dim_array_index.enumerated_values_map[1].parent == dim_array_index
+
 
 class TestEnumeratedValueMapParsing:
     @pytest.mark.parametrize(
@@ -2740,3 +2755,23 @@ class TestEnumeratedValueParsing:
             device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0].enumerated_values_map[0],
             SVDEnumeratedValueMap,
         )
+
+    def test_enumerated_values_map_parent(self, get_device: Callable[[], SVDDevice]):
+        device = get_device()
+
+        assert len(device.peripherals) > 0
+        assert len(device.peripherals[0].registers_clusters) > 0
+        assert isinstance(device.peripherals[0].registers_clusters[1], SVDRegister)
+        assert len(device.peripherals[0].registers_clusters[1].fields) > 0
+        assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_values) > 1
+        assert (
+            len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0].enumerated_values_map) == 3
+        )
+
+        enumerated_values0 = device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0]
+        enumerated_values1 = device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[1]
+
+        assert enumerated_values0.enumerated_values_map[0].parent == enumerated_values0
+        assert enumerated_values0.enumerated_values_map[1].parent == enumerated_values0
+        assert enumerated_values0.enumerated_values_map[2].parent == enumerated_values0
+        assert enumerated_values1.enumerated_values_map[0].parent == enumerated_values1
