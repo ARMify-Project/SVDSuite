@@ -3,30 +3,33 @@ import lxml.etree
 import pytest
 
 from svdsuite.svd_model import (
+    SVDAddressBlock,
+    SVDCluster,
+    SVDCPU,
+    SVDDevice,
+    SVDDimArrayIndex,
+    SVDEnumeratedValue,
+    SVDEnumeratedValueMap,
+    SVDField,
+    SVDInterrupt,
+    SVDPeripheral,
+    SVDRegister,
+    SVDSauRegion,
+    SVDSauRegionsConfig,
+    SVDWriteConstraint,
+)
+
+from svdsuite.types import (
     AccessType,
     CPUNameType,
     DataTypeType,
     EndianType,
-    ModifiedWriteValuesType,
-    ReadActionType,
-    SVDCluster,
-    SVDField,
-    SVDSauRegion,
-    SauAccessType,
-    SVDSauRegionsConfig,
-    ProtectionStringType,
-    SVDCPU,
-    SVDEnumeratedValueMap,
-    SVDDimArrayIndex,
-    SVDAddressBlock,
     EnumeratedTokenType,
-    SVDInterrupt,
-    SVDWriteConstraint,
-    SVDEnumeratedValue,
     EnumUsageType,
-    SVDRegister,
-    SVDPeripheral,
-    SVDDevice,
+    ModifiedWriteValuesType,
+    ProtectionStringType,
+    ReadActionType,
+    SauAccessType,
 )
 
 SVDObject = (
@@ -45,6 +48,7 @@ SVDObject = (
     | SVDPeripheral
     | SVDDevice
 )
+
 
 
 @pytest.fixture(name="svd_obj_to_xml_str", scope="session")
