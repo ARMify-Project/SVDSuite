@@ -3,16 +3,6 @@ from typing import List, Literal, Optional, Tuple, overload
 import lxml.etree
 
 from svdsuite.svd_model import (
-    AccessType,
-    CPUNameType,
-    DataTypeType,
-    EndianType,
-    EnumeratedTokenType,
-    EnumUsageType,
-    ModifiedWriteValuesType,
-    ProtectionStringType,
-    ReadActionType,
-    SauAccessType,
     SVDCPU,
     SVDAddressBlock,
     SVDCluster,
@@ -27,6 +17,19 @@ from svdsuite.svd_model import (
     SVDSauRegion,
     SVDSauRegionsConfig,
     SVDWriteConstraint,
+)
+
+from svdsuite.types import (
+    AccessType,
+    CPUNameType,
+    DataTypeType,
+    EndianType,
+    EnumeratedTokenType,
+    EnumUsageType,
+    ModifiedWriteValuesType,
+    ProtectionStringType,
+    ReadActionType,
+    SauAccessType,
 )
 
 from svdsuite.dim import resolve_dim
