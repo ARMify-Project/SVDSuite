@@ -14,6 +14,23 @@ from svdsuite.types import (
     SauAccessType,
 )
 
+from svdsuite.svd_model import (
+    SVDCPU,
+    SVDAddressBlock,
+    SVDCluster,
+    SVDDevice,
+    SVDDimArrayIndex,
+    SVDEnumeratedValue,
+    SVDEnumeratedValueMap,
+    SVDField,
+    SVDInterrupt,
+    SVDPeripheral,
+    SVDRegister,
+    SVDSauRegion,
+    SVDSauRegionsConfig,
+    SVDWriteConstraint,
+)
+
 
 @dataclass(kw_only=True)
 class SauRegion:
@@ -22,6 +39,7 @@ class SauRegion:
     base: int
     limit: int
     access: SauAccessType
+    parsed: SVDSauRegion
 
 
 @dataclass(kw_only=True)
@@ -29,6 +47,7 @@ class SauRegionsConfig:
     enabled: bool = True
     protection_when_disabled: ProtectionStringType = ProtectionStringType.SECURE
     regions: List[SauRegion] = field(default_factory=list)
+    parsed: SVDSauRegionsConfig
 
 
 @dataclass(kw_only=True)
@@ -50,6 +69,7 @@ class CPU:
     device_num_interrupts: None | int = None
     sau_num_regions: None | int = None
     sau_regions_config: None | SauRegionsConfig = None
+    parsed: SVDCPU
 
 
 @dataclass(kw_only=True)
@@ -58,12 +78,14 @@ class EnumeratedValueMap:
     description: None | str = None
     value: None | str = None  # int value, but can contain 'do not care' bits represented by >x<
     is_default: None | bool = None
+    parsed: SVDEnumeratedValueMap
 
 
 @dataclass(kw_only=True)
 class DimArrayIndex:
     header_enum_name: None | str = None
     enumerated_values_map: List[EnumeratedValueMap]
+    parsed: SVDDimArrayIndex
 
 
 @dataclass(kw_only=True)
@@ -90,6 +112,7 @@ class AddressBlock:
     size: int
     usage: EnumeratedTokenType
     protection: None | ProtectionStringType = None
+    parsed: SVDAddressBlock
 
 
 @dataclass(kw_only=True)
@@ -97,6 +120,7 @@ class Interrupt:
     name: str
     description: None | str = None
     value: int
+    parsed: SVDInterrupt
 
 
 @dataclass(kw_only=True)
@@ -104,6 +128,7 @@ class WriteConstraint:
     write_as_read: None | bool = None
     use_enumerated_values: None | bool = None
     range_: None | Tuple[int, int] = None
+    parsed: SVDWriteConstraint
 
 
 @dataclass(kw_only=True)
@@ -113,6 +138,7 @@ class EnumeratedValue:
     usage: EnumUsageType = EnumUsageType.READ_WRITE
     enumerated_values_map: List[EnumeratedValueMap]
     derived_from: None | str = None
+    parsed: SVDEnumeratedValue
 
 
 @dataclass(kw_only=True)
@@ -130,6 +156,7 @@ class Field(_DimElementGroup):
     read_action: None | ReadActionType = None
     enumerated_values: List[EnumeratedValue] = field(default_factory=list)
     derived_from: None | str = None
+    parsed: SVDField
 
 
 @dataclass(kw_only=True)
@@ -151,6 +178,7 @@ class Register(_DimElementGroup):
     read_action: None | ReadActionType = None
     fields: List[Field] = field(default_factory=list)
     derived_from: None | str = None
+    parsed: SVDRegister
 
 
 @dataclass(kw_only=True)
@@ -162,6 +190,7 @@ class Cluster(_DimElementGroup, _RegisterPropertiesGroup):
     address_offset: int
     registers_clusters: List[Union[Register, "Cluster"]] = field(default_factory=list)
     derived_from: None | str = None
+    parsed: SVDCluster
 
 
 @dataclass(kw_only=True)
@@ -180,6 +209,7 @@ class Peripheral(_DimElementGroup, _RegisterPropertiesGroup):
     interrupts: List[Interrupt] = field(default_factory=list)
     registers_clusters: List[Register | Cluster] = field(default_factory=list)
     derived_from: None | str = None
+    parsed: SVDPeripheral
 
 
 @dataclass(kw_only=True)
@@ -197,3 +227,4 @@ class Device(_RegisterPropertiesGroup):
     address_unit_bits: int
     width: int
     peripherals: List[Peripheral] = field(default_factory=list)
+    parsed: SVDDevice

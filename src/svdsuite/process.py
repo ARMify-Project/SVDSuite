@@ -119,6 +119,7 @@ class SVDProcess:
             address_unit_bits=parsed_device.address_unit_bits,
             width=parsed_device.width,
             peripherals=self._process_peripherals(parsed_device.peripherals, register_properties_inheritance),
+            parsed=parsed_device,
         )
 
     def _process_cpu(self, parsed_cpu: None | SVDCPU) -> None | CPU:
@@ -143,6 +144,7 @@ class SVDProcess:
             device_num_interrupts=parsed_cpu.device_num_interrupts,
             sau_num_regions=parsed_cpu.sau_num_regions,
             sau_regions_config=self._process_sau_regions_config(parsed_cpu.sau_regions_config),
+            parsed=parsed_cpu,
         )
 
     def _process_sau_regions_config(
@@ -159,6 +161,7 @@ class SVDProcess:
                 else parsed_sau_regions_config.protection_when_disabled
             ),
             regions=self._process_sau_regions(parsed_sau_regions_config.regions),
+            parsed=parsed_sau_regions_config,
         )
 
     def _process_sau_regions(self, parsed_sau_regions: list[SVDSauRegion]) -> list[SauRegion]:
@@ -171,6 +174,7 @@ class SVDProcess:
                     base=parsed_region.base,
                     limit=parsed_region.limit,
                     access=parsed_region.access,
+                    parsed=parsed_region,
                 )
             )
 
@@ -224,6 +228,7 @@ class SVDProcess:
                 parsed_peripheral.registers_clusters, register_properties_inheritance
             ),
             derived_from=parsed_peripheral.derived_from,
+            parsed=parsed_peripheral,
         )
 
     def _process_address_blocks(
@@ -241,6 +246,7 @@ class SVDProcess:
                         if parsed_address_block.protection is not None
                         else peripheral_protection
                     ),
+                    parsed=parsed_address_block,
                 )
             )
 
@@ -254,6 +260,7 @@ class SVDProcess:
                     name=parsed_interrupt.name,
                     description=parsed_interrupt.description,
                     value=parsed_interrupt.value,
+                    parsed=parsed_interrupt,
                 )
             )
 
@@ -305,6 +312,7 @@ class SVDProcess:
                 parsed_cluster.registers_clusters, register_properties_inheritance
             ),
             derived_from=parsed_cluster.derived_from,
+            parsed=parsed_cluster,
         )
 
     def _process_register(
@@ -358,6 +366,7 @@ class SVDProcess:
             read_action=parsed_register.read_action,
             fields=self._process_fields(parsed_register.fields, register_properties_inheritance.access),
             derived_from=parsed_register.derived_from,
+            parsed=parsed_register,
         )
 
     def _process_write_constraint(self, write_constraint: None | SVDWriteConstraint) -> None | WriteConstraint:
@@ -368,6 +377,7 @@ class SVDProcess:
             write_as_read=write_constraint.write_as_read,
             use_enumerated_values=write_constraint.use_enumerated_values,
             range_=write_constraint.range_,
+            parsed=write_constraint,
         )
 
     def _process_fields(self, parsed_fields: list[SVDField], register_access: AccessType) -> list[Field]:
@@ -395,6 +405,7 @@ class SVDProcess:
                     read_action=parsed_field.read_action,
                     enumerated_values=self._process_enumerated_values(parsed_field.enumerated_values),
                     derived_from=parsed_field.derived_from,
+                    parsed=parsed_field,
                 )
             )
 
@@ -418,6 +429,7 @@ class SVDProcess:
                         parsed_enumerated_value.enumerated_values_map
                     ),
                     derived_from=parsed_enumerated_value.derived_from,
+                    parsed=parsed_enumerated_value,
                 )
             )
 
@@ -434,6 +446,7 @@ class SVDProcess:
                     description=parsed_enumerated_value.description,
                     value=parsed_enumerated_value.value,
                     is_default=parsed_enumerated_value.is_default,
+                    parsed=parsed_enumerated_value,
                 )
             )
 
