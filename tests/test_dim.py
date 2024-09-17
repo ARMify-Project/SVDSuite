@@ -1,9 +1,9 @@
 import pytest
 
-from svdsuite.dim import resolve_dim, resolve_dim_index, DimException
+from svdsuite.utils.dim import resolve_dim, resolve_dim_index, DimException
 
 
-class TestDim:
+class TestDimUtils:
     @pytest.mark.parametrize(
         "dim,dim_index,expected",
         [

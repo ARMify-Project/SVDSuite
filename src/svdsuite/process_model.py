@@ -89,24 +89,6 @@ class DimArrayIndex:
 
 
 @dataclass(kw_only=True)
-class _DimElementGroup:
-    dim: None | int = None
-    dim_increment: None | int = None
-    dim_index: None | str = None
-    dim_name: None | str = None
-    dim_array_index: None | DimArrayIndex = None
-
-
-@dataclass(kw_only=True)
-class _RegisterPropertiesGroup:
-    size: None | int = None
-    access: None | AccessType = None
-    protection: None | ProtectionStringType = None
-    reset_value: None | int = None
-    reset_mask: None | int = None
-
-
-@dataclass(kw_only=True)
 class AddressBlock:
     offset: int
     size: int
@@ -142,25 +124,21 @@ class EnumeratedValue:
 
 
 @dataclass(kw_only=True)
-class Field(_DimElementGroup):
+class Field:
     name: str
     description: None | str = None
-    bit_offset: None | int = None
-    bit_width: None | int = None
-    lsb: None | int = None
-    msb: None | int = None
-    bit_range: None | str = None
-    access: None | AccessType = None
+    lsb: int
+    msb: int
+    access: AccessType
     modified_write_values: ModifiedWriteValuesType = ModifiedWriteValuesType.MODIFY
     write_constraint: None | WriteConstraint = None
     read_action: None | ReadActionType = None
     enumerated_values: List[EnumeratedValue] = field(default_factory=list)
-    derived_from: None | str = None
     parsed: SVDField
 
 
 @dataclass(kw_only=True)
-class Register(_DimElementGroup):
+class Register:
     size: int
     access: AccessType
     protection: ProtectionStringType
@@ -177,24 +155,32 @@ class Register(_DimElementGroup):
     write_constraint: None | WriteConstraint = None
     read_action: None | ReadActionType = None
     fields: List[Field] = field(default_factory=list)
-    derived_from: None | str = None
     parsed: SVDRegister
 
 
 @dataclass(kw_only=True)
-class Cluster(_DimElementGroup, _RegisterPropertiesGroup):
+class Cluster:
+    size: None | int = None
+    access: None | AccessType = None
+    protection: None | ProtectionStringType = None
+    reset_value: None | int = None
+    reset_mask: None | int = None
     name: str
     description: None | str = None
     alternate_cluster: None | str = None
     header_struct_name: None | str = None
     address_offset: int
     registers_clusters: List[Union[Register, "Cluster"]] = field(default_factory=list)
-    derived_from: None | str = None
     parsed: SVDCluster
 
 
 @dataclass(kw_only=True)
-class Peripheral(_DimElementGroup, _RegisterPropertiesGroup):
+class Peripheral:
+    size: None | int = None
+    access: None | AccessType = None
+    protection: None | ProtectionStringType = None
+    reset_value: None | int = None
+    reset_mask: None | int = None
     name: str
     version: None | str = None
     description: None | str = None
@@ -208,12 +194,17 @@ class Peripheral(_DimElementGroup, _RegisterPropertiesGroup):
     address_blocks: List[AddressBlock] = field(default_factory=list)
     interrupts: List[Interrupt] = field(default_factory=list)
     registers_clusters: List[Register | Cluster] = field(default_factory=list)
-    derived_from: None | str = None
+    derived_from: None | str = None  # TODO required?
     parsed: SVDPeripheral
 
 
 @dataclass(kw_only=True)
-class Device(_RegisterPropertiesGroup):
+class Device:
+    size: None | int = None
+    access: None | AccessType = None
+    protection: None | ProtectionStringType = None
+    reset_value: None | int = None
+    reset_mask: None | int = None
     vendor: None | str = None
     vendor_id: None | str = None
     name: str

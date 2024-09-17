@@ -32,8 +32,6 @@ from svdsuite.types import (
     SauAccessType,
 )
 
-from svdsuite.dim import resolve_dim
-
 
 @overload
 def _to_bool(value: str, default: None = None) -> bool: ...
@@ -108,24 +106,10 @@ class SVDParser:
         return cls(lxml.etree.fromstring(content).getroottree())
 
     def __init__(self, tree: lxml.etree._ElementTree) -> None:  # pyright: ignore[reportPrivateUsage]
-        self._tree = tree
-        self._root = self._tree.getroot()
-        self._peripheral_scope: dict[str, SVDPeripheral] = {}
-        self._cluster_scope: dict[str, SVDCluster] = {}
-        self._register_scope: dict[str, SVDRegister] = {}
-        self._field_scope: dict[str, SVDField] = {}
+        self._parsed_device = self._parse_device(tree.getroot())
 
     def get_parsed_device(self) -> SVDDevice:
-        return self._parse_device(self._root)
-
-    def _add_dimable_obj_to_scope[
-        T: (SVDPeripheral, SVDCluster, SVDRegister, SVDField)
-    ](self, scope: dict[str, T], obj: T):  # pylint: disable=undefined-variable
-        scope[obj.name] = obj
-
-        if obj.dim is not None:
-            for name_resolved in resolve_dim(obj.name, obj.dim, obj.dim_index):
-                scope[name_resolved] = obj
+        return self._parsed_device
 
     @overload
     def _parse_element_text(
@@ -423,8 +407,6 @@ class SVDParser:
             if peripheral.dim_array_index is not None:
                 peripheral.dim_array_index.parent = peripheral
 
-            self._add_dimable_obj_to_scope(self._peripheral_scope, peripheral)
-
             peripherals.append(peripheral)
 
         return peripherals
@@ -490,8 +472,6 @@ class SVDParser:
         if register.dim_array_index is not None:
             register.dim_array_index.parent = register
 
-        self._add_dimable_obj_to_scope(self._register_scope, register)
-
         return register
 
     def _parse_fields(
@@ -556,8 +536,6 @@ class SVDParser:
 
             if field.dim_array_index is not None:
                 field.dim_array_index.parent = field
-
-            self._add_dimable_obj_to_scope(self._field_scope, field)
 
             fields.append(field)
 
@@ -659,8 +637,6 @@ class SVDParser:
 
         if cluster.dim_array_index is not None:
             cluster.dim_array_index.parent = cluster
-
-        self._add_dimable_obj_to_scope(self._cluster_scope, cluster)
 
         return cluster
 
