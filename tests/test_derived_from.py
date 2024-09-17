@@ -2,7 +2,7 @@ from typing import Callable
 import pytest
 
 from svdsuite.process import SVDProcess
-from svdsuite.process_model import Device, Register
+from svdsuite.model.process import Device, Register
 from svdsuite.types import EnumeratedTokenType
 
 

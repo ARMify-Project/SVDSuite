@@ -1,6 +1,6 @@
 import pytest
 
-from svdsuite.utils.dim import resolve_dim, resolve_dim_index, DimException
+from svdsuite.util.dim import resolve_dim, resolve_dim_index, DimException
 
 
 class TestDimUtils:

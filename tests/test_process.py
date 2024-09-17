@@ -1,9 +1,11 @@
+import tempfile
 from unittest.mock import Mock
 from typing import Callable, TypeAlias
 import pytest
 
-from svdsuite.svd_model import SVDDevice, SVDPeripheral, SVDCluster, SVDRegister, SVDField
-from svdsuite.process_model import Device, Peripheral, Cluster, Register, Field
+from svdsuite.serialize import SVDSerializer
+from svdsuite.model.svd import SVDDevice, SVDPeripheral, SVDCluster, SVDRegister, SVDField
+from svdsuite.model.process import Device, Peripheral, Cluster, Register, Field
 from svdsuite.process import SVDProcess, _ProcessRegister, _RegisterClusterMap  # type: ignore
 from svdsuite.types import AccessType, ProtectionStringType
 
@@ -415,19 +417,25 @@ class TestProcess:
         r8 = SVDRegister(name="r8", address_offset=0xC, fields=[])
         r9 = SVDRegister(name="r9", address_offset=0x14, fields=[])
 
-        cl1 = SVDCluster(name="cl1", address_offset=0x4, registers_clusters=[r1, r2])
+        cl1 = SVDCluster(name="cl1", description="test", address_offset=0x4, registers_clusters=[r1, r2])
         r1.parent = cl1
         r2.parent = cl1
 
-        cl2 = SVDCluster(name="cl2", address_offset=0x10, registers_clusters=[r3])
+        cl2 = SVDCluster(name="cl2", description="test", address_offset=0x10, registers_clusters=[r3])
         r3.parent = cl2
 
-        cl3 = SVDCluster(name="cl3", address_offset=0x0, parent=cl2, registers_clusters=[r4])
+        cl3 = SVDCluster(name="cl3", description="test", address_offset=0x0, parent=cl2, registers_clusters=[r4])
         cl2.registers_clusters.append(cl3)
         r4.parent = cl3
 
         cl4_cl5_dim = SVDCluster(
-            name="cl%s", dim=2, dim_increment=1, dim_index="4-5", address_offset=0x0, registers_clusters=[r6]
+            name="cl%s",
+            description="test",
+            dim=2,
+            dim_increment=1,
+            dim_index="4-5",
+            address_offset=0x0,
+            registers_clusters=[r6],
         )
         r6.parent = cl4_cl5_dim
 
@@ -453,7 +461,7 @@ class TestProcess:
             xs_no_namespace_schema_location="",
             schema_version="",
             version="1",
-            description="",
+            description="test description",
             address_unit_bits=8,
             width=32,
             peripherals=[p1, p2, p3, p4_p5_dim],
@@ -644,3 +652,16 @@ class TestProcess:
         assert p2.registers_clusters[3].name == "cl2"
         assert p2.registers_clusters[4].name == "r9"
         assert p2.registers_clusters[5].name == "r5"
+
+    def test_to_xml(self, parsed_device: SVDDevice, get_test_svd_file_content: Callable[[str], bytes]) -> None:
+        svd_device = SVDProcess(parsed_device).convert_processed_device_to_svd_device()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            SVDSerializer.device_to_svd_file(temp_dir + "/test.svd", svd_device, pretty_print=True)
+
+            with open(temp_dir + "/test.svd", "rb") as f:
+                test_content = f.read()
+
+        expected_content = get_test_svd_file_content("process_to_xml_expected.svd")
+
+        assert expected_content == test_content

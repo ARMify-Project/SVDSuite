@@ -14,7 +14,7 @@ from svdsuite.types import (
     SauAccessType,
 )
 
-from svdsuite.svd_model import (
+from svdsuite.model.svd import (
     SVDCPU,
     SVDAddressBlock,
     SVDCluster,
@@ -194,7 +194,6 @@ class Peripheral:
     address_blocks: List[AddressBlock] = field(default_factory=list)
     interrupts: List[Interrupt] = field(default_factory=list)
     registers_clusters: List[Register | Cluster] = field(default_factory=list)
-    derived_from: None | str = None  # TODO required?
     parsed: SVDPeripheral
 
 

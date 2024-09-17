@@ -6,7 +6,7 @@ import re
 import bisect
 
 from svdsuite.parse import SVDParser
-from svdsuite.svd_model import (
+from svdsuite.model.svd import (
     SVDDevice,
     SVDCPU,
     SVDEnumeratedValue,
@@ -21,7 +21,7 @@ from svdsuite.svd_model import (
     SVDCluster,
     SVDWriteConstraint,
 )
-from svdsuite.process_model import (
+from svdsuite.model.process import (
     Device,
     CPU,
     EnumeratedValue,
@@ -37,7 +37,8 @@ from svdsuite.process_model import (
     WriteConstraint,
 )
 from svdsuite.types import CPUNameType, EnumUsageType, ModifiedWriteValuesType, ProtectionStringType, AccessType
-from svdsuite.utils.dim import resolve_dim
+from svdsuite.util.dim import resolve_dim
+from svdsuite.util.model_convert import convert_device
 
 SVDElementTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField
 
@@ -480,6 +481,9 @@ class SVDProcess:
 
     def get_processed_device(self) -> Device:
         return self._processed_device
+
+    def convert_processed_device_to_svd_device(self) -> SVDDevice:
+        return convert_device(self._processed_device)
 
     def _process_device(self, parsed_device: SVDDevice) -> Device:
         return Device(

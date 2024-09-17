@@ -2,7 +2,7 @@ from typing import Callable, Any, List, Tuple
 import lxml.etree
 import pytest
 
-from svdsuite.svd_model import (
+from svdsuite.model.svd import (
     SVDAddressBlock,
     SVDCluster,
     SVDCPU,
@@ -32,6 +32,23 @@ from svdsuite.types import (
     SauAccessType,
 )
 
+from svdsuite.serialize import (
+    SVDDeviceSerializer,
+    SVDPeripheralSerializer,
+    SVDCPUSerializer,
+    SVDSauRegionsConfigSerializer,
+    SVDSauRegionSerializer,
+    SVDAddressBlockSerializer,
+    SVDInterruptSerializer,
+    SVDWriteConstraintSerializer,
+    SVDEnumeratedValueSerializer,
+    SVDFieldSerializer,
+    SVDRegisterSerializer,
+    SVDClusterSerializer,
+    SVDEnumeratedValueMapSerializer,
+    SVDDimArrayIndexSerializer,
+)
+
 SVDObject = (
     SVDSauRegion
     | SVDSauRegionsConfig
@@ -50,11 +67,41 @@ SVDObject = (
 )
 
 
-
 @pytest.fixture(name="svd_obj_to_xml_str", scope="session")
 def fixture_svd_obj_to_xml_str() -> Callable[[SVDObject], str]:
     def _(svd_obj: SVDObject) -> str:
-        return lxml.etree.tostring(svd_obj.to_xml(), pretty_print=False).decode()
+        if isinstance(svd_obj, SVDDevice):
+            serializer = SVDDeviceSerializer(svd_obj)
+        elif isinstance(svd_obj, SVDPeripheral):
+            serializer = SVDPeripheralSerializer(svd_obj)
+        elif isinstance(svd_obj, SVDCPU):
+            serializer = SVDCPUSerializer(svd_obj)
+        elif isinstance(svd_obj, SVDSauRegionsConfig):
+            serializer = SVDSauRegionsConfigSerializer(svd_obj)
+        elif isinstance(svd_obj, SVDSauRegion):
+            serializer = SVDSauRegionSerializer(svd_obj)
+        elif isinstance(svd_obj, SVDAddressBlock):
+            serializer = SVDAddressBlockSerializer(svd_obj)
+        elif isinstance(svd_obj, SVDInterrupt):
+            serializer = SVDInterruptSerializer(svd_obj)
+        elif isinstance(svd_obj, SVDWriteConstraint):
+            serializer = SVDWriteConstraintSerializer(svd_obj)
+        elif isinstance(svd_obj, SVDEnumeratedValue):
+            serializer = SVDEnumeratedValueSerializer(svd_obj)
+        elif isinstance(svd_obj, SVDField):
+            serializer = SVDFieldSerializer(svd_obj)
+        elif isinstance(svd_obj, SVDRegister):
+            serializer = SVDRegisterSerializer(svd_obj)
+        elif isinstance(svd_obj, SVDCluster):
+            serializer = SVDClusterSerializer(svd_obj)
+        elif isinstance(svd_obj, SVDEnumeratedValueMap):
+            serializer = SVDEnumeratedValueMapSerializer(svd_obj)
+        elif isinstance(svd_obj, SVDDimArrayIndex):  # pyright: ignore[reportUnnecessaryIsInstance]
+            serializer = SVDDimArrayIndexSerializer(svd_obj)
+        else:
+            raise TypeError("Unsupported SVDObject type")
+
+        return lxml.etree.tostring(serializer.to_xml(), pretty_print=False).decode()
 
     return _
 

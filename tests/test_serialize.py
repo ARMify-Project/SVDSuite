@@ -1,11 +1,12 @@
 import tempfile
 
 from svdsuite.serialize import SVDSerializer
-from svdsuite.svd_model import SVDDevice
+from svdsuite.model.svd import SVDDevice
 
 
 class TestSerialize:
     expected_svd_str = """\
+<?xml version='1.0' encoding='utf-8'?>
 <device xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd" schemaVersion="1.3">
   <name>STM32F0</name>
   <version>1.0</version>

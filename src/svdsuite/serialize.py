@@ -1,5 +1,5 @@
 import lxml.etree
-from svdsuite.svd_model import (
+from svdsuite.model.svd import (
     SVDDevice,
     SVDPeripheral,
     SVDCPU,
@@ -19,13 +19,25 @@ from svdsuite.svd_model import (
 
 class SVDSerializer:
     @staticmethod
-    def device_to_svd_file(path: str, device: SVDDevice, pretty_print: bool = False):
+    def device_to_svd_file(path: str, device: SVDDevice, pretty_print: bool = False, xml_declaration: bool = True):
         with open(path, "wb") as f:
-            f.write(lxml.etree.tostring(SVDDeviceSerializer(device).to_xml(), pretty_print=pretty_print))
+            f.write(
+                lxml.etree.tostring(
+                    SVDDeviceSerializer(device).to_xml(),
+                    pretty_print=pretty_print,
+                    xml_declaration=xml_declaration,
+                    encoding="utf-8",
+                )
+            )
 
     @staticmethod
-    def device_to_svd_content(device: SVDDevice, pretty_print: bool = False) -> bytes:
-        return lxml.etree.tostring(SVDDeviceSerializer(device).to_xml(), pretty_print=pretty_print)
+    def device_to_svd_content(device: SVDDevice, pretty_print: bool = False, xml_declaration: bool = True) -> bytes:
+        return lxml.etree.tostring(
+            SVDDeviceSerializer(device).to_xml(),
+            pretty_print=pretty_print,
+            xml_declaration=xml_declaration,
+            encoding="utf-8",
+        )
 
     @staticmethod
     def device_to_svd_str(device: SVDDevice, pretty_print: bool = False) -> str:
