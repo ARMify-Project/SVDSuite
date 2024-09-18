@@ -14,7 +14,7 @@ from svdsuite.types import (
     SauAccessType,
 )
 
-from svdsuite.model.svd import (
+from svdsuite.model.parse import (
     SVDCPU,
     SVDAddressBlock,
     SVDCluster,

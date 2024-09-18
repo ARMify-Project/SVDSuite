@@ -2,7 +2,7 @@ from typing import List, Literal, Optional, Tuple, overload
 
 import lxml.etree
 
-from svdsuite.model.svd import (
+from svdsuite.model.parse import (
     SVDCPU,
     SVDAddressBlock,
     SVDCluster,

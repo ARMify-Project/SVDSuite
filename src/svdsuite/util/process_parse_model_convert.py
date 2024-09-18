@@ -1,4 +1,4 @@
-from svdsuite.model.svd import (
+from svdsuite.model.parse import (
     SVDCPU,
     SVDAddressBlock,
     SVDCluster,
@@ -32,7 +32,7 @@ from svdsuite.model.process import (
 )
 
 
-def convert_sau_region(region: SauRegion) -> SVDSauRegion:
+def process_parse_convert_sau_region(region: SauRegion) -> SVDSauRegion:
     return SVDSauRegion(
         enabled=region.enabled,
         name=region.name,
@@ -43,8 +43,8 @@ def convert_sau_region(region: SauRegion) -> SVDSauRegion:
     )
 
 
-def convert_sau_regions_config(config: SauRegionsConfig) -> SVDSauRegionsConfig:
-    regions = [convert_sau_region(region) for region in config.regions]
+def process_parse_convert_sau_regions_config(config: SauRegionsConfig) -> SVDSauRegionsConfig:
+    regions = [process_parse_convert_sau_region(region) for region in config.regions]
 
     svd_config = SVDSauRegionsConfig(
         enabled=config.enabled,
@@ -59,8 +59,10 @@ def convert_sau_regions_config(config: SauRegionsConfig) -> SVDSauRegionsConfig:
     return svd_config
 
 
-def convert_cpu(cpu: CPU) -> SVDCPU:
-    sau_regions_config = convert_sau_regions_config(cpu.sau_regions_config) if cpu.sau_regions_config else None
+def process_parse_convert_cpu(cpu: CPU) -> SVDCPU:
+    sau_regions_config = (
+        process_parse_convert_sau_regions_config(cpu.sau_regions_config) if cpu.sau_regions_config else None
+    )
 
     svd_cpu = SVDCPU(
         name=cpu.name,
@@ -89,7 +91,7 @@ def convert_cpu(cpu: CPU) -> SVDCPU:
     return svd_cpu
 
 
-def convert_enumerated_value_map(value_map: EnumeratedValueMap) -> SVDEnumeratedValueMap:
+def process_parse_convert_enumerated_value_map(value_map: EnumeratedValueMap) -> SVDEnumeratedValueMap:
     return SVDEnumeratedValueMap(
         name=value_map.name,
         description=value_map.description,
@@ -99,8 +101,8 @@ def convert_enumerated_value_map(value_map: EnumeratedValueMap) -> SVDEnumerated
     )
 
 
-def convert_dim_array_index(index: DimArrayIndex) -> SVDDimArrayIndex:
-    value_maps = [convert_enumerated_value_map(value_map) for value_map in index.enumerated_values_map]
+def process_parse_convert_dim_array_index(index: DimArrayIndex) -> SVDDimArrayIndex:
+    value_maps = [process_parse_convert_enumerated_value_map(value_map) for value_map in index.enumerated_values_map]
 
     svd_index = SVDDimArrayIndex(
         header_enum_name=index.header_enum_name,
@@ -114,7 +116,7 @@ def convert_dim_array_index(index: DimArrayIndex) -> SVDDimArrayIndex:
     return svd_index
 
 
-def convert_address_block(block: AddressBlock) -> SVDAddressBlock:
+def process_parse_convert_address_block(block: AddressBlock) -> SVDAddressBlock:
     return SVDAddressBlock(
         offset=block.offset,
         size=block.size,
@@ -124,7 +126,7 @@ def convert_address_block(block: AddressBlock) -> SVDAddressBlock:
     )
 
 
-def convert_interrupt(interrupt: Interrupt) -> SVDInterrupt:
+def process_parse_convert_interrupt(interrupt: Interrupt) -> SVDInterrupt:
     return SVDInterrupt(
         name=interrupt.name,
         description=interrupt.description,
@@ -133,7 +135,7 @@ def convert_interrupt(interrupt: Interrupt) -> SVDInterrupt:
     )
 
 
-def convert_write_constraint(constraint: WriteConstraint) -> SVDWriteConstraint:
+def process_parse_convert_write_constraint(constraint: WriteConstraint) -> SVDWriteConstraint:
     return SVDWriteConstraint(
         write_as_read=constraint.write_as_read,
         use_enumerated_values=constraint.use_enumerated_values,
@@ -142,8 +144,8 @@ def convert_write_constraint(constraint: WriteConstraint) -> SVDWriteConstraint:
     )
 
 
-def convert_enumerated_value(value: EnumeratedValue) -> SVDEnumeratedValue:
-    value_maps = [convert_enumerated_value_map(value_map) for value_map in value.enumerated_values_map]
+def process_parse_convert_enumerated_value(value: EnumeratedValue) -> SVDEnumeratedValue:
+    value_maps = [process_parse_convert_enumerated_value_map(value_map) for value_map in value.enumerated_values_map]
 
     svd_value = SVDEnumeratedValue(
         name=value.name,
@@ -160,8 +162,8 @@ def convert_enumerated_value(value: EnumeratedValue) -> SVDEnumeratedValue:
     return svd_value
 
 
-def convert_field(field: Field) -> SVDField:
-    enumerated_values = [convert_enumerated_value(value) for value in field.enumerated_values]
+def process_parse_convert_field(field: Field) -> SVDField:
+    enumerated_values = [process_parse_convert_enumerated_value(value) for value in field.enumerated_values]
 
     svd_field = SVDField(
         name=field.name,
@@ -170,7 +172,9 @@ def convert_field(field: Field) -> SVDField:
         msb=field.msb,
         access=field.access,
         modified_write_values=field.modified_write_values,
-        write_constraint=convert_write_constraint(field.write_constraint) if field.write_constraint else None,
+        write_constraint=(
+            process_parse_convert_write_constraint(field.write_constraint) if field.write_constraint else None
+        ),
         read_action=field.read_action,
         enumerated_values=enumerated_values,
         derived_from=None,
@@ -183,8 +187,8 @@ def convert_field(field: Field) -> SVDField:
     return svd_field
 
 
-def convert_register(register: Register) -> SVDRegister:
-    fields = [convert_field(field) for field in register.fields]
+def process_parse_convert_register(register: Register) -> SVDRegister:
+    fields = [process_parse_convert_field(field) for field in register.fields]
 
     svd_register = SVDRegister(
         name=register.name,
@@ -200,7 +204,9 @@ def convert_register(register: Register) -> SVDRegister:
         reset_mask=register.reset_mask,
         data_type=register.data_type,
         modified_write_values=register.modified_write_values,
-        write_constraint=convert_write_constraint(register.write_constraint) if register.write_constraint else None,
+        write_constraint=(
+            process_parse_convert_write_constraint(register.write_constraint) if register.write_constraint else None
+        ),
         read_action=register.read_action,
         fields=fields,
         derived_from=None,
@@ -213,13 +219,13 @@ def convert_register(register: Register) -> SVDRegister:
     return svd_register
 
 
-def convert_cluster(cluster: Cluster) -> SVDCluster:
+def process_parse_convert_cluster(cluster: Cluster) -> SVDCluster:
     registers_clusters: list[SVDCluster | SVDRegister] = []
     for register_cluster in cluster.registers_clusters:
         if isinstance(register_cluster, Register):
-            converted = convert_register(register_cluster)
+            converted = process_parse_convert_register(register_cluster)
         elif isinstance(register_cluster, Cluster):  # pyright: ignore[reportUnnecessaryIsInstance]
-            converted = convert_cluster(register_cluster)
+            converted = process_parse_convert_cluster(register_cluster)
         else:
             raise ValueError(f"Invalid register type: {type(register_cluster)}")
 
@@ -247,16 +253,16 @@ def convert_cluster(cluster: Cluster) -> SVDCluster:
     return svd_cluster
 
 
-def convert_peripheral(peripheral: Peripheral) -> SVDPeripheral:
-    address_blocks = [convert_address_block(block) for block in peripheral.address_blocks]
-    interrupts = [convert_interrupt(interrupt) for interrupt in peripheral.interrupts]
+def process_parse_convert_peripheral(peripheral: Peripheral) -> SVDPeripheral:
+    address_blocks = [process_parse_convert_address_block(block) for block in peripheral.address_blocks]
+    interrupts = [process_parse_convert_interrupt(interrupt) for interrupt in peripheral.interrupts]
 
     registers_clusters: list[SVDCluster | SVDRegister] = []
     for register_cluster in peripheral.registers_clusters:
         if isinstance(register_cluster, Register):
-            converted = convert_register(register_cluster)
+            converted = process_parse_convert_register(register_cluster)
         elif isinstance(register_cluster, Cluster):  # pyright: ignore[reportUnnecessaryIsInstance]
-            converted = convert_cluster(register_cluster)
+            converted = process_parse_convert_cluster(register_cluster)
         else:
             raise ValueError(f"Invalid register type: {type(register_cluster)}")
 
@@ -297,8 +303,8 @@ def convert_peripheral(peripheral: Peripheral) -> SVDPeripheral:
     return svd_peripheral
 
 
-def convert_device(device: Device) -> SVDDevice:
-    peripherals = [convert_peripheral(peripheral) for peripheral in device.peripherals]
+def process_parse_convert_device(device: Device) -> SVDDevice:
+    peripherals = [process_parse_convert_peripheral(peripheral) for peripheral in device.peripherals]
 
     svd_device = SVDDevice(
         xs_no_namespace_schema_location="CMSIS-SVD.xsd",
@@ -310,7 +316,7 @@ def convert_device(device: Device) -> SVDDevice:
         version=device.version,
         description=device.description,
         license_text=device.license_text,
-        cpu=convert_cpu(device.cpu) if device.cpu else None,
+        cpu=process_parse_convert_cpu(device.cpu) if device.cpu else None,
         header_system_filename=device.header_system_filename,
         header_definitions_prefix=device.header_definitions_prefix,
         address_unit_bits=device.address_unit_bits,

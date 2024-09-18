@@ -3,7 +3,7 @@ from typing import Callable
 import lxml.etree
 import pytest
 
-from svdsuite.model.svd import (
+from svdsuite.model.parse import (
     SVDAddressBlock,
     SVDCluster,
     SVDCPU,

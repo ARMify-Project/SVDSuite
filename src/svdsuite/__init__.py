@@ -13,7 +13,7 @@ from svdsuite.types import (
     ReadActionType,
     SauAccessType,
 )
-from svdsuite.model.svd import (
+from svdsuite.model.parse import (
     SVDAddressBlock,
     SVDCluster,
     SVDCPU,

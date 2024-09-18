@@ -1,7 +1,7 @@
 import tempfile
 
 from svdsuite.serialize import SVDSerializer
-from svdsuite.model.svd import SVDDevice
+from svdsuite.model.parse import SVDDevice
 
 
 class TestSerialize:

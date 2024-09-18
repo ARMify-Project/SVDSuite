@@ -2,7 +2,7 @@ from typing import Callable, Any, List, Tuple
 import lxml.etree
 import pytest
 
-from svdsuite.model.svd import (
+from svdsuite.model.parse import (
     SVDAddressBlock,
     SVDCluster,
     SVDCPU,

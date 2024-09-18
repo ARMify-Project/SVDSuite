@@ -4,7 +4,7 @@ from typing import Callable, TypeAlias
 import pytest
 
 from svdsuite.serialize import SVDSerializer
-from svdsuite.model.svd import SVDDevice, SVDPeripheral, SVDCluster, SVDRegister, SVDField
+from svdsuite.model.parse import SVDDevice, SVDPeripheral, SVDCluster, SVDRegister, SVDField
 from svdsuite.model.process import Device, Peripheral, Cluster, Register, Field
 from svdsuite.process import SVDProcess, _ProcessRegister, _RegisterClusterMap  # type: ignore
 from svdsuite.types import AccessType, ProtectionStringType

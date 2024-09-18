@@ -1,5 +1,5 @@
 import lxml.etree
-from svdsuite.model.svd import (
+from svdsuite.model.parse import (
     SVDDevice,
     SVDPeripheral,
     SVDCPU,

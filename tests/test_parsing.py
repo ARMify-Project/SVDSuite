@@ -2,7 +2,7 @@ from typing import Callable, Any
 import pytest
 
 from svdsuite.parse import SVDParser, SVDParserException, _to_int  # type: ignore
-from svdsuite.model.svd import (
+from svdsuite.model.parse import (
     SVDAddressBlock,
     SVDCluster,
     SVDCPU,
