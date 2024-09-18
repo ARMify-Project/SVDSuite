@@ -42,6 +42,8 @@ from svdsuite.model.process import (
     WriteConstraint,
 )
 
+from svdsuite.model.map import MapPeripheral, MapRegister
+
 __all__ = [
     "AccessType",
     "CPUNameType",
@@ -80,4 +82,6 @@ __all__ = [
     "SauRegion",
     "SauRegionsConfig",
     "WriteConstraint",
+    "MapPeripheral",
+    "MapRegister",
 ]
