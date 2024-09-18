@@ -1,64 +1,15 @@
-from svdsuite.parse import SVDParser, SVDParserException
-from svdsuite.validate import SVDValidator, SVDValidatorException, SVDSchemaVersion
-from svdsuite.serialize import SVDSerializer
-from svdsuite.types import (
-    AccessType,
-    CPUNameType,
-    DataTypeType,
-    EndianType,
-    EnumeratedTokenType,
-    EnumUsageType,
-    ModifiedWriteValuesType,
-    ProtectionStringType,
-    ReadActionType,
-    SauAccessType,
-)
-from svdsuite.model.parse import (
-    SVDAddressBlock,
-    SVDCluster,
-    SVDCPU,
-    SVDDevice,
-    SVDDimArrayIndex,
-    SVDEnumeratedValue,
-    SVDEnumeratedValueMap,
-    SVDField,
-    SVDInterrupt,
-    SVDPeripheral,
-    SVDRegister,
-    SVDSauRegion,
-    SVDSauRegionsConfig,
-    SVDWriteConstraint,
-)
+from svdsuite.parse import Parser, ParserException
+from svdsuite.process import Process, ProcessException
+from svdsuite.validate import Validator, ValidatorException, SVDSchemaVersion
+from svdsuite.serialize import Serializer
 
 __all__ = [
-    "SVDParser",
-    "SVDParserException",
+    "Parser",
+    "ParserException",
+    "Process",
+    "ProcessException",
+    "Validator",
+    "ValidatorException",
     "SVDSchemaVersion",
-    "SVDValidator",
-    "SVDValidatorException",
-    "SVDSerializer",
-    "AccessType",
-    "CPUNameType",
-    "DataTypeType",
-    "EndianType",
-    "EnumeratedTokenType",
-    "EnumUsageType",
-    "ModifiedWriteValuesType",
-    "ProtectionStringType",
-    "ReadActionType",
-    "SauAccessType",
-    "SVDAddressBlock",
-    "SVDCluster",
-    "SVDCPU",
-    "SVDDevice",
-    "SVDDimArrayIndex",
-    "SVDEnumeratedValue",
-    "SVDEnumeratedValueMap",
-    "SVDField",
-    "SVDInterrupt",
-    "SVDPeripheral",
-    "SVDRegister",
-    "SVDSauRegion",
-    "SVDSauRegionsConfig",
-    "SVDWriteConstraint",
+    "Serializer",
 ]

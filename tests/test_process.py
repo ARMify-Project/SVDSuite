@@ -3,11 +3,11 @@ from unittest.mock import Mock
 from typing import Callable, TypeAlias
 import pytest
 
-from svdsuite.serialize import SVDSerializer
+from svdsuite.serialize import Serializer
 from svdsuite.model.parse import SVDDevice, SVDPeripheral, SVDCluster, SVDRegister, SVDField
 from svdsuite.model.process import Device, Peripheral, Cluster, Register, Field
-from svdsuite.process import SVDProcess, _ProcessRegister, _RegisterClusterMap  # type: ignore
-from svdsuite.types import AccessType, ProtectionStringType
+from svdsuite.process import Process, _ProcessRegister, _RegisterClusterMap  # type: ignore
+from svdsuite.model.types import AccessType, ProtectionStringType
 
 TestDataTuple: TypeAlias = tuple[
     Device,
@@ -473,7 +473,7 @@ class TestProcess:
         )
 
     def test_basic(self, parsed_device: SVDDevice) -> None:
-        device = SVDProcess(parsed_device).get_processed_device()
+        device = Process(parsed_device).get_processed_device()
 
         assert len(device.peripherals) == 5
         assert device.peripherals[0].name == "p1"
@@ -625,7 +625,7 @@ class TestProcess:
         assert r5.name == "r5"
         r5.size = 32
 
-        device = SVDProcess(parsed_device).get_processed_device()
+        device = Process(parsed_device).get_processed_device()
         assert len(device.peripherals) == 5
         assert device.peripherals[1].name == "p2"
         p2 = device.peripherals[1]
@@ -641,7 +641,7 @@ class TestProcess:
         assert r5.name == "r5"
         r5.address_offset = 0x30
 
-        device = SVDProcess(parsed_device).get_processed_device()
+        device = Process(parsed_device).get_processed_device()
         assert len(device.peripherals) == 5
         assert device.peripherals[1].name == "p2"
         p2 = device.peripherals[1]
@@ -654,10 +654,10 @@ class TestProcess:
         assert p2.registers_clusters[5].name == "r5"
 
     def test_to_xml(self, parsed_device: SVDDevice, get_test_svd_file_content: Callable[[str], bytes]) -> None:
-        svd_device = SVDProcess(parsed_device).convert_processed_device_to_svd_device()
+        svd_device = Process(parsed_device).convert_processed_device_to_svd_device()
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            SVDSerializer.device_to_svd_file(temp_dir + "/test.svd", svd_device, pretty_print=True)
+            Serializer.device_to_svd_file(temp_dir + "/test.svd", svd_device, pretty_print=True)
 
             with open(temp_dir + "/test.svd", "rb") as f:
                 test_content = f.read()

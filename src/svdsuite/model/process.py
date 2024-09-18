@@ -1,7 +1,7 @@
 from typing import List, Union, Tuple
 from dataclasses import dataclass, field
 
-from svdsuite.types import (
+from svdsuite.model.types import (
     AccessType,
     CPUNameType,
     DataTypeType,

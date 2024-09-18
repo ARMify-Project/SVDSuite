@@ -1,16 +1,16 @@
 from typing import Callable
 import pytest
 
-from svdsuite.process import SVDProcess
+from svdsuite.process import Process
 from svdsuite.model.process import Device, Register
-from svdsuite.types import EnumeratedTokenType
+from svdsuite.model.types import EnumeratedTokenType
 
 
 @pytest.fixture(name="get_processed_device_from_testfile")
 def fixture_get_processed_device_from_testfile(get_test_svd_file_content: Callable[[str], bytes]):
     def _(file_name: str) -> Device:
         file_content = get_test_svd_file_content(file_name)
-        return SVDProcess.for_xml_content(file_content).get_processed_device()
+        return Process.for_xml_content(file_content).get_processed_device()
 
     return _
 

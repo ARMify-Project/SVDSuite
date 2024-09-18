@@ -19,7 +19,7 @@ from svdsuite.model.parse import (
     SVDWriteConstraint,
 )
 
-from svdsuite.types import (
+from svdsuite.model.types import (
     AccessType,
     CPUNameType,
     DataTypeType,

@@ -5,7 +5,7 @@ import copy
 import re
 import bisect
 
-from svdsuite.parse import SVDParser
+from svdsuite.parse import Parser
 from svdsuite.model.parse import (
     SVDDevice,
     SVDCPU,
@@ -36,7 +36,7 @@ from svdsuite.model.process import (
     Cluster,
     WriteConstraint,
 )
-from svdsuite.types import CPUNameType, EnumUsageType, ModifiedWriteValuesType, ProtectionStringType, AccessType
+from svdsuite.model.types import CPUNameType, EnumUsageType, ModifiedWriteValuesType, ProtectionStringType, AccessType
 from svdsuite.util.dim import resolve_dim
 from svdsuite.util.process_parse_model_convert import process_parse_convert_device
 
@@ -459,22 +459,22 @@ class _Resolver:
                 self._derived_mapping.append((derived_node_name, element_name))
 
 
-class SVDProcessException(Exception):
+class ProcessException(Exception):
     pass
 
 
-class SVDProcess:
+class Process:
     @classmethod
     def for_xml_file(cls, path: str):
-        return cls(SVDParser.for_xml_file(path).get_parsed_device())
+        return cls(Parser.for_xml_file(path).get_parsed_device())
 
     @classmethod
     def for_xml_str(cls, xml_str: str):
-        return cls(SVDParser.for_xml_content(xml_str.encode()).get_parsed_device())
+        return cls(Parser.for_xml_content(xml_str.encode()).get_parsed_device())
 
     @classmethod
     def for_xml_content(cls, content: bytes):
-        return cls(SVDParser.for_xml_content(content).get_parsed_device())
+        return cls(Parser.for_xml_content(content).get_parsed_device())
 
     def __init__(self, parsed_device: SVDDevice) -> None:
         self._processed_device = self._process_device(parsed_device)
@@ -602,12 +602,12 @@ class _ProcessField:
 
     def _validate_svdfield(self, element: SVDElementTypes) -> SVDField:
         if not isinstance(element, SVDField):
-            raise SVDProcessException(f"Expected SVDField, got {type(element)}")
+            raise ProcessException(f"Expected SVDField, got {type(element)}")
         return element
 
     def _validate_access(self, access: None | AccessType) -> AccessType:
         if access is None:
-            raise SVDProcessException("Access can't be None for field")
+            raise ProcessException("Access can't be None for field")
         return access
 
     def _create_field(self, node: _Node, parsed_field: SVDField, index: int) -> Field:
@@ -624,7 +624,7 @@ class _ProcessField:
 
         try:
             lsb, msb = self._process_field_msb_lsb_with_increment(parsed_field, node, index)
-        except SVDProcessException:
+        except ProcessException:
             lsb = base_element.lsb
             msb = base_element.msb
 
@@ -704,7 +704,7 @@ class _ProcessField:
             else:
                 raise ValueError(f"Invalid bit range format: {parsed_field.bit_range}")
         else:
-            raise SVDProcessException("Field must have bit_offset and bit_width, lsb and msb, or bit_range")
+            raise ProcessException("Field must have bit_offset and bit_width, lsb and msb, or bit_range")
 
         return (field_msb, field_lsb)
 
@@ -791,7 +791,7 @@ class _ProcessRegister:
 
     def _validate_svdregister(self, element: SVDElementTypes) -> SVDRegister:
         if not isinstance(element, SVDRegister):
-            raise SVDProcessException(f"Expected SVDRegister, got {type(element)}")
+            raise ProcessException(f"Expected SVDRegister, got {type(element)}")
         return element
 
     def _create_register(self, node: _Node, parsed_register: SVDRegister, index: int) -> Register:
@@ -811,15 +811,15 @@ class _ProcessRegister:
         reset_mask: None | int,
     ) -> tuple[int, AccessType, ProtectionStringType, int, int]:
         if size is None:
-            raise SVDProcessException("Size can't be None for register")
+            raise ProcessException("Size can't be None for register")
         if access is None:
-            raise SVDProcessException("Access can't be None for register")
+            raise ProcessException("Access can't be None for register")
         if protection is None:
-            raise SVDProcessException("Protection can't be None for register")
+            raise ProcessException("Protection can't be None for register")
         if reset_value is None:
-            raise SVDProcessException("Reset value can't be None for register")
+            raise ProcessException("Reset value can't be None for register")
         if reset_mask is None:
-            raise SVDProcessException("Reset mask can't be None for register")
+            raise ProcessException("Reset mask can't be None for register")
 
         return (size, access, protection, reset_value, reset_mask)
 
@@ -962,7 +962,7 @@ class _ProcessCluster:
 
     def _validate_svdcluster(self, element: SVDElementTypes) -> SVDCluster:
         if not isinstance(element, SVDCluster):
-            raise SVDProcessException(f"Expected SVDCluster, got {type(element)}")
+            raise ProcessException(f"Expected SVDCluster, got {type(element)}")
         return element
 
     def _create_cluster(self, node: _Node, parsed_cluster: SVDCluster, index: int) -> Cluster:
@@ -1076,7 +1076,7 @@ class _ProcessPeripheral:
 
     def _validate_svdperipheral(self, element: SVDElementTypes) -> SVDPeripheral:
         if not isinstance(element, SVDPeripheral):
-            raise SVDProcessException(f"Expected SVDPeripheral, got {type(element)}")
+            raise ProcessException(f"Expected SVDPeripheral, got {type(element)}")
         return element
 
     def _create_peripheral(self, node: _Node, parsed_peripheral: SVDPeripheral, index: int) -> Peripheral:

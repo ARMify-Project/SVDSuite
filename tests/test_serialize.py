@@ -1,6 +1,6 @@
 import tempfile
 
-from svdsuite.serialize import SVDSerializer
+from svdsuite.serialize import Serializer
 from svdsuite.model.parse import SVDDevice
 
 
@@ -40,7 +40,7 @@ class TestSerialize:
             peripherals=[],
         )
 
-        svd_str = SVDSerializer.device_to_svd_str(device, pretty_print=True)
+        svd_str = Serializer.device_to_svd_str(device, pretty_print=True)
 
         assert svd_str == self.expected_svd_str
 
@@ -68,7 +68,7 @@ class TestSerialize:
             peripherals=[],
         )
 
-        svd_content = SVDSerializer.device_to_svd_content(device, pretty_print=True)
+        svd_content = Serializer.device_to_svd_content(device, pretty_print=True)
 
         assert svd_content == self.expected_svd_str.encode()
 
@@ -97,7 +97,7 @@ class TestSerialize:
         )
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            SVDSerializer.device_to_svd_file(temp_dir + "/test.svd", device, pretty_print=True)
+            Serializer.device_to_svd_file(temp_dir + "/test.svd", device, pretty_print=True)
 
             with open(temp_dir + "/test.svd", "r", encoding="utf8") as f:
                 svd_str = f.read()

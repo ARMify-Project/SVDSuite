@@ -17,7 +17,7 @@ from svdsuite.model.parse import (
 )
 
 
-class SVDSerializer:
+class Serializer:
     @staticmethod
     def device_to_svd_file(path: str, device: SVDDevice, pretty_print: bool = False, xml_declaration: bool = True):
         with open(path, "wb") as f:
@@ -41,7 +41,7 @@ class SVDSerializer:
 
     @staticmethod
     def device_to_svd_str(device: SVDDevice, pretty_print: bool = False) -> str:
-        return SVDSerializer.device_to_svd_content(device, pretty_print=pretty_print).decode()
+        return Serializer.device_to_svd_content(device, pretty_print=pretty_print).decode()
 
 
 class XMLSerializable:

@@ -1,7 +1,7 @@
 from typing import Callable, Any
 import pytest
 
-from svdsuite.parse import SVDParser, SVDParserException, _to_int  # type: ignore
+from svdsuite.parse import Parser, ParserException, _to_int  # type: ignore
 from svdsuite.model.parse import (
     SVDAddressBlock,
     SVDCluster,
@@ -34,7 +34,7 @@ def fixture_get_device(get_test_svd_file_content: Callable[[str], bytes]) -> Cal
     def _():
         file_content = get_test_svd_file_content("parser_testfile.svd")
 
-        parser = SVDParser.for_xml_content(file_content)
+        parser = Parser.for_xml_content(file_content)
         return parser.get_parsed_device()
 
     return _
@@ -47,7 +47,7 @@ def fixture_get_device_with_element_modification(
     def _(xpath: str, test_input: None | str):
         file_content = modify_test_svd_file_and_get_content("parser_testfile.svd", xpath, None, test_input)
 
-        parser = SVDParser.for_xml_content(file_content)
+        parser = Parser.for_xml_content(file_content)
         return parser.get_parsed_device()
 
     return _
@@ -60,7 +60,7 @@ def fixture_get_device_with_attribute_modification(
     def _(xpath: str, attribute: None | str, test_input: None | str):
         file_content = modify_test_svd_file_and_get_content("parser_testfile.svd", xpath, attribute, test_input)
 
-        parser = SVDParser.for_xml_content(file_content)
+        parser = Parser.for_xml_content(file_content)
         return parser.get_parsed_device()
 
     return _
@@ -69,22 +69,22 @@ def fixture_get_device_with_attribute_modification(
 class TestParserInstantiation:
     def test_cls_for_xml_file(self, get_test_svd_file_path: Callable[[str], str]):
         file_path = get_test_svd_file_path("parser_testfile.svd")
-        parser = SVDParser.for_xml_file(file_path)
+        parser = Parser.for_xml_file(file_path)
 
-        assert isinstance(parser, SVDParser)
+        assert isinstance(parser, Parser)
 
     def test_for_xml_str(self, get_test_svd_file_content: Callable[[str], bytes]):
         file_content = get_test_svd_file_content("parser_testfile.svd")
         file_str = file_content.decode()
-        parser = SVDParser.for_xml_str(file_str)
+        parser = Parser.for_xml_str(file_str)
 
-        assert isinstance(parser, SVDParser)
+        assert isinstance(parser, Parser)
 
     def test_cls_for_xml_content(self, get_test_svd_file_content: Callable[[str], bytes]):
         file_content = get_test_svd_file_content("parser_testfile.svd")
-        parser = SVDParser.for_xml_content(file_content)
+        parser = Parser.for_xml_content(file_content)
 
-        assert isinstance(parser, SVDParser)
+        assert isinstance(parser, Parser)
 
 
 class TestToInt:
@@ -147,7 +147,7 @@ class TestDeviceParsing:
         "test_input,expected",
         [
             ("ARM_Example", "ARM_Example"),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_name(
@@ -173,7 +173,7 @@ class TestDeviceParsing:
 
     @pytest.mark.parametrize(
         "test_input,expected",
-        [("1.2", "1.2"), pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException))],
+        [("1.2", "1.2"), pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException))],
     )
     def test_version(
         self,
@@ -189,7 +189,7 @@ class TestDeviceParsing:
         "test_input,expected",
         [
             ("This is a description", "This is a description"),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_description(
@@ -249,7 +249,7 @@ class TestDeviceParsing:
         [
             ("100", 100),
             ("0x64", 100),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_address_unit_bits(
@@ -267,7 +267,7 @@ class TestDeviceParsing:
         [
             ("100", 100),
             ("0x64", 100),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_width(
@@ -394,7 +394,7 @@ class TestCPUParsing:
             ("CA72", CPUNameType.CA72),
             ("SMC1", CPUNameType.SMC1),
             ("other", CPUNameType.OTHER),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_name(
@@ -412,7 +412,7 @@ class TestCPUParsing:
         "test_input,expected",
         [
             ("r1p0", "r1p0"),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_revision(
@@ -433,7 +433,7 @@ class TestCPUParsing:
             ("big", EndianType.BIG),
             ("selectable", EndianType.SELECTABLE),
             ("other", EndianType.OTHER),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_endian(
@@ -641,7 +641,7 @@ class TestCPUParsing:
         [
             ("100", 100),
             ("0x64", 100),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_nvic_prio_bits(
@@ -662,7 +662,7 @@ class TestCPUParsing:
             ("1", True),
             ("false", False),
             ("0", False),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_vendor_systick_config(
@@ -819,7 +819,7 @@ class TestSauRegionParsing:
         [
             ("100", 100),
             ("0x64", 100),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_base(
@@ -840,7 +840,7 @@ class TestSauRegionParsing:
         [
             ("100", 100),
             ("0x64", 100),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_limit(
@@ -861,7 +861,7 @@ class TestSauRegionParsing:
         [
             ("c", SauAccessType.NON_SECURE_CALLABLE),
             ("n", SauAccessType.NON_SECURE),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_access(
@@ -957,7 +957,7 @@ class TestPeripheralParsing:
         "test_input,expected",
         [
             ("Timer%s", "Timer%s"),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_name(
@@ -1081,7 +1081,7 @@ class TestPeripheralParsing:
         [
             ("100", 100),
             ("0x64", 100),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_base_address(
@@ -1280,7 +1280,7 @@ class TestEnumeratedValueMapParsing:
         "test_input,expected",
         [
             ("UART0", "UART0"),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_name(
@@ -1368,7 +1368,7 @@ class TestAddressBlockParsing:
         [
             ("100", 100),
             ("0x64", 100),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_offset(
@@ -1388,7 +1388,7 @@ class TestAddressBlockParsing:
         [
             ("100", 100),
             ("0x64", 100),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_size(
@@ -1409,7 +1409,7 @@ class TestAddressBlockParsing:
             ("registers", EnumeratedTokenType.REGISTERS),
             ("buffer", EnumeratedTokenType.BUFFER),
             ("reserved", EnumeratedTokenType.RESERVED),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_usage(
@@ -1453,7 +1453,7 @@ class TestInterruptParsing:
         "test_input,expected",
         [
             ("TIM0", "TIM0"),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_name(
@@ -1491,7 +1491,7 @@ class TestInterruptParsing:
         [
             ("100", 100),
             ("0x64", 100),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_value(
@@ -1610,7 +1610,7 @@ class TestClusterParsing:
         "test_input,expected",
         [
             ("Cluster%s", "Cluster%s"),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_name(
@@ -1690,7 +1690,7 @@ class TestClusterParsing:
         [
             ("100", 100),
             ("0x64", 100),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_address_offset(
@@ -1934,7 +1934,7 @@ class TestRegisterParsing:
         "test_input,expected",
         [
             ("Register%s", "Register%s"),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_name(
@@ -2033,7 +2033,7 @@ class TestRegisterParsing:
         [
             ("100", 100),
             ("0x64", 100),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_address_offset(
@@ -2455,7 +2455,7 @@ class TestFieldParsing:
         "test_input,expected",
         [
             ("Field%s", "Field%s"),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=SVDParserException)),
+            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
         ],
     )
     def test_name(

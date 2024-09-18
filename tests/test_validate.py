@@ -2,7 +2,7 @@ from typing import Callable
 import pytest
 import lxml.etree
 
-from svdsuite.validate import SVDValidator, SVDSchemaVersion
+from svdsuite.validate import Validator, SVDSchemaVersion
 
 
 class TestValidate:
@@ -49,15 +49,13 @@ class TestValidate:
     """
 
     def test_testfile_read(self, get_test_svd_file_path: Callable[[str], str]):
-        assert (
-            SVDValidator.validate_xml_file(get_test_svd_file_path("parser_testfile.svd"), get_exception=False) is False
-        )
+        assert Validator.validate_xml_file(get_test_svd_file_path("parser_testfile.svd"), get_exception=False) is False
 
     def test_valid_xml_str(self):
-        assert SVDValidator.validate_xml_str(self.xml_content) is True
+        assert Validator.validate_xml_str(self.xml_content) is True
 
     def test_valid_xml_content(self):
-        assert SVDValidator.validate_xml_content(self.xml_content.encode()) is True
+        assert Validator.validate_xml_content(self.xml_content.encode()) is True
 
     def test_invalid_xml_with_false(self):
         xml_content = """\
@@ -70,7 +68,7 @@ class TestValidate:
         </device>
         """
 
-        assert SVDValidator.validate_xml_str(xml_content, get_exception=False) is False
+        assert Validator.validate_xml_str(xml_content, get_exception=False) is False
 
     @pytest.mark.xfail(strict=True, raises=lxml.etree.DocumentInvalid)
     def test_invalid_xml_with_exception_specified(self):
@@ -84,7 +82,7 @@ class TestValidate:
         </device>
         """
 
-        SVDValidator.validate_xml_str(xml_content, get_exception=True)
+        Validator.validate_xml_str(xml_content, get_exception=True)
 
     @pytest.mark.xfail(strict=True, raises=lxml.etree.DocumentInvalid)
     def test_invalid_xml_with_exception_not_specified(self):
@@ -98,7 +96,7 @@ class TestValidate:
         </device>
         """
 
-        SVDValidator.validate_xml_str(xml_content)
+        Validator.validate_xml_str(xml_content)
 
     def test_cpu_which_exist_in_1_3_10_schema(self):
         xml_content = """\
@@ -150,7 +148,7 @@ class TestValidate:
         </device>
         """
 
-        validated = SVDValidator.validate_xml_str(
+        validated = Validator.validate_xml_str(
             xml_content, get_exception=False, schema_version=SVDSchemaVersion.V1_3_10
         )
 
@@ -206,8 +204,6 @@ class TestValidate:
         </device>
         """
 
-        validated = SVDValidator.validate_xml_str(
-            xml_content, get_exception=False, schema_version=SVDSchemaVersion.V1_3_9
-        )
+        validated = Validator.validate_xml_str(xml_content, get_exception=False, schema_version=SVDSchemaVersion.V1_3_9)
 
         assert validated is False

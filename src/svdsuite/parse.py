@@ -19,7 +19,7 @@ from svdsuite.model.parse import (
     SVDWriteConstraint,
 )
 
-from svdsuite.types import (
+from svdsuite.model.types import (
     AccessType,
     CPUNameType,
     DataTypeType,
@@ -88,18 +88,18 @@ def _to_int(value: None | str, base: int = 0) -> None | int:
         raise NotImplementedError(f"can't parse value '{value}' in function _to_int") from exc
 
 
-class SVDParserException(Exception):
+class ParserException(Exception):
     pass
 
 
-class SVDParser:
+class Parser:
     @classmethod
     def for_xml_file(cls, path: str):
         return cls(lxml.etree.parse(path))
 
     @staticmethod
     def for_xml_str(xml_str: str):
-        return SVDParser.for_xml_content(xml_str.encode())
+        return Parser.for_xml_content(xml_str.encode())
 
     @classmethod
     def for_xml_content(cls, content: bytes):
@@ -136,12 +136,12 @@ class SVDParser:
         element = parent.find(element_name)
         if element is None:
             if not optional:
-                raise SVDParserException(f"can't get element '{element_name}'")
+                raise ParserException(f"can't get element '{element_name}'")
             return None
 
         if element.text is None:
             if not optional:
-                raise SVDParserException(f"can't get element '{element_name}'")
+                raise ParserException(f"can't get element '{element_name}'")
             return None
 
         return element.text
@@ -172,7 +172,7 @@ class SVDParser:
 
         if attribute is None:
             if not optional:
-                raise SVDParserException(f"can't get attribute '{attribute_name}' for current element")
+                raise ParserException(f"can't get attribute '{attribute_name}' for current element")
             return None
 
         return attribute.strip()
@@ -345,7 +345,7 @@ class SVDParser:
         peripherals_element = device_element.find("peripherals")
 
         if peripherals_element is None:
-            raise SVDParserException("can't find peripherals element")
+            raise ParserException("can't find peripherals element")
 
         peripherals: List[SVDPeripheral] = []
         for peripheral_element in peripherals_element.findall("peripheral"):
