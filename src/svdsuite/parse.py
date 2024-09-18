@@ -94,15 +94,15 @@ class ParserException(Exception):
 
 class Parser:
     @classmethod
-    def for_xml_file(cls, path: str):
+    def from_svd_file(cls, path: str):
         return cls(lxml.etree.parse(path))
 
     @staticmethod
-    def for_xml_str(xml_str: str):
-        return Parser.for_xml_content(xml_str.encode())
+    def from_xml_str(xml_str: str):
+        return Parser.from_xml_content(xml_str.encode())
 
     @classmethod
-    def for_xml_content(cls, content: bytes):
+    def from_xml_content(cls, content: bytes):
         return cls(lxml.etree.fromstring(content).getroottree())
 
     def __init__(self, tree: lxml.etree._ElementTree) -> None:  # pyright: ignore[reportPrivateUsage]

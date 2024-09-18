@@ -34,7 +34,7 @@ def fixture_get_device(get_test_svd_file_content: Callable[[str], bytes]) -> Cal
     def _():
         file_content = get_test_svd_file_content("parser_testfile.svd")
 
-        parser = Parser.for_xml_content(file_content)
+        parser = Parser.from_xml_content(file_content)
         return parser.get_parsed_device()
 
     return _
@@ -47,7 +47,7 @@ def fixture_get_device_with_element_modification(
     def _(xpath: str, test_input: None | str):
         file_content = modify_test_svd_file_and_get_content("parser_testfile.svd", xpath, None, test_input)
 
-        parser = Parser.for_xml_content(file_content)
+        parser = Parser.from_xml_content(file_content)
         return parser.get_parsed_device()
 
     return _
@@ -60,7 +60,7 @@ def fixture_get_device_with_attribute_modification(
     def _(xpath: str, attribute: None | str, test_input: None | str):
         file_content = modify_test_svd_file_and_get_content("parser_testfile.svd", xpath, attribute, test_input)
 
-        parser = Parser.for_xml_content(file_content)
+        parser = Parser.from_xml_content(file_content)
         return parser.get_parsed_device()
 
     return _
@@ -69,20 +69,20 @@ def fixture_get_device_with_attribute_modification(
 class TestParserInstantiation:
     def test_cls_for_xml_file(self, get_test_svd_file_path: Callable[[str], str]):
         file_path = get_test_svd_file_path("parser_testfile.svd")
-        parser = Parser.for_xml_file(file_path)
+        parser = Parser.from_svd_file(file_path)
 
         assert isinstance(parser, Parser)
 
     def test_for_xml_str(self, get_test_svd_file_content: Callable[[str], bytes]):
         file_content = get_test_svd_file_content("parser_testfile.svd")
         file_str = file_content.decode()
-        parser = Parser.for_xml_str(file_str)
+        parser = Parser.from_xml_str(file_str)
 
         assert isinstance(parser, Parser)
 
     def test_cls_for_xml_content(self, get_test_svd_file_content: Callable[[str], bytes]):
         file_content = get_test_svd_file_content("parser_testfile.svd")
-        parser = Parser.for_xml_content(file_content)
+        parser = Parser.from_xml_content(file_content)
 
         assert isinstance(parser, Parser)
 

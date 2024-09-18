@@ -465,16 +465,16 @@ class ProcessException(Exception):
 
 class Process:
     @classmethod
-    def for_xml_file(cls, path: str):
-        return cls(Parser.for_xml_file(path).get_parsed_device())
+    def from_svd_file(cls, path: str):
+        return cls(Parser.from_svd_file(path).get_parsed_device())
 
     @classmethod
-    def for_xml_str(cls, xml_str: str):
-        return cls(Parser.for_xml_content(xml_str.encode()).get_parsed_device())
+    def from_xml_str(cls, xml_str: str):
+        return cls(Parser.from_xml_content(xml_str.encode()).get_parsed_device())
 
     @classmethod
-    def for_xml_content(cls, content: bytes):
-        return cls(Parser.for_xml_content(content).get_parsed_device())
+    def from_xml_content(cls, content: bytes):
+        return cls(Parser.from_xml_content(content).get_parsed_device())
 
     def __init__(self, parsed_device: SVDDevice) -> None:
         self._processed_device = self._process_device(parsed_device)

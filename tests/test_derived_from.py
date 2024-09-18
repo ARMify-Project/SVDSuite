@@ -10,7 +10,7 @@ from svdsuite.model.types import EnumeratedTokenType
 def fixture_get_processed_device_from_testfile(get_test_svd_file_content: Callable[[str], bytes]):
     def _(file_name: str) -> Device:
         file_content = get_test_svd_file_content(file_name)
-        return Process.for_xml_content(file_content).get_processed_device()
+        return Process.from_xml_content(file_content).get_processed_device()
 
     return _
 
