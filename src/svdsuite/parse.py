@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional, Tuple, overload
+from typing import Literal, Optional, overload
 
 import lxml.etree
 
@@ -230,7 +230,7 @@ class Parser:
 
     def _parse_register_properties(
         self, element: lxml.etree._Element  # pyright: ignore[reportPrivateUsage]
-    ) -> Tuple[Optional[int], Optional[AccessType], Optional[ProtectionStringType], Optional[int], Optional[int]]:
+    ) -> tuple[Optional[int], Optional[AccessType], Optional[ProtectionStringType], Optional[int], Optional[int]]:
         size = _to_int(self._parse_element_text("size", element, optional=True))
         access = self._parse_element_text("access", element, optional=True)
         protection = self._parse_element_text("protection", element, optional=True)
@@ -326,8 +326,8 @@ class Parser:
 
     def _parse_sau_regions(
         self, config_element: lxml.etree._Element  # pyright: ignore[reportPrivateUsage]
-    ) -> List[SVDSauRegion]:
-        regions: List[SVDSauRegion] = []
+    ) -> list[SVDSauRegion]:
+        regions: list[SVDSauRegion] = []
         for region_element in config_element.findall("region"):
             enabled = _to_none_or_bool(self._parse_element_attribute("enabled", region_element, optional=True))
             name = self._parse_element_attribute("name", region_element, optional=True)
@@ -341,13 +341,13 @@ class Parser:
 
     def _parse_peripherals(
         self, device_element: lxml.etree._Element  # pyright: ignore[reportPrivateUsage]
-    ) -> List[SVDPeripheral]:
+    ) -> list[SVDPeripheral]:
         peripherals_element = device_element.find("peripherals")
 
         if peripherals_element is None:
             raise ParserException("can't find peripherals element")
 
-        peripherals: List[SVDPeripheral] = []
+        peripherals: list[SVDPeripheral] = []
         for peripheral_element in peripherals_element.findall("peripheral"):
             derived_from = self._parse_element_attribute("derivedFrom", peripheral_element, optional=True)
             name = self._parse_element_text("name", peripheral_element, optional=False)
@@ -476,11 +476,11 @@ class Parser:
 
     def _parse_fields(
         self, register_element: lxml.etree._Element  # pyright: ignore[reportPrivateUsage]
-    ) -> List[SVDField]:
+    ) -> list[SVDField]:
         if (fields_element := register_element.find("fields")) is None:
             return []
 
-        fields: List[SVDField] = []
+        fields: list[SVDField] = []
         for field_element in fields_element.findall("field"):
             derived_from = self._parse_element_attribute("derivedFrom", field_element, optional=True)
             name = self._parse_element_text("name", field_element, optional=False)
@@ -543,8 +543,8 @@ class Parser:
 
     def _parse_enumerated_values(
         self, field_element: lxml.etree._Element  # pyright: ignore[reportPrivateUsage]
-    ) -> List[SVDEnumeratedValue]:
-        enumerated_values: List[SVDEnumeratedValue] = []
+    ) -> list[SVDEnumeratedValue]:
+        enumerated_values: list[SVDEnumeratedValue] = []
         for enumerated_value_element in field_element.findall("enumeratedValues"):
             derived_from = self._parse_element_attribute("derivedFrom", enumerated_value_element, optional=True)
             name = self._parse_element_text("name", enumerated_value_element, optional=True)
@@ -642,11 +642,11 @@ class Parser:
 
     def _parse_registers_clusters(
         self, parent_element: None | lxml.etree._Element  # pyright: ignore[reportPrivateUsage]
-    ) -> List[SVDRegister | SVDCluster]:
+    ) -> list[SVDRegister | SVDCluster]:
         if parent_element is None:
             return []
 
-        registers_clusters: List[SVDRegister | SVDCluster] = []
+        registers_clusters: list[SVDRegister | SVDCluster] = []
         for element in parent_element:
             if element.tag == "register":
                 register = self._parse_register(element)
@@ -660,8 +660,8 @@ class Parser:
 
     def _parse_interrupts(
         self, peripheral_element: lxml.etree._Element  # pyright: ignore[reportPrivateUsage]
-    ) -> List[SVDInterrupt]:
-        interrupts: List[SVDInterrupt] = []
+    ) -> list[SVDInterrupt]:
+        interrupts: list[SVDInterrupt] = []
         for interrupt_element in peripheral_element.findall("interrupt"):
             name = self._parse_element_text("name", interrupt_element, optional=False)
             description = self._parse_element_text("description", interrupt_element, optional=True)
@@ -673,8 +673,8 @@ class Parser:
 
     def _parse_address_blocks(
         self, peripheral_element: lxml.etree._Element  # pyright: ignore[reportPrivateUsage]
-    ) -> List[SVDAddressBlock]:
-        address_blocks: List[SVDAddressBlock] = []
+    ) -> list[SVDAddressBlock]:
+        address_blocks: list[SVDAddressBlock] = []
         for address_block_element in peripheral_element.findall("addressBlock"):
             offset = _to_int(self._parse_element_text("offset", address_block_element, optional=False))
             size = _to_int(self._parse_element_text("size", address_block_element, optional=False))
@@ -693,7 +693,7 @@ class Parser:
     def _parse_dim_element_group(
         self,
         element: lxml.etree._Element,  # pyright: ignore[reportPrivateUsage]
-    ) -> Tuple[Optional[int], Optional[int], Optional[str], Optional[str], Optional[SVDDimArrayIndex]]:
+    ) -> tuple[Optional[int], Optional[int], Optional[str], Optional[str], Optional[SVDDimArrayIndex]]:
         dim = _to_int(self._parse_element_text("dim", element, optional=True))
         dim_increment = _to_int(self._parse_element_text("dimIncrement", element, optional=True))
         dim_index = self._parse_element_text("dimIndex", element, optional=True)
@@ -726,8 +726,8 @@ class Parser:
     def _parse_enumerated_values_map(
         self,
         parent_element: lxml.etree._Element,  # pyright: ignore[reportPrivateUsage]
-    ) -> List[SVDEnumeratedValueMap]:
-        enumerated_values_map: List[SVDEnumeratedValueMap] = []
+    ) -> list[SVDEnumeratedValueMap]:
+        enumerated_values_map: list[SVDEnumeratedValueMap] = []
         for enumerated_value_element in parent_element.findall("enumeratedValue"):
             name = self._parse_element_text("name", enumerated_value_element, optional=False)
             description = self._parse_element_text("description", enumerated_value_element, optional=True)

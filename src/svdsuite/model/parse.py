@@ -1,4 +1,3 @@
-from typing import List, Tuple, Union
 from dataclasses import dataclass, field
 
 from svdsuite.model.types import (
@@ -29,7 +28,7 @@ class SVDSauRegion:
 class SVDSauRegionsConfig:
     enabled: None | bool = None
     protection_when_disabled: None | ProtectionStringType = None
-    regions: List[SVDSauRegion] = field(default_factory=list)
+    regions: list[SVDSauRegion] = field(default_factory=list)
     parent: "None | SVDCPU" = None
 
 
@@ -67,7 +66,7 @@ class SVDEnumeratedValueMap:
 @dataclass(kw_only=True)
 class SVDDimArrayIndex:
     header_enum_name: None | str = None
-    enumerated_values_map: List[SVDEnumeratedValueMap]
+    enumerated_values_map: list[SVDEnumeratedValueMap]
     parent: "None | SVDPeripheral | SVDCluster | SVDRegister | SVDField" = None
 
 
@@ -110,7 +109,7 @@ class SVDInterrupt:
 class SVDWriteConstraint:
     write_as_read: None | bool = None
     use_enumerated_values: None | bool = None
-    range_: None | Tuple[int, int] = None
+    range_: None | tuple[int, int] = None
     parent: "None | SVDField | SVDRegister" = None
 
 
@@ -119,7 +118,7 @@ class SVDEnumeratedValue:
     name: None | str = None
     header_enum_name: None | str = None
     usage: None | EnumUsageType = None
-    enumerated_values_map: List[SVDEnumeratedValueMap]
+    enumerated_values_map: list[SVDEnumeratedValueMap]
     derived_from: None | str = None
     parent: "None | SVDField" = None
 
@@ -137,7 +136,7 @@ class SVDField(_SVDDimElementGroup):
     modified_write_values: None | ModifiedWriteValuesType = None
     write_constraint: None | SVDWriteConstraint = None
     read_action: None | ReadActionType = None
-    enumerated_values: List[SVDEnumeratedValue] = field(default_factory=list)
+    enumerated_values: list[SVDEnumeratedValue] = field(default_factory=list)
     derived_from: None | str = None
     parent: "None | SVDRegister" = None
 
@@ -154,7 +153,7 @@ class SVDRegister(_SVDDimElementGroup, _SVDRegisterPropertiesGroup):
     modified_write_values: None | ModifiedWriteValuesType = None
     write_constraint: None | SVDWriteConstraint = None
     read_action: None | ReadActionType = None
-    fields: List[SVDField] = field(default_factory=list)
+    fields: list[SVDField] = field(default_factory=list)
     derived_from: None | str = None
     parent: "None | SVDCluster  | SVDPeripheral" = None
 
@@ -166,7 +165,7 @@ class SVDCluster(_SVDDimElementGroup, _SVDRegisterPropertiesGroup):
     alternate_cluster: None | str = None
     header_struct_name: None | str = None
     address_offset: int
-    registers_clusters: List[Union[SVDRegister, "SVDCluster"]] = field(default_factory=list)
+    registers_clusters: list["SVDRegister | SVDCluster"] = field(default_factory=list)
     derived_from: None | str = None
     parent: "None | SVDCluster | SVDPeripheral" = None
 
@@ -183,9 +182,9 @@ class SVDPeripheral(_SVDDimElementGroup, _SVDRegisterPropertiesGroup):
     header_struct_name: None | str = None
     disable_condition: None | str = None
     base_address: int
-    address_blocks: List[SVDAddressBlock] = field(default_factory=list)
-    interrupts: List[SVDInterrupt] = field(default_factory=list)
-    registers_clusters: List[SVDRegister | SVDCluster] = field(default_factory=list)
+    address_blocks: list[SVDAddressBlock] = field(default_factory=list)
+    interrupts: list[SVDInterrupt] = field(default_factory=list)
+    registers_clusters: list[SVDRegister | SVDCluster] = field(default_factory=list)
     derived_from: None | str = None
     parent: "None | SVDDevice" = None
 
@@ -206,4 +205,4 @@ class SVDDevice(_SVDRegisterPropertiesGroup):
     header_definitions_prefix: None | str = None
     address_unit_bits: int
     width: int
-    peripherals: List[SVDPeripheral] = field(default_factory=list)
+    peripherals: list[SVDPeripheral] = field(default_factory=list)

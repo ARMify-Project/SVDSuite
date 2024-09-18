@@ -1,4 +1,4 @@
-from typing import Callable, Any, List, Tuple
+from typing import Callable, Any
 import lxml.etree
 import pytest
 
@@ -159,7 +159,7 @@ def fixture_create_sau_regions_config():
     def _(
         enabled: None | bool = True,
         protection_when_disabled: None | ProtectionStringType = ProtectionStringType.SECURE,
-        regions: None | List[SVDSauRegion] = None,
+        regions: None | list[SVDSauRegion] = None,
     ) -> SVDSauRegionsConfig:
         return SVDSauRegionsConfig(
             enabled=enabled,
@@ -236,7 +236,7 @@ def fixture_create_enumerated_value_map():
 def fixture_create_dim_array_index():
     def _(
         header_enum_name: None | str = "FSMC_EnumArray",
-        enumerated_values_map: None | List[SVDEnumeratedValueMap] = None,
+        enumerated_values_map: None | list[SVDEnumeratedValueMap] = None,
     ) -> SVDDimArrayIndex:
         return SVDDimArrayIndex(
             header_enum_name=header_enum_name,
@@ -285,7 +285,7 @@ def fixture_create_write_constraint():
     def _(
         write_as_read: None | bool = None,
         use_enumerated_values: None | bool = None,
-        range_: None | Tuple[int, int] = None,
+        range_: None | tuple[int, int] = None,
     ) -> SVDWriteConstraint:
         return SVDWriteConstraint(
             write_as_read=write_as_read,
@@ -302,7 +302,7 @@ def fixture_create_enumerated_value():
         name: None | str = "TimerIntSelect",
         header_enum_name: None | str = "TimerIntSelect_Enum",
         usage: None | EnumUsageType = EnumUsageType.READ,
-        enumerated_values_map: None | List[SVDEnumeratedValueMap] = None,
+        enumerated_values_map: None | list[SVDEnumeratedValueMap] = None,
         derived_from: None | str = "der.from",
     ) -> SVDEnumeratedValue:
         return SVDEnumeratedValue(
@@ -336,7 +336,7 @@ def fixture_create_field():
         modified_write_values: None | ModifiedWriteValuesType = ModifiedWriteValuesType.ONE_TO_SET,
         write_constraint: None | SVDWriteConstraint = None,
         read_action: None | ReadActionType = ReadActionType.CLEAR,
-        enumerated_values: None | List[SVDEnumeratedValue] = None,
+        enumerated_values: None | list[SVDEnumeratedValue] = None,
     ) -> SVDField:
         return SVDField(
             derived_from=derived_from,
@@ -386,7 +386,7 @@ def fixture_create_register():
         modified_write_values: None | ModifiedWriteValuesType = ModifiedWriteValuesType.ONE_TO_SET,
         write_constraint: None | SVDWriteConstraint = None,
         read_action: None | ReadActionType = ReadActionType.CLEAR,
-        fields: None | List[SVDField] = None,
+        fields: None | list[SVDField] = None,
     ) -> SVDRegister:
         return SVDRegister(
             derived_from=derived_from,
@@ -435,7 +435,7 @@ def fixture_create_cluster():
         protection: None | ProtectionStringType = None,
         reset_value: None | int = None,
         reset_mask: None | int = None,
-        registers_clusters: None | List[SVDRegister | SVDCluster] = None,
+        registers_clusters: None | list[SVDRegister | SVDCluster] = None,
     ) -> SVDCluster:
         return SVDCluster(
             derived_from=derived_from,
@@ -484,9 +484,9 @@ def fixture_create_peripheral():
         protection: None | ProtectionStringType = None,
         reset_value: None | int = None,
         reset_mask: None | int = None,
-        address_blocks: None | List[SVDAddressBlock] = None,
-        interrupts: None | List[SVDInterrupt] = None,
-        registers_clusters: None | List[SVDRegister | SVDCluster] = None,
+        address_blocks: None | list[SVDAddressBlock] = None,
+        interrupts: None | list[SVDInterrupt] = None,
+        registers_clusters: None | list[SVDRegister | SVDCluster] = None,
     ):
         return SVDPeripheral(
             derived_from=derived_from,
@@ -540,7 +540,7 @@ def fixture_create_device():
         protection: None | ProtectionStringType = None,
         reset_value: None | int = None,
         reset_mask: None | int = None,
-        peripherals: None | List[SVDPeripheral] = None,
+        peripherals: None | list[SVDPeripheral] = None,
     ):
         return SVDDevice(
             xs_no_namespace_schema_location=xs_no_namespace_schema_location,
