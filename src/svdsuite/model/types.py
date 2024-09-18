@@ -94,10 +94,13 @@ class AccessType(Enum):
 
     @classmethod
     def from_str(cls, label: str):
-        try:
-            return cls(label)
-        except ValueError as exc:
-            raise NotImplementedError from exc
+        label_lower = label.lower()
+
+        for item in cls:
+            if item.value.lower() == label_lower:
+                return item
+
+        raise NotImplementedError(f"No matching AccessType found for: {label}")
 
 
 class EnumeratedTokenType(Enum):
