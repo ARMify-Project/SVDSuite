@@ -63,6 +63,7 @@ class ProtectionStringType(Enum):
     SECURE = "s"
     NON_SECURE = "n"
     PRIVILEGED = "p"
+    ANY = "any"
 
     @classmethod
     def from_str(cls, label: str):

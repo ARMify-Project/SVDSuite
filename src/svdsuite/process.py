@@ -815,7 +815,7 @@ class _ProcessRegister:
         if access is None:
             raise ProcessException("Access can't be None for register")
         if protection is None:
-            raise ProcessException("Protection can't be None for register")
+            protection = ProtectionStringType.ANY
         if reset_value is None:
             raise ProcessException("Reset value can't be None for register")
         if reset_mask is None:
