@@ -191,6 +191,7 @@ class _DirectedGraph:
         self.completed_nodes: set[_Node] = set()
         self.node_lookup: dict[str, _Node] = {}
         self.alternative_name_lookup: dict[str, _Node] = {}
+        self.reverse_graph: dict[_Node, set[_Node]] = {}
 
     def add_node(
         self,
@@ -228,6 +229,9 @@ class _DirectedGraph:
             print(f"Adding edge from {from_node.name} to {to_node.name}")  #  TODO DEBUG
             self.graph[from_node].append(to_node)
             self.incoming_edges_count[to_node] += 1
+            if to_node not in self.reverse_graph:
+                self.reverse_graph[to_node] = set()
+            self.reverse_graph[to_node].add(from_node)
         else:
             raise ValueError("Both nodes must exist in the graph")
 
@@ -244,10 +248,11 @@ class _DirectedGraph:
         node = self._find_node_by_name(name)
         if node:
             self.completed_nodes.add(node)
-            for _, nodes in self.graph.items():
-                if node in nodes:
-                    nodes.remove(node)
+            if node in self.reverse_graph:
+                for predecessor in self.reverse_graph[node]:
+                    self.graph[predecessor].remove(node)
                     self.incoming_edges_count[node] -= 1
+                del self.reverse_graph[node]
 
     def _generate_alternative_names(
         self, element: SVDElementTypes, parent_node: None | _Node, dim_values: list[str]
