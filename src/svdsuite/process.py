@@ -189,6 +189,8 @@ class _DirectedGraph:
             SVDPeripheral: [],
         }
         self.completed_nodes: set[_Node] = set()
+        self.node_lookup: dict[str, _Node] = {}
+        self.alternative_name_lookup: dict[str, _Node] = {}
 
     def add_node(
         self,
@@ -212,6 +214,9 @@ class _DirectedGraph:
             self.graph[node] = []
             self.incoming_edges_count[node] = 0
             self.node_types[type(element)].append(node)
+            self.node_lookup[full_name] = node
+            for alt_name in alternative_names:
+                self.alternative_name_lookup[alt_name] = node
 
         return node
 
@@ -296,11 +301,11 @@ class _DirectedGraph:
         return False
 
     def _find_node_by_name(self, name: str) -> None | _Node:
-        for node in self.graph:
-            if node.name == name:
-                return node
-            if name in node.alternative_names:
-                return node
+        if name in self.node_lookup:
+            return self.node_lookup[name]
+        if name in self.alternative_name_lookup:
+            return self.alternative_name_lookup[name]
+
         return None
 
     def __str__(self) -> str:
