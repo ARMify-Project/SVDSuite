@@ -151,13 +151,13 @@ class _Node:
         self,
         name: str,
         element: SVDElementTypes,
-        alternative_names: list[str],
+        alternative_names: set[str],
         dim_values: list[str],
         register_properties: _RegisterPropertiesInheritance,
     ) -> None:
         self.name: str = name
         self.element = element
-        self.alternative_names: list[str] = alternative_names
+        self.alternative_names: set[str] = alternative_names
         self.dim_values: list[str] = dim_values
         self.register_properties = register_properties
         self._hash = hash(self.name)
@@ -206,7 +206,7 @@ class _DirectedGraph:
         alternative_names = self._generate_alternative_names(element, parent_node, dim_values)
         print(f"Alternative names for node {full_name}: {alternative_names}")  # TODO DEBUG
 
-        node = _Node(full_name, element, alternative_names, dim_values, register_properties)
+        node = _Node(full_name, element, set(alternative_names), dim_values, register_properties)
 
         if node not in self.graph:
             self.graph[node] = []
@@ -246,18 +246,18 @@ class _DirectedGraph:
 
     def _generate_alternative_names(
         self, element: SVDElementTypes, parent_node: None | _Node, dim_values: list[str]
-    ) -> list[str]:
-        alternative_names: list[str] = []
+    ) -> set[str]:
+        alternative_names: set[str] = set()
 
         if isinstance(element, SVDPeripheral):
-            alternative_names = dim_values
+            alternative_names = set(dim_values)
         else:
             if parent_node is None:
                 raise ValueError("Parent node must be provided for cluster, register, field")
 
-            alternative_names += self._combine_names(parent_node.alternative_names, [element.name])
-            alternative_names += self._combine_names([parent_node.name], dim_values)
-            alternative_names += self._combine_names(parent_node.alternative_names, dim_values)
+            alternative_names.update(self._combine_names(parent_node.alternative_names, set([element.name])))
+            alternative_names.update(self._combine_names(set([parent_node.name]), set(dim_values)))
+            alternative_names.update(self._combine_names(parent_node.alternative_names, set(dim_values)))
 
         return alternative_names
 
@@ -266,8 +266,8 @@ class _DirectedGraph:
             return resolve_dim(element.name, element.dim, element.dim_index)
         return []
 
-    def _combine_names(self, names1: list[str], names2: list[str]) -> list[str]:
-        return [f"{item1}.{item2}" for item1, item2 in itertools.product(names1, names2)]
+    def _combine_names(self, names1: set[str], names2: set[str]) -> set[str]:
+        return {f"{item1}.{item2}" for item1, item2 in itertools.product(names1, names2)}
 
     def detect_cycle(self) -> bool:
         visited: set[_Node] = set()
