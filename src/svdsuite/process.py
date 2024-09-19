@@ -160,12 +160,13 @@ class _Node:
         self.alternative_names: list[str] = alternative_names
         self.dim_values: list[str] = dim_values
         self.register_properties = register_properties
+        self._hash = hash(self.name)
 
     def __repr__(self) -> str:
         return f"Node({self.name}, {self.element})"
 
     def __hash__(self) -> int:
-        return hash((self.name, type(self.element)))
+        return self._hash
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, _Node):
@@ -196,11 +197,14 @@ class _DirectedGraph:
         register_properties: _RegisterPropertiesInheritance,
         parent_node: None | _Node = None,
     ) -> _Node:
+        print(f"Adding node {full_name} of type {type(element)}")  # TODO DEBUG
+
         if self._find_node_by_name(full_name):
             raise ValueError(f"Node with name {full_name} already exists in the graph")
 
         dim_values = self._resolve_dim_values(element)
         alternative_names = self._generate_alternative_names(element, parent_node, dim_values)
+        print(f"Alternative names for node {full_name}: {alternative_names}")  # TODO DEBUG
 
         node = _Node(full_name, element, alternative_names, dim_values, register_properties)
 
@@ -216,13 +220,9 @@ class _DirectedGraph:
         to_node = self._find_node_by_name(to_name)
 
         if from_node and to_node:
+            print(f"Adding edge from {from_node.name} to {to_node.name}")  #  TODO DEBUG
             self.graph[from_node].append(to_node)
             self.incoming_edges_count[to_node] += 1
-
-            if self._detect_cycle():
-                self.graph[from_node].remove(to_node)
-                self.incoming_edges_count[to_node] -= 1
-                raise _DirectedGraphException(f"Adding edge from {from_node.name} to {to_node.name} creates a cycle")
         else:
             raise ValueError("Both nodes must exist in the graph")
 
@@ -269,7 +269,7 @@ class _DirectedGraph:
     def _combine_names(self, names1: list[str], names2: list[str]) -> list[str]:
         return [f"{item1}.{item2}" for item1, item2 in itertools.product(names1, names2)]
 
-    def _detect_cycle(self) -> bool:
+    def detect_cycle(self) -> bool:
         visited: set[_Node] = set()
         rec_stack: set[_Node] = set()
 
@@ -316,10 +316,16 @@ class _Resolver:
         self._parsed_device = parsed_device
         self._graph = _DirectedGraph()
         self._derived_mapping: list[tuple[str, str]] = []
+        self._resolve_next_code_called = False
 
         self._build_resolve_graph()
 
     def resolve_next_node(self) -> None | _Node:
+        if not self._resolve_next_code_called:
+            self._resolve_next_code_called = True
+            if self._graph.detect_cycle():
+                raise _DirectedGraphException("Detected cycle in graph")
+
         node = self._graph.get_next_node_without_outgoing_edges()
 
         if node is not None:
@@ -1252,6 +1258,8 @@ class _ProcessPeripheralElements:
 
     def process_peripherals(self) -> list[Peripheral]:
         while node := self._resolver.resolve_next_node():
+            print(f"Resolved node: {node.name}")  # TODO DEBUG
+
             if isinstance(node.element, SVDPeripheral):
                 self._process_peripheral.process_peripheral(node)
             if isinstance(node.element, SVDCluster):
