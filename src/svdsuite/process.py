@@ -211,13 +211,12 @@ class _DirectedGraph:
 
         node = _Node(full_name, element, set(alternative_names), dim_values, register_properties)
 
-        if node not in self.graph:
-            self.graph[node] = []
-            self.incoming_edges_count[node] = 0
-            self.node_types[type(element)].append(node)
-            self.node_lookup[full_name] = node
-            for alt_name in alternative_names:
-                self.alternative_name_lookup[alt_name] = node
+        self.graph[node] = []
+        self.incoming_edges_count[node] = 0
+        self.node_types[type(element)].append(node)
+        self.node_lookup[full_name] = node
+        for alt_name in alternative_names:
+            self.alternative_name_lookup[alt_name] = node
 
         return node
 
