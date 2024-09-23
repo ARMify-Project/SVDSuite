@@ -222,7 +222,7 @@ class _DirectedGraph:
         from_node = self._find_node_by_name(from_name)
         to_node = self._find_node_by_name(to_name)
 
-        if from_node and to_node:
+        if from_node is not None and to_node is not None:
             print(f"Adding edge from {from_node.name} to {to_node.name}")  #  TODO DEBUG
             self.graph[from_node].append(to_node)
             if to_node not in self.reverse_graph:
