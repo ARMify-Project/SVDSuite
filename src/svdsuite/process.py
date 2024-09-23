@@ -308,9 +308,6 @@ class _DirectedGraph:
 
         return None
 
-    def __str__(self) -> str:
-        return f"Outgoing Edges: {self.graph}\n" f"Completed Nodes: {self.completed_nodes}"
-
 
 class _Resolver:
     def __init__(self, parsed_device: SVDDevice) -> None:
