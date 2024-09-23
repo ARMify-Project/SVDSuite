@@ -446,13 +446,18 @@ class TestProcess:
         cl2.parent = p1
         r9.parent = p1
 
-        p2 = SVDPeripheral(name="p2", derived_from="p1", base_address=0x0, registers_clusters=[r5])
+        p2 = SVDPeripheral(name="p2", derived_from="p1", base_address=0x100, registers_clusters=[r5])
         r5.parent = p2
 
-        p3 = SVDPeripheral(name="p3", derived_from="p2", base_address=0x0, registers_clusters=[])
+        p3 = SVDPeripheral(name="p3", derived_from="p2", base_address=0x200, registers_clusters=[])
 
         p4_p5_dim = SVDPeripheral(
-            name="p%s", dim=2, dim_increment=1, dim_index="4-5", base_address=0x0, registers_clusters=[cl4_cl5_dim]
+            name="p%s",
+            dim=2,
+            dim_increment=0x100,
+            dim_index="4-5",
+            base_address=0x300,
+            registers_clusters=[cl4_cl5_dim],
         )
         cl4_cl5_dim.parent = p4_p5_dim
 
@@ -564,6 +569,7 @@ class TestProcess:
         assert p3.registers_clusters[0].fields[2].name == "f8"
         assert p3.registers_clusters[0].fields[3].name == "f9"
 
+        assert p4.base_address == 0x300
         assert len(p4.registers_clusters) == 2
         assert p4.registers_clusters[0].name == "cl4"
         assert p4.registers_clusters[1].name == "cl5"
@@ -592,6 +598,7 @@ class TestProcess:
         assert r6_cl5_p4.fields[1].name == "f11"
         assert r6_cl5_p4.fields[2].name == "f5"
 
+        assert p5.base_address == 0x400
         assert len(p5.registers_clusters) == 2
         assert p5.registers_clusters[0].name == "cl4"
         assert p5.registers_clusters[1].name == "cl5"

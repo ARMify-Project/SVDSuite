@@ -224,7 +224,7 @@
     </peripheral>
     <peripheral>
       <name>p2</name>
-      <baseAddress>0x0</baseAddress>
+      <baseAddress>0x100</baseAddress>
       <size>32</size>
       <access>read-write</access>
       <protection>s</protection>
@@ -279,7 +279,7 @@
     </peripheral>
     <peripheral>
       <name>p3</name>
-      <baseAddress>0x0</baseAddress>
+      <baseAddress>0x200</baseAddress>
       <size>32</size>
       <access>read-write</access>
       <protection>s</protection>
@@ -334,7 +334,7 @@
     </peripheral>
     <peripheral>
       <name>p4</name>
-      <baseAddress>0x0</baseAddress>
+      <baseAddress>0x300</baseAddress>
       <size>32</size>
       <access>read-write</access>
       <protection>s</protection>
@@ -431,7 +431,7 @@
     </peripheral>
     <peripheral>
       <name>p5</name>
-      <baseAddress>0x1</baseAddress>
+      <baseAddress>0x400</baseAddress>
       <size>32</size>
       <access>read-write</access>
       <protection>s</protection>
