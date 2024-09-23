@@ -181,7 +181,6 @@ class _DirectedGraphException(Exception):
 class _DirectedGraph:
     def __init__(self) -> None:
         self.graph: dict[_Node, list[_Node]] = {}
-        self.incoming_edges_count: dict[_Node, int] = {}
         self.node_types: dict[type[SVDElementTypes], list[_Node]] = {
             SVDField: [],
             SVDRegister: [],
@@ -212,7 +211,6 @@ class _DirectedGraph:
         node = _Node(full_name, element, set(alternative_names), dim_values, register_properties)
 
         self.graph[node] = []
-        self.incoming_edges_count[node] = 0
         self.node_types[type(element)].append(node)
         self.node_lookup[full_name] = node
         for alt_name in alternative_names:
@@ -227,7 +225,6 @@ class _DirectedGraph:
         if from_node and to_node:
             print(f"Adding edge from {from_node.name} to {to_node.name}")  #  TODO DEBUG
             self.graph[from_node].append(to_node)
-            self.incoming_edges_count[to_node] += 1
             if to_node not in self.reverse_graph:
                 self.reverse_graph[to_node] = set()
             self.reverse_graph[to_node].add(from_node)
@@ -250,7 +247,6 @@ class _DirectedGraph:
             if node in self.reverse_graph:
                 for predecessor in self.reverse_graph[node]:
                     self.graph[predecessor].remove(node)
-                    self.incoming_edges_count[node] -= 1
                 del self.reverse_graph[node]
 
     def _generate_alternative_names(
@@ -313,11 +309,7 @@ class _DirectedGraph:
         return None
 
     def __str__(self) -> str:
-        return (
-            f"Outgoing Edges: {self.graph}\n"
-            f"Incoming Edge Counts: {self.incoming_edges_count}\n"
-            f"Completed Nodes: {self.completed_nodes}"
-        )
+        return f"Outgoing Edges: {self.graph}\n" f"Completed Nodes: {self.completed_nodes}"
 
 
 class _Resolver:
