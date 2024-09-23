@@ -1,3 +1,4 @@
+from collections import defaultdict
 import itertools
 from dataclasses import dataclass
 from typing import TypeAlias, TypeVar, Self, Optional
@@ -174,23 +175,13 @@ class _Node:
         return self.name == other.name
 
 
-class _DirectedGraphException(Exception):
-    pass
-
-
 class _DirectedGraph:
     def __init__(self) -> None:
-        self.graph: dict[_Node, list[_Node]] = {}
-        self.node_types: dict[type[SVDElementTypes], list[_Node]] = {
-            SVDField: [],
-            SVDRegister: [],
-            SVDCluster: [],
-            SVDPeripheral: [],
-        }
-        self.completed_nodes: set[_Node] = set()
+        self.incoming_edges: defaultdict[_Node, list[_Node]] = defaultdict(list)
+        self.outgoing_edges_count: dict[_Node, int] = {}
+        self.next_node: set[_Node] = set()
         self.node_lookup: dict[str, _Node] = {}
         self.alternative_name_lookup: dict[str, _Node] = {}
-        self.reverse_graph: dict[_Node, set[_Node]] = {}
 
     def add_node(
         self,
@@ -199,19 +190,16 @@ class _DirectedGraph:
         register_properties: _RegisterPropertiesInheritance,
         parent_node: None | _Node = None,
     ) -> _Node:
-        print(f"Adding node {full_name} of type {type(element)}")  # TODO DEBUG
-
         if self._find_node_by_name(full_name):
             raise ValueError(f"Node with name {full_name} already exists in the graph")
 
         dim_values = self._resolve_dim_values(element)
         alternative_names = self._generate_alternative_names(element, parent_node, dim_values)
-        print(f"Alternative names for node {full_name}: {alternative_names}")  # TODO DEBUG
 
-        node = _Node(full_name, element, set(alternative_names), dim_values, register_properties)
+        node = _Node(full_name, element, alternative_names, dim_values, register_properties)
 
-        self.graph[node] = []
-        self.node_types[type(element)].append(node)
+        self.next_node.add(node)
+        self.outgoing_edges_count[node] = 0
         self.node_lookup[full_name] = node
         for alt_name in alternative_names:
             self.alternative_name_lookup[alt_name] = node
@@ -223,31 +211,23 @@ class _DirectedGraph:
         to_node = self._find_node_by_name(to_name)
 
         if from_node is not None and to_node is not None:
-            print(f"Adding edge from {from_node.name} to {to_node.name}")  #  TODO DEBUG
-            self.graph[from_node].append(to_node)
-            if to_node not in self.reverse_graph:
-                self.reverse_graph[to_node] = set()
-            self.reverse_graph[to_node].add(from_node)
+            self.incoming_edges[to_node].append(from_node)
+            self.outgoing_edges_count[from_node] += 1
+            self.next_node.discard(from_node)
         else:
             raise ValueError("Both nodes must exist in the graph")
 
     def get_next_node_without_outgoing_edges(self) -> None | _Node:
-        type_priority: list[type[SVDElementTypes]] = [SVDField, SVDRegister, SVDCluster, SVDPeripheral]
+        try:
+            return self.next_node.pop()
+        except KeyError:
+            return None
 
-        for node_type in type_priority:
-            for node in self.node_types[node_type]:
-                if node not in self.completed_nodes and not self.graph[node]:
-                    return node
-        return None
-
-    def mark_node_as_completed(self, name: str) -> None:
-        node = self._find_node_by_name(name)
-        if node:
-            self.completed_nodes.add(node)
-            if node in self.reverse_graph:
-                for predecessor in self.reverse_graph[node]:
-                    self.graph[predecessor].remove(node)
-                del self.reverse_graph[node]
+    def mark_node_as_completed(self, node: _Node):
+        for predecessor in self.incoming_edges[node]:
+            self.outgoing_edges_count[predecessor] -= 1
+            if self.outgoing_edges_count[predecessor] == 0:
+                self.next_node.add(predecessor)
 
     def _generate_alternative_names(
         self, element: SVDElementTypes, parent_node: None | _Node, dim_values: list[str]
@@ -274,32 +254,6 @@ class _DirectedGraph:
     def _combine_names(self, names1: set[str], names2: set[str]) -> set[str]:
         return {f"{item1}.{item2}" for item1, item2 in itertools.product(names1, names2)}
 
-    def detect_cycle(self) -> bool:
-        visited: set[_Node] = set()
-        rec_stack: set[_Node] = set()
-
-        def dfs(node: _Node) -> bool:
-            if node in rec_stack:
-                return True
-            if node in visited:
-                return False
-
-            visited.add(node)
-            rec_stack.add(node)
-
-            for neighbor in self.graph[node]:
-                if dfs(neighbor):
-                    return True
-
-            rec_stack.remove(node)
-            return False
-
-        for node in self.graph:
-            if node not in visited:
-                if dfs(node):
-                    return True
-        return False
-
     def _find_node_by_name(self, name: str) -> None | _Node:
         if name in self.node_lookup:
             return self.node_lookup[name]
@@ -314,20 +268,14 @@ class _Resolver:
         self._parsed_device = parsed_device
         self._graph = _DirectedGraph()
         self._derived_mapping: list[tuple[str, str]] = []
-        self._resolve_next_code_called = False
 
         self._build_resolve_graph()
 
     def resolve_next_node(self) -> None | _Node:
-        if not self._resolve_next_code_called:
-            self._resolve_next_code_called = True
-            if self._graph.detect_cycle():
-                raise _DirectedGraphException("Detected cycle in graph")
-
         node = self._graph.get_next_node_without_outgoing_edges()
 
         if node is not None:
-            self._graph.mark_node_as_completed(node.name)
+            self._graph.mark_node_as_completed(node)
 
         return node
 
@@ -1256,8 +1204,6 @@ class _ProcessPeripheralElements:
 
     def process_peripherals(self) -> list[Peripheral]:
         while node := self._resolver.resolve_next_node():
-            print(f"Resolved node: {node.name}")  # TODO DEBUG
-
             if isinstance(node.element, SVDPeripheral):
                 self._process_peripheral.process_peripheral(node)
             if isinstance(node.element, SVDCluster):
