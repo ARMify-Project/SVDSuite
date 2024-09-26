@@ -7,9 +7,9 @@
   <width>32</width>
   <size>32</size>
   <access>read-write</access>
+  <protection>s</protection>
   <resetValue>0x0</resetValue>
   <resetMask>0xffffffff</resetMask>
-  <protection>s</protection>
   <peripherals>
     <peripheral>
       <name>ADC1</name>
@@ -34,6 +34,7 @@
       <registers>
         <cluster>
           <name>cl1</name>
+          <description>Cluster 1</description>
           <addressOffset>0x8</addressOffset>
           <register>
             <name>r3</name>
@@ -58,9 +59,11 @@
         </register>
         <cluster>
           <name>cl2</name>
+          <description>Cluster 2</description>
           <addressOffset>0x1b</addressOffset>
           <cluster>
             <name>cl3</name>
+            <description>Cluster 3</description>
             <addressOffset>0x4</addressOffset>
             <register>
               <name>r7</name>
@@ -97,8 +100,8 @@
       <registers>
         <register>
           <name>r10</name>
-          <size>32</size>
           <addressOffset>0x29</addressOffset>
+          <size>32</size>
         </register>
       </registers>
     </peripheral>

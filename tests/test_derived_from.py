@@ -110,8 +110,8 @@ class TestPeripheralDerivedFrom:
         assert adc2.description == "Analog-to-Digital Converter2"
         assert adc2.alternate_peripheral == "ADCy"
         assert adc2.group_name == "ADCc"
-        assert adc2.prepend_to_name == "ADC!"
-        assert adc2.append_to_name == "!ADC"
+        assert adc2.prepend_to_name == "ADC_"
+        assert adc2.append_to_name == "_ADC"
         assert adc2.header_struct_name == "abc"
         assert adc2.disable_condition == "$ADC1"
         assert adc2.base_address == 0x40001000
