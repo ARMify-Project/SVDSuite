@@ -16,11 +16,6 @@
       <version>1.0</version>
       <description>Analog-to-Digital Converter</description>
       <alternatePeripheral>ADCx</alternatePeripheral>
-      <groupName>ADC</groupName>
-      <prependToName>ADC_</prependToName>
-      <appendToName>_ADC</appendToName> 
-      <headerStructName>adc</headerStructName>
-      <disableCondition>!ADC1</disableCondition>
       <baseAddress>0x40001000</baseAddress>
       <addressBlock>
         <offset>0x0</offset>
@@ -100,8 +95,8 @@
       <registers>
         <register>
           <name>r10</name>
-          <addressOffset>0x8</addressOffset>
-          <size>144</size>
+          <addressOffset>0x29</addressOffset>
+          <size>32</size>
         </register>
       </registers>
     </peripheral>

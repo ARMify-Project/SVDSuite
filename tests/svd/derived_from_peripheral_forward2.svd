@@ -15,12 +15,8 @@
       <name>ADC2</name>
       <version>2.0</version>
       <description>Analog-to-Digital Converter2</description>
-      <alternatePeripheral>ADCy</alternatePeripheral>
-      <groupName>ADCc</groupName>
       <prependToName>ADC_</prependToName>
       <appendToName>_ADC</appendToName> 
-      <headerStructName>abc</headerStructName>
-      <disableCondition>$ADC1</disableCondition>
       <baseAddress>0x40001000</baseAddress>
       <addressBlock>
         <offset>0x1</offset>
@@ -37,11 +33,8 @@
       <version>1.0</version>
       <description>Analog-to-Digital Converter</description>
       <alternatePeripheral>ADCx</alternatePeripheral>
-      <groupName>ADC</groupName>
-      <prependToName>ADC_</prependToName>
-      <appendToName>_ADC</appendToName> 
-      <headerStructName>adc</headerStructName>
-      <disableCondition>!ADC1</disableCondition>
+      <prependToName>ADCx</prependToName>
+      <appendToName>yADC</appendToName> 
       <baseAddress>0x40002000</baseAddress>
       <addressBlock>
         <offset>0x0</offset>

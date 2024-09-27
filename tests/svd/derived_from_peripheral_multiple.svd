@@ -12,16 +12,10 @@
   <resetMask>0xffffffff</resetMask>
   <peripherals>
     <peripheral>
-      <name>ADC1</name>
+      <name>ADC2</name>
       <version>1.0</version>
       <description>Analog-to-Digital Converter</description>
-      <alternatePeripheral>ADCx</alternatePeripheral>
-      <groupName>ADC</groupName>
-      <prependToName>ADC_</prependToName>
-      <appendToName>_ADC</appendToName> 
-      <headerStructName>adc</headerStructName>
-      <disableCondition>!ADC1</disableCondition>
-      <baseAddress>0x40001000</baseAddress>
+      <baseAddress>0x40002000</baseAddress>
       <addressBlock>
         <offset>0x0</offset>
         <size>0x1000</size>
@@ -63,15 +57,13 @@
         </register>
       </registers>
     </peripheral>
+    <peripheral derivedFrom="ADC2">
+      <name>ADC1</name>
+      <baseAddress>0x40001000</baseAddress>
+    </peripheral>
     <peripheral derivedFrom="ADC1">
-      <name>ADC2</name>
-      <baseAddress>0x40002000</baseAddress>
-      <registers>
-        <register>
-          <name>ADC_ISR2</name>
-          <addressOffset>0x4</addressOffset>
-        </register>
-      </registers>
+      <name>ADC3</name>
+      <baseAddress>0x40003000</baseAddress>
     </peripheral>
   </peripherals>
 </device>
