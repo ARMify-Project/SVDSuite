@@ -41,7 +41,7 @@ from svdsuite.serialize import (
     SVDAddressBlockSerializer,
     SVDInterruptSerializer,
     SVDWriteConstraintSerializer,
-    SVDEnumeratedValueSerializer,
+    SVDEnumeratedValueContainerSerializer,
     SVDFieldSerializer,
     SVDRegisterSerializer,
     SVDClusterSerializer,
@@ -87,7 +87,7 @@ def fixture_svd_obj_to_xml_str() -> Callable[[SVDObject], str]:
         elif isinstance(svd_obj, SVDWriteConstraint):
             serializer = SVDWriteConstraintSerializer(svd_obj)
         elif isinstance(svd_obj, SVDEnumeratedValueContainer):
-            serializer = SVDEnumeratedValueSerializer(svd_obj)
+            serializer = SVDEnumeratedValueContainerSerializer(svd_obj)
         elif isinstance(svd_obj, SVDField):
             serializer = SVDFieldSerializer(svd_obj)
         elif isinstance(svd_obj, SVDRegister):
@@ -214,8 +214,8 @@ def fixture_create_cpu():
     return _
 
 
-@pytest.fixture(name="create_enumerated_value_map", scope="function")
-def fixture_create_enumerated_value_map():
+@pytest.fixture(name="create_enumerated_value", scope="function")
+def fixture_create_enumerated_value():
     def _(
         name: str = "enabled",
         description: None | str = "The clock source clk1 is running.",
@@ -296,8 +296,8 @@ def fixture_create_write_constraint():
     return _
 
 
-@pytest.fixture(name="create_enumerated_value", scope="function")
-def fixture_create_enumerated_value():
+@pytest.fixture(name="create_enumerated_value_container", scope="function")
+def fixture_create_enumerated_value_container():
     def _(
         name: None | str = "TimerIntSelect",
         header_enum_name: None | str = "TimerIntSelect_Enum",
@@ -336,7 +336,7 @@ def fixture_create_field():
         modified_write_values: None | ModifiedWriteValuesType = ModifiedWriteValuesType.ONE_TO_SET,
         write_constraint: None | SVDWriteConstraint = None,
         read_action: None | ReadActionType = ReadActionType.CLEAR,
-        enumerated_values: None | list[SVDEnumeratedValueContainer] = None,
+        enumerated_value_containers: None | list[SVDEnumeratedValueContainer] = None,
     ) -> SVDField:
         return SVDField(
             derived_from=derived_from,
@@ -356,7 +356,7 @@ def fixture_create_field():
             modified_write_values=modified_write_values,
             write_constraint=write_constraint,
             read_action=read_action,
-            enumerated_values=[] if enumerated_values is None else enumerated_values,
+            enumerated_value_containers=[] if enumerated_value_containers is None else enumerated_value_containers,
         )
 
     return _
@@ -1584,11 +1584,11 @@ class TestSVDEnumeratedValueMap:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
-        enumerated_value_map = create_enumerated_value_map(name=test_input)
+        enumerated_value_map = create_enumerated_value(name=test_input)
 
         expected_xml = f"""\
         <enumeratedValue>
@@ -1606,11 +1606,11 @@ class TestSVDEnumeratedValueMap:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
-        enumerated_value_map = create_enumerated_value_map(description=test_input, value=None, is_default=True)
+        enumerated_value_map = create_enumerated_value(description=test_input, value=None, is_default=True)
 
         expected_xml = f"""\
         <enumeratedValue>
@@ -1630,11 +1630,11 @@ class TestSVDEnumeratedValueMap:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
-        enumerated_value_map = create_enumerated_value_map(value=test_input)
+        enumerated_value_map = create_enumerated_value(value=test_input)
 
         expected_xml = f"""\
         <enumeratedValue>
@@ -1652,11 +1652,11 @@ class TestSVDEnumeratedValueMap:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
-        enumerated_value_map = create_enumerated_value_map(is_default=test_input, value=None)
+        enumerated_value_map = create_enumerated_value(is_default=test_input, value=None)
 
         expected_xml = f"""\
         <enumeratedValue>
@@ -1677,15 +1677,15 @@ class TestSVDDimArrayIndex:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
         dim_array_index = create_dim_array_index(
             header_enum_name=test_input,
             enumerated_values_map=[
-                create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0"),
-                create_enumerated_value_map(name="TIMER0", description="TIMER0 Peripheral", value="1"),
+                create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0"),
+                create_enumerated_value(name="TIMER0", description="TIMER0 Peripheral", value="1"),
             ],
         )
 
@@ -1996,16 +1996,16 @@ class TestSVDEnumeratedValue:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_attrib: Callable[[str, None | str], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value_container: Callable[..., SVDEnumeratedValueContainer],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
-        enumerated_value = create_enumerated_value(
+        enumerated_value = create_enumerated_value_container(
             derived_from=test_input,
             enumerated_values_map=[
-                create_enumerated_value_map(name="disabled", description="The clock source is turned off", value="0"),
-                create_enumerated_value_map(name="enabled", description="The clock source is running", value="1"),
+                create_enumerated_value(name="disabled", description="The clock source is turned off", value="0"),
+                create_enumerated_value(name="enabled", description="The clock source is running", value="1"),
             ],
         )
 
@@ -2035,16 +2035,16 @@ class TestSVDEnumeratedValue:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value_container: Callable[..., SVDEnumeratedValueContainer],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
-        enumerated_value = create_enumerated_value(
+        enumerated_value = create_enumerated_value_container(
             name=test_input,
             enumerated_values_map=[
-                create_enumerated_value_map(name="disabled", description="The clock source is turned off", value="0"),
-                create_enumerated_value_map(name="enabled", description="The clock source is running", value="1"),
+                create_enumerated_value(name="disabled", description="The clock source is turned off", value="0"),
+                create_enumerated_value(name="enabled", description="The clock source is running", value="1"),
             ],
         )
 
@@ -2074,16 +2074,16 @@ class TestSVDEnumeratedValue:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value_container: Callable[..., SVDEnumeratedValueContainer],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
-        enumerated_value = create_enumerated_value(
+        enumerated_value = create_enumerated_value_container(
             header_enum_name=test_input,
             enumerated_values_map=[
-                create_enumerated_value_map(name="disabled", description="The clock source is turned off", value="0"),
-                create_enumerated_value_map(name="enabled", description="The clock source is running", value="1"),
+                create_enumerated_value(name="disabled", description="The clock source is turned off", value="0"),
+                create_enumerated_value(name="enabled", description="The clock source is running", value="1"),
             ],
         )
 
@@ -2116,16 +2116,16 @@ class TestSVDEnumeratedValue:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value_container: Callable[..., SVDEnumeratedValueContainer],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
-        enumerated_value = create_enumerated_value(
+        enumerated_value = create_enumerated_value_container(
             usage=test_input,
             enumerated_values_map=[
-                create_enumerated_value_map(name="disabled", description="The clock source is turned off", value="0"),
-                create_enumerated_value_map(name="enabled", description="The clock source is running", value="1"),
+                create_enumerated_value(name="disabled", description="The clock source is turned off", value="0"),
+                create_enumerated_value(name="enabled", description="The clock source is running", value="1"),
             ],
         )
 
@@ -2153,9 +2153,9 @@ class TestSVDEnumeratedValue:
         self,
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
+        create_enumerated_value_container: Callable[..., SVDEnumeratedValueContainer],
     ):
-        enumerated_value = create_enumerated_value(enumerated_values_map=None)
+        enumerated_value = create_enumerated_value_container(enumerated_values_map=None)
 
         expected_xml = """\
         <enumeratedValues derivedFrom="der.from">
@@ -2171,9 +2171,9 @@ class TestSVDEnumeratedValue:
         self,
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
+        create_enumerated_value_container: Callable[..., SVDEnumeratedValueContainer],
     ):
-        enumerated_value = create_enumerated_value(
+        enumerated_value = create_enumerated_value_container(
             derived_from=None, name=None, header_enum_name=None, usage=None, enumerated_values_map=None
         )
 
@@ -2224,7 +2224,7 @@ class TestSVDField:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_field: Callable[..., SVDField],
         test_input: Any,
         expected: Any,
@@ -2237,7 +2237,7 @@ class TestSVDField:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
@@ -2283,7 +2283,7 @@ class TestSVDField:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_field: Callable[..., SVDField],
         test_input: Any,
         expected: Any,
@@ -2296,7 +2296,7 @@ class TestSVDField:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
@@ -2342,7 +2342,7 @@ class TestSVDField:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_field: Callable[..., SVDField],
         test_input: Any,
         expected: Any,
@@ -2355,7 +2355,7 @@ class TestSVDField:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
@@ -2401,7 +2401,7 @@ class TestSVDField:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_field: Callable[..., SVDField],
         test_input: Any,
         expected: Any,
@@ -2414,7 +2414,7 @@ class TestSVDField:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
@@ -2823,19 +2823,19 @@ class TestSVDField:
 
         assert dedent_xml(expected_xml) == svd_obj_to_xml_str(field)
 
-    def test_with_enumerated_values(
+    def test_with_enumerated_value_containers(
         self,
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value_container: Callable[..., SVDEnumeratedValueContainer],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_field: Callable[..., SVDField],
     ):
         field = create_field(
             write_constraint=None,
-            enumerated_values=[
-                create_enumerated_value(enumerated_values_map=[create_enumerated_value_map()]),
-                create_enumerated_value(enumerated_values_map=[create_enumerated_value_map(name="disabled")]),
+            enumerated_value_containers=[
+                create_enumerated_value_container(enumerated_values_map=[create_enumerated_value()]),
+                create_enumerated_value_container(enumerated_values_map=[create_enumerated_value(name="disabled")]),
             ],
         )
 
@@ -2918,7 +2918,7 @@ class TestSVDRegister:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_register: Callable[..., SVDRegister],
         test_input: Any,
         expected: Any,
@@ -2931,7 +2931,7 @@ class TestSVDRegister:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
@@ -2979,7 +2979,7 @@ class TestSVDRegister:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_register: Callable[..., SVDRegister],
         test_input: Any,
         expected: Any,
@@ -2992,7 +2992,7 @@ class TestSVDRegister:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
@@ -3040,7 +3040,7 @@ class TestSVDRegister:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_register: Callable[..., SVDRegister],
         test_input: Any,
         expected: Any,
@@ -3053,7 +3053,7 @@ class TestSVDRegister:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
@@ -3101,7 +3101,7 @@ class TestSVDRegister:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_register: Callable[..., SVDRegister],
         test_input: Any,
         expected: Any,
@@ -3114,7 +3114,7 @@ class TestSVDRegister:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
@@ -3882,7 +3882,7 @@ class TestSVDCluster:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_cluster: Callable[..., SVDCluster],
         test_input: Any,
         expected: Any,
@@ -3895,7 +3895,7 @@ class TestSVDCluster:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
         )
@@ -3931,7 +3931,7 @@ class TestSVDCluster:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_cluster: Callable[..., SVDCluster],
         test_input: Any,
         expected: Any,
@@ -3944,7 +3944,7 @@ class TestSVDCluster:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
         )
@@ -3980,7 +3980,7 @@ class TestSVDCluster:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_cluster: Callable[..., SVDCluster],
         test_input: Any,
         expected: Any,
@@ -3993,7 +3993,7 @@ class TestSVDCluster:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
         )
@@ -4029,7 +4029,7 @@ class TestSVDCluster:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_cluster: Callable[..., SVDCluster],
         test_input: Any,
         expected: Any,
@@ -4042,7 +4042,7 @@ class TestSVDCluster:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
         )
@@ -4521,7 +4521,7 @@ class TestSVDPeripheral:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_peripheral: Callable[..., SVDPeripheral],
         test_input: Any,
         expected: Any,
@@ -4534,7 +4534,7 @@ class TestSVDPeripheral:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
         )
@@ -4575,7 +4575,7 @@ class TestSVDPeripheral:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_peripheral: Callable[..., SVDPeripheral],
         test_input: Any,
         expected: Any,
@@ -4588,7 +4588,7 @@ class TestSVDPeripheral:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
         )
@@ -4629,7 +4629,7 @@ class TestSVDPeripheral:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_peripheral: Callable[..., SVDPeripheral],
         test_input: Any,
         expected: Any,
@@ -4642,7 +4642,7 @@ class TestSVDPeripheral:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
         )
@@ -4683,7 +4683,7 @@ class TestSVDPeripheral:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValue],
         create_peripheral: Callable[..., SVDPeripheral],
         test_input: Any,
         expected: Any,
@@ -4696,7 +4696,7 @@ class TestSVDPeripheral:
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
                 enumerated_values_map=[
-                    create_enumerated_value_map(name="UART0", description="UART0 Peripheral", value="0")
+                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
                 ],
             ),
         )

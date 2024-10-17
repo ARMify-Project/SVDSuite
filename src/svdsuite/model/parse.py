@@ -136,7 +136,7 @@ class SVDField(_SVDDimElementGroup):
     modified_write_values: None | ModifiedWriteValuesType = None
     write_constraint: None | SVDWriteConstraint = None
     read_action: None | ReadActionType = None
-    enumerated_values: list[SVDEnumeratedValueContainer] = field(default_factory=list)
+    enumerated_value_containers: list[SVDEnumeratedValueContainer] = field(default_factory=list)
     derived_from: None | str = None
     parent: "None | SVDRegister" = None
 

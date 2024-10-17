@@ -494,7 +494,7 @@ class Parser:
             modified_write_values = self._parse_element_text("modifiedWriteValues", field_element, optional=True)
             write_constraint = self._parse_write_constraint(field_element)
             read_action = self._parse_element_text("readAction", field_element, optional=True)
-            enumerated_values = self._parse_enumerated_values(field_element)
+            enumerated_value_containers = self._parse_enumerated_value_containers(field_element)
 
             dim, dim_increment, dim_index, dim_name, dim_array_index = self._parse_dim_element_group(field_element)
 
@@ -519,7 +519,7 @@ class Parser:
                 modified_write_values=modified_write_values,
                 write_constraint=write_constraint,
                 read_action=read_action,
-                enumerated_values=enumerated_values,
+                enumerated_value_containers=enumerated_value_containers,
                 dim=dim,
                 dim_increment=dim_increment,
                 dim_index=dim_index,
@@ -531,8 +531,8 @@ class Parser:
             if field.write_constraint is not None:
                 field.write_constraint.parent = field
 
-            for enumerated_value in field.enumerated_values:
-                enumerated_value.parent = field
+            for enumerated_value_container in field.enumerated_value_containers:
+                enumerated_value_container.parent = field
 
             if field.dim_array_index is not None:
                 field.dim_array_index.parent = field
@@ -541,21 +541,21 @@ class Parser:
 
         return fields
 
-    def _parse_enumerated_values(
+    def _parse_enumerated_value_containers(
         self, field_element: lxml.etree._Element  # pyright: ignore[reportPrivateUsage]
     ) -> list[SVDEnumeratedValueContainer]:
-        enumerated_values: list[SVDEnumeratedValueContainer] = []
-        for enumerated_value_element in field_element.findall("enumeratedValues"):
-            derived_from = self._parse_element_attribute("derivedFrom", enumerated_value_element, optional=True)
-            name = self._parse_element_text("name", enumerated_value_element, optional=True)
-            header_enum_name = self._parse_element_text("headerEnumName", enumerated_value_element, optional=True)
-            usage = self._parse_element_text("usage", enumerated_value_element, optional=True)
-            enumerated_values_map = self._parse_enumerated_values_map(enumerated_value_element)
+        enumerated_value_containers: list[SVDEnumeratedValueContainer] = []
+        for container_element in field_element.findall("enumeratedValues"):
+            derived_from = self._parse_element_attribute("derivedFrom", container_element, optional=True)
+            name = self._parse_element_text("name", container_element, optional=True)
+            header_enum_name = self._parse_element_text("headerEnumName", container_element, optional=True)
+            usage = self._parse_element_text("usage", container_element, optional=True)
+            enumerated_values_map = self._parse_enumerated_values_map(container_element)
 
             if usage is not None:
                 usage = EnumUsageType.from_str(usage)
 
-            enumerated_value = SVDEnumeratedValueContainer(
+            enumerated_value_container = SVDEnumeratedValueContainer(
                 name=name,
                 header_enum_name=header_enum_name,
                 usage=usage,
@@ -563,12 +563,12 @@ class Parser:
                 derived_from=derived_from,
             )
 
-            for enumerated_value_map in enumerated_value.enumerated_values_map:
-                enumerated_value_map.parent = enumerated_value
+            for enumerated_value_map in enumerated_value_container.enumerated_values_map:
+                enumerated_value_map.parent = enumerated_value_container
 
-            enumerated_values.append(enumerated_value)
+            enumerated_value_containers.append(enumerated_value_container)
 
-        return enumerated_values
+        return enumerated_value_containers
 
     def _parse_write_constraint(
         self, parent_element: lxml.etree._Element  # pyright: ignore[reportPrivateUsage]

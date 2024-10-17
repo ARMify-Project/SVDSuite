@@ -591,7 +591,7 @@ class _ProcessField:
         )
         read_action = _or_if_none(parsed_field.read_action, base_element.read_action)
         enumerated_values = (
-            self._process_enumerated_values(parsed_field.enumerated_values) or base_element.enumerated_values
+            self._process_enumerated_values(parsed_field.enumerated_value_containers) or base_element.enumerated_values
         )
 
         return Field(
@@ -614,7 +614,7 @@ class _ProcessField:
         modified_write_values = parsed_field.modified_write_values or ModifiedWriteValuesType.MODIFY
         write_constraint = _process_write_constraint(parsed_field.write_constraint)
         read_action = parsed_field.read_action
-        enumerated_values = self._process_enumerated_values(parsed_field.enumerated_values)
+        enumerated_values = self._process_enumerated_values(parsed_field.enumerated_value_containers)
 
         return Field(
             name=name,

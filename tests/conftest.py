@@ -173,8 +173,8 @@ def fixture_create_cpu():
     return _
 
 
-@pytest.fixture(name="create_enumerated_value_map", scope="function")
-def fixture_create_enumerated_value_map():
+@pytest.fixture(name="create_enumerated_value", scope="function")
+def fixture_create_enumerated_value():
     def _(
         name: str = "enabled",
         description: None | str = "The clock source clk1 is running.",
@@ -255,8 +255,8 @@ def fixture_create_write_constraint():
     return _
 
 
-@pytest.fixture(name="create_enumerated_value", scope="function")
-def fixture_create_enumerated_value():
+@pytest.fixture(name="create_enumerated_value_container", scope="function")
+def fixture_create_enumerated_value_container():
     def _(
         name: None | str = "TimerIntSelect",
         header_enum_name: None | str = "TimerIntSelect_Enum",
@@ -295,7 +295,7 @@ def fixture_create_field():
         modified_write_values: None | ModifiedWriteValuesType = ModifiedWriteValuesType.ONE_TO_SET,
         write_constraint: None | SVDWriteConstraint = None,
         read_action: None | ReadActionType = ReadActionType.CLEAR,
-        enumerated_values: None | list[SVDEnumeratedValueContainer] = None,
+        enumerated_value_containers: None | list[SVDEnumeratedValueContainer] = None,
     ) -> SVDField:
         return SVDField(
             derived_from=derived_from,
@@ -315,7 +315,7 @@ def fixture_create_field():
             modified_write_values=modified_write_values,
             write_constraint=write_constraint,
             read_action=read_action,
-            enumerated_values=[] if enumerated_values is None else enumerated_values,
+            enumerated_value_containers=[] if enumerated_value_containers is None else enumerated_value_containers,
         )
 
     return _

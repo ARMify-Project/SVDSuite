@@ -1275,7 +1275,7 @@ class TestDimArrayIndexParsing:
         assert dim_array_index.enumerated_values_map[1].parent == dim_array_index
 
 
-class TestEnumeratedValueMapParsing:
+class TestEnumeratedValueParsing:
     @pytest.mark.parametrize(
         "test_input,expected",
         [
@@ -2679,24 +2679,25 @@ class TestFieldParsing:
         assert len(device.peripherals[0].registers_clusters[1].fields) > 0
         assert device.peripherals[0].registers_clusters[1].fields[0].read_action == expected
 
-    def test_enumerated_values(self, get_device: Callable[[], SVDDevice]):
+    def test_enumerated_value_container(self, get_device: Callable[[], SVDDevice]):
         device = get_device()
 
         assert len(device.peripherals) > 0
         assert len(device.peripherals[0].registers_clusters) > 0
         assert isinstance(device.peripherals[0].registers_clusters[1], SVDRegister)
         assert len(device.peripherals[0].registers_clusters[1].fields) > 0
-        assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_values) == 2
+        assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers) == 2
         assert isinstance(
-            device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0], SVDEnumeratedValueContainer
+            device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers[0],
+            SVDEnumeratedValueContainer,
         )
         assert (
-            device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0].parent
+            device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers[0].parent
             == device.peripherals[0].registers_clusters[1].fields[0]
         )
 
 
-class TestEnumeratedValueParsing:
+class TestEnumeratedValueContainerParsing:
     @pytest.mark.parametrize(
         "test_input,expected",
         [
@@ -2720,8 +2721,11 @@ class TestEnumeratedValueParsing:
         assert len(device.peripherals[0].registers_clusters) > 0
         assert isinstance(device.peripherals[0].registers_clusters[1], SVDRegister)
         assert len(device.peripherals[0].registers_clusters[1].fields) > 0
-        assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_values) > 0
-        assert device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0].derived_from == expected
+        assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers) > 0
+        assert (
+            device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers[0].derived_from
+            == expected
+        )
 
     @pytest.mark.parametrize(
         "test_input,expected",
@@ -2741,8 +2745,8 @@ class TestEnumeratedValueParsing:
         assert len(device.peripherals[0].registers_clusters) > 0
         assert isinstance(device.peripherals[0].registers_clusters[1], SVDRegister)
         assert len(device.peripherals[0].registers_clusters[1].fields) > 0
-        assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_values) > 0
-        assert device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0].name == expected
+        assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers) > 0
+        assert device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers[0].name == expected
 
     @pytest.mark.parametrize(
         "test_input,expected",
@@ -2762,8 +2766,11 @@ class TestEnumeratedValueParsing:
         assert len(device.peripherals[0].registers_clusters) > 0
         assert isinstance(device.peripherals[0].registers_clusters[1], SVDRegister)
         assert len(device.peripherals[0].registers_clusters[1].fields) > 0
-        assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_values) > 0
-        assert device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0].header_enum_name == expected
+        assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers) > 0
+        assert (
+            device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers[0].header_enum_name
+            == expected
+        )
 
     @pytest.mark.parametrize(
         "test_input,expected",
@@ -2788,8 +2795,8 @@ class TestEnumeratedValueParsing:
         assert len(device.peripherals[0].registers_clusters) > 0
         assert isinstance(device.peripherals[0].registers_clusters[1], SVDRegister)
         assert len(device.peripherals[0].registers_clusters[1].fields) > 0
-        assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_values) > 0
-        assert device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0].usage == expected
+        assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers) > 0
+        assert device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers[0].usage == expected
 
     def test_enumerated_values_map(self, get_device: Callable[[], SVDDevice]):
         device = get_device()
@@ -2798,12 +2805,23 @@ class TestEnumeratedValueParsing:
         assert len(device.peripherals[0].registers_clusters) > 0
         assert isinstance(device.peripherals[0].registers_clusters[1], SVDRegister)
         assert len(device.peripherals[0].registers_clusters[1].fields) > 0
-        assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_values) > 0
+        assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers) > 0
         assert (
-            len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0].enumerated_values_map) == 3
+            len(
+                device.peripherals[0]
+                .registers_clusters[1]
+                .fields[0]
+                .enumerated_value_containers[0]
+                .enumerated_values_map
+            )
+            == 3
         )
         assert isinstance(
-            device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0].enumerated_values_map[0],
+            device.peripherals[0]
+            .registers_clusters[1]
+            .fields[0]
+            .enumerated_value_containers[0]
+            .enumerated_values_map[0],
             SVDEnumeratedValue,
         )
 
@@ -2814,13 +2832,20 @@ class TestEnumeratedValueParsing:
         assert len(device.peripherals[0].registers_clusters) > 0
         assert isinstance(device.peripherals[0].registers_clusters[1], SVDRegister)
         assert len(device.peripherals[0].registers_clusters[1].fields) > 0
-        assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_values) > 1
+        assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers) > 1
         assert (
-            len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0].enumerated_values_map) == 3
+            len(
+                device.peripherals[0]
+                .registers_clusters[1]
+                .fields[0]
+                .enumerated_value_containers[0]
+                .enumerated_values_map
+            )
+            == 3
         )
 
-        enumerated_values0 = device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0]
-        enumerated_values1 = device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[1]
+        enumerated_values0 = device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers[0]
+        enumerated_values1 = device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers[1]
 
         assert enumerated_values0.enumerated_values_map[0].parent == enumerated_values0
         assert enumerated_values0.enumerated_values_map[1].parent == enumerated_values0

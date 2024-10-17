@@ -257,7 +257,7 @@ class SVDWriteConstraintSerializer(XMLSerializable):
         return element
 
 
-class SVDEnumeratedValueSerializer(XMLSerializable):
+class SVDEnumeratedValueContainerSerializer(XMLSerializable):
     def __init__(self, value: SVDEnumeratedValueContainer):
         self.value = value
 
@@ -339,8 +339,8 @@ class SVDFieldSerializer(XMLSerializable):
         if self.field.read_action is not None:
             element.append(self._append_element("readAction", text=self.field.read_action.value))
 
-        for value in self.field.enumerated_values:
-            element.append(SVDEnumeratedValueSerializer(value).to_xml())
+        for value in self.field.enumerated_value_containers:
+            element.append(SVDEnumeratedValueContainerSerializer(value).to_xml())
 
         return element
 

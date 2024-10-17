@@ -163,7 +163,7 @@ def process_parse_convert_enumerated_value(value: EnumeratedValueContainer) -> S
 
 
 def process_parse_convert_field(field: Field) -> SVDField:
-    enumerated_values = [process_parse_convert_enumerated_value(value) for value in field.enumerated_values]
+    enumerated_value_containers = [process_parse_convert_enumerated_value(value) for value in field.enumerated_values]
 
     svd_field = SVDField(
         name=field.name,
@@ -176,12 +176,12 @@ def process_parse_convert_field(field: Field) -> SVDField:
             process_parse_convert_write_constraint(field.write_constraint) if field.write_constraint else None
         ),
         read_action=field.read_action,
-        enumerated_values=enumerated_values,
+        enumerated_value_containers=enumerated_value_containers,
         derived_from=None,
         parent=None,  # set by parent register
     )
 
-    for value in enumerated_values:
+    for value in enumerated_value_containers:
         value.parent = svd_field
 
     return svd_field
