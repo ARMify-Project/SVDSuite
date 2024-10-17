@@ -164,7 +164,7 @@ def process_parse_convert_enumerated_value_container(value: EnumeratedValueConta
 
 def process_parse_convert_field(field: Field) -> SVDField:
     enumerated_value_containers = [
-        process_parse_convert_enumerated_value_container(value) for value in field.enumerated_values
+        process_parse_convert_enumerated_value_container(container) for container in field.enumerated_value_containers
     ]
 
     svd_field = SVDField(
@@ -183,8 +183,8 @@ def process_parse_convert_field(field: Field) -> SVDField:
         parent=None,  # set by parent register
     )
 
-    for value in enumerated_value_containers:
-        value.parent = svd_field
+    for container in enumerated_value_containers:
+        container.parent = svd_field
 
     return svd_field
 

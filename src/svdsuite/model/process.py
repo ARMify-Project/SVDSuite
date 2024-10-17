@@ -132,7 +132,7 @@ class Field:
     modified_write_values: ModifiedWriteValuesType = ModifiedWriteValuesType.MODIFY
     write_constraint: None | WriteConstraint = None
     read_action: None | ReadActionType = None
-    enumerated_values: list[EnumeratedValueContainer] = field(default_factory=list)
+    enumerated_value_containers: list[EnumeratedValueContainer] = field(default_factory=list)
     parsed: SVDField
 
 

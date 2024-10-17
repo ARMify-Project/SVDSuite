@@ -1694,4 +1694,4 @@ class TestEnumeratedValues:
         assert len(device.peripherals[0].registers_clusters) == 1
         assert isinstance(device.peripherals[0].registers_clusters[0], Register)
         assert len(device.peripherals[0].registers_clusters[0].fields) == 1
-        assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_values) == 1
+        assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 1

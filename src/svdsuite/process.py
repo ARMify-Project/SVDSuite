@@ -590,8 +590,9 @@ class _ProcessField:
             _process_write_constraint(parsed_field.write_constraint), base_element.write_constraint
         )
         read_action = _or_if_none(parsed_field.read_action, base_element.read_action)
-        enumerated_values = (
-            self._process_enumerated_values(parsed_field.enumerated_value_containers) or base_element.enumerated_values
+        enumerated_value_containers = (
+            self._process_enumerated_value_containers(parsed_field.enumerated_value_containers)
+            or base_element.enumerated_value_containers
         )
 
         return Field(
@@ -603,7 +604,7 @@ class _ProcessField:
             modified_write_values=modified_write_values,
             write_constraint=write_constraint,
             read_action=read_action,
-            enumerated_values=enumerated_values,
+            enumerated_value_containers=enumerated_value_containers,
             parsed=parsed_field,
         )
 
@@ -614,7 +615,9 @@ class _ProcessField:
         modified_write_values = parsed_field.modified_write_values or ModifiedWriteValuesType.MODIFY
         write_constraint = _process_write_constraint(parsed_field.write_constraint)
         read_action = parsed_field.read_action
-        enumerated_values = self._process_enumerated_values(parsed_field.enumerated_value_containers)
+        enumerated_value_containers = self._process_enumerated_value_containers(
+            parsed_field.enumerated_value_containers
+        )
 
         return Field(
             name=name,
@@ -625,7 +628,7 @@ class _ProcessField:
             modified_write_values=modified_write_values,
             write_constraint=write_constraint,
             read_action=read_action,
-            enumerated_values=enumerated_values,
+            enumerated_value_containers=enumerated_value_containers,
             parsed=parsed_field,
         )
 
@@ -664,32 +667,32 @@ class _ProcessField:
 
         return (field_msb, field_lsb)
 
-    def _process_enumerated_values(
-        self, parsed_enumerated_values: list[SVDEnumeratedValueContainer]
+    def _process_enumerated_value_containers(
+        self, parsed_enumerated_value_containers: list[SVDEnumeratedValueContainer]
     ) -> list[EnumeratedValueContainer]:
-        enumerated_values: list[EnumeratedValueContainer] = []
-        for parsed_enumerated_value in parsed_enumerated_values:
-            if parsed_enumerated_value.derived_from is not None:
+        enumerated_value_containers: list[EnumeratedValueContainer] = []
+        for parsed_enumerated_value_container in parsed_enumerated_value_containers:
+            if parsed_enumerated_value_container.derived_from is not None:
                 raise NotImplementedError("Derived from is not supported for enumerated values")
 
-            enumerated_values.append(
+            enumerated_value_containers.append(
                 EnumeratedValueContainer(
-                    name=parsed_enumerated_value.name,
-                    header_enum_name=parsed_enumerated_value.header_enum_name,
+                    name=parsed_enumerated_value_container.name,
+                    header_enum_name=parsed_enumerated_value_container.header_enum_name,
                     usage=(
-                        parsed_enumerated_value.usage
-                        if parsed_enumerated_value.usage is not None
+                        parsed_enumerated_value_container.usage
+                        if parsed_enumerated_value_container.usage is not None
                         else EnumUsageType.READ_WRITE
                     ),
                     enumerated_values_map=self._process_enumerated_values_map(
-                        parsed_enumerated_value.enumerated_values
+                        parsed_enumerated_value_container.enumerated_values
                     ),
-                    derived_from=parsed_enumerated_value.derived_from,
-                    parsed=parsed_enumerated_value,
+                    derived_from=parsed_enumerated_value_container.derived_from,
+                    parsed=parsed_enumerated_value_container,
                 )
             )
 
-        return enumerated_values
+        return enumerated_value_containers
 
     def _process_enumerated_values_map(
         self, parsed_enumerated_values_map: list[SVDEnumeratedValue]
