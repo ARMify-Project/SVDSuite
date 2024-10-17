@@ -9,7 +9,7 @@ from svdsuite.model.parse import (
     SVDDevice,
     SVDDimArrayIndex,
     SVDEnumeratedValueContainer,
-    SVDEnumeratedValueMap,
+    SVDEnumeratedValue,
     SVDField,
     SVDInterrupt,
     SVDPeripheral,
@@ -53,7 +53,7 @@ SVDObject = (
     SVDSauRegion
     | SVDSauRegionsConfig
     | SVDCPU
-    | SVDEnumeratedValueMap
+    | SVDEnumeratedValue
     | SVDDimArrayIndex
     | SVDAddressBlock
     | SVDInterrupt
@@ -94,7 +94,7 @@ def fixture_svd_obj_to_xml_str() -> Callable[[SVDObject], str]:
             serializer = SVDRegisterSerializer(svd_obj)
         elif isinstance(svd_obj, SVDCluster):
             serializer = SVDClusterSerializer(svd_obj)
-        elif isinstance(svd_obj, SVDEnumeratedValueMap):
+        elif isinstance(svd_obj, SVDEnumeratedValue):
             serializer = SVDEnumeratedValueMapSerializer(svd_obj)
         elif isinstance(svd_obj, SVDDimArrayIndex):  # pyright: ignore[reportUnnecessaryIsInstance]
             serializer = SVDDimArrayIndexSerializer(svd_obj)
@@ -221,8 +221,8 @@ def fixture_create_enumerated_value_map():
         description: None | str = "The clock source clk1 is running.",
         value: None | str = "0b1111",
         is_default: None | bool = None,
-    ) -> SVDEnumeratedValueMap:
-        return SVDEnumeratedValueMap(
+    ) -> SVDEnumeratedValue:
+        return SVDEnumeratedValue(
             name=name,
             description=description,
             value=value,
@@ -236,7 +236,7 @@ def fixture_create_enumerated_value_map():
 def fixture_create_dim_array_index():
     def _(
         header_enum_name: None | str = "FSMC_EnumArray",
-        enumerated_values_map: None | list[SVDEnumeratedValueMap] = None,
+        enumerated_values_map: None | list[SVDEnumeratedValue] = None,
     ) -> SVDDimArrayIndex:
         return SVDDimArrayIndex(
             header_enum_name=header_enum_name,
@@ -302,7 +302,7 @@ def fixture_create_enumerated_value():
         name: None | str = "TimerIntSelect",
         header_enum_name: None | str = "TimerIntSelect_Enum",
         usage: None | EnumUsageType = EnumUsageType.READ,
-        enumerated_values_map: None | list[SVDEnumeratedValueMap] = None,
+        enumerated_values_map: None | list[SVDEnumeratedValue] = None,
         derived_from: None | str = "der.from",
     ) -> SVDEnumeratedValueContainer:
         return SVDEnumeratedValueContainer(
@@ -1584,7 +1584,7 @@ class TestSVDEnumeratedValueMap:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
@@ -1606,7 +1606,7 @@ class TestSVDEnumeratedValueMap:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
@@ -1630,7 +1630,7 @@ class TestSVDEnumeratedValueMap:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
@@ -1652,7 +1652,7 @@ class TestSVDEnumeratedValueMap:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
@@ -1677,7 +1677,7 @@ class TestSVDDimArrayIndex:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
@@ -1997,7 +1997,7 @@ class TestSVDEnumeratedValue:
         create_attrib: Callable[[str, None | str], str],
         dedent_xml: Callable[[str], str],
         create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
@@ -2036,7 +2036,7 @@ class TestSVDEnumeratedValue:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
@@ -2075,7 +2075,7 @@ class TestSVDEnumeratedValue:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
@@ -2117,7 +2117,7 @@ class TestSVDEnumeratedValue:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         test_input: Any,
         expected: Any,
     ):
@@ -2224,7 +2224,7 @@ class TestSVDField:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_field: Callable[..., SVDField],
         test_input: Any,
         expected: Any,
@@ -2283,7 +2283,7 @@ class TestSVDField:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_field: Callable[..., SVDField],
         test_input: Any,
         expected: Any,
@@ -2342,7 +2342,7 @@ class TestSVDField:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_field: Callable[..., SVDField],
         test_input: Any,
         expected: Any,
@@ -2401,7 +2401,7 @@ class TestSVDField:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_field: Callable[..., SVDField],
         test_input: Any,
         expected: Any,
@@ -2828,7 +2828,7 @@ class TestSVDField:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         dedent_xml: Callable[[str], str],
         create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_field: Callable[..., SVDField],
     ):
         field = create_field(
@@ -2918,7 +2918,7 @@ class TestSVDRegister:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_register: Callable[..., SVDRegister],
         test_input: Any,
         expected: Any,
@@ -2979,7 +2979,7 @@ class TestSVDRegister:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_register: Callable[..., SVDRegister],
         test_input: Any,
         expected: Any,
@@ -3040,7 +3040,7 @@ class TestSVDRegister:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_register: Callable[..., SVDRegister],
         test_input: Any,
         expected: Any,
@@ -3101,7 +3101,7 @@ class TestSVDRegister:
         dedent_xml: Callable[[str], str],
         create_write_constraint: Callable[..., SVDWriteConstraint],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_register: Callable[..., SVDRegister],
         test_input: Any,
         expected: Any,
@@ -3882,7 +3882,7 @@ class TestSVDCluster:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_cluster: Callable[..., SVDCluster],
         test_input: Any,
         expected: Any,
@@ -3931,7 +3931,7 @@ class TestSVDCluster:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_cluster: Callable[..., SVDCluster],
         test_input: Any,
         expected: Any,
@@ -3980,7 +3980,7 @@ class TestSVDCluster:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_cluster: Callable[..., SVDCluster],
         test_input: Any,
         expected: Any,
@@ -4029,7 +4029,7 @@ class TestSVDCluster:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_cluster: Callable[..., SVDCluster],
         test_input: Any,
         expected: Any,
@@ -4521,7 +4521,7 @@ class TestSVDPeripheral:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_peripheral: Callable[..., SVDPeripheral],
         test_input: Any,
         expected: Any,
@@ -4575,7 +4575,7 @@ class TestSVDPeripheral:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_peripheral: Callable[..., SVDPeripheral],
         test_input: Any,
         expected: Any,
@@ -4629,7 +4629,7 @@ class TestSVDPeripheral:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_peripheral: Callable[..., SVDPeripheral],
         test_input: Any,
         expected: Any,
@@ -4683,7 +4683,7 @@ class TestSVDPeripheral:
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
         create_dim_array_index: Callable[..., SVDDimArrayIndex],
-        create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
+        create_enumerated_value_map: Callable[..., SVDEnumeratedValue],
         create_peripheral: Callable[..., SVDPeripheral],
         test_input: Any,
         expected: Any,

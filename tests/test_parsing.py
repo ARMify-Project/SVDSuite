@@ -8,7 +8,7 @@ from svdsuite.model.parse import (
     SVDCPU,
     SVDDevice,
     SVDEnumeratedValueContainer,
-    SVDEnumeratedValueMap,
+    SVDEnumeratedValue,
     SVDField,
     SVDInterrupt,
     SVDPeripheral,
@@ -1248,8 +1248,8 @@ class TestDimArrayIndexParsing:
         assert isinstance(device.peripherals[0], SVDPeripheral)
         assert device.peripherals[0].dim_array_index is not None
         assert len(device.peripherals[0].dim_array_index.enumerated_values_map) == 2
-        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values_map[0], SVDEnumeratedValueMap)
-        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values_map[1], SVDEnumeratedValueMap)
+        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values_map[0], SVDEnumeratedValue)
+        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values_map[1], SVDEnumeratedValue)
         assert device.peripherals[0].dim_array_index.enumerated_values_map[0].name == "UART0"
         assert device.peripherals[0].dim_array_index.enumerated_values_map[0].description == "UART0 Peripheral"
         assert device.peripherals[0].dim_array_index.enumerated_values_map[0].value == "0"
@@ -1266,8 +1266,8 @@ class TestDimArrayIndexParsing:
         assert isinstance(device.peripherals[0], SVDPeripheral)
         assert device.peripherals[0].dim_array_index is not None
         assert len(device.peripherals[0].dim_array_index.enumerated_values_map) == 2
-        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values_map[0], SVDEnumeratedValueMap)
-        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values_map[1], SVDEnumeratedValueMap)
+        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values_map[0], SVDEnumeratedValue)
+        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values_map[1], SVDEnumeratedValue)
 
         dim_array_index = device.peripherals[0].dim_array_index
 
@@ -2804,7 +2804,7 @@ class TestEnumeratedValueParsing:
         )
         assert isinstance(
             device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0].enumerated_values_map[0],
-            SVDEnumeratedValueMap,
+            SVDEnumeratedValue,
         )
 
     def test_enumerated_values_map_parent(self, get_device: Callable[[], SVDDevice]):

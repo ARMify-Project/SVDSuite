@@ -5,7 +5,7 @@ from svdsuite.model.parse import (
     SVDDevice,
     SVDDimArrayIndex,
     SVDEnumeratedValueContainer,
-    SVDEnumeratedValueMap,
+    SVDEnumeratedValue,
     SVDField,
     SVDInterrupt,
     SVDPeripheral,
@@ -91,8 +91,8 @@ def process_parse_convert_cpu(cpu: CPU) -> SVDCPU:
     return svd_cpu
 
 
-def process_parse_convert_enumerated_value_map(value_map: EnumeratedValueMap) -> SVDEnumeratedValueMap:
-    return SVDEnumeratedValueMap(
+def process_parse_convert_enumerated_value_map(value_map: EnumeratedValueMap) -> SVDEnumeratedValue:
+    return SVDEnumeratedValue(
         name=value_map.name,
         description=value_map.description,
         value=value_map.value,

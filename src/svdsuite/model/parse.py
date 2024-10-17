@@ -55,7 +55,7 @@ class SVDCPU:
 
 
 @dataclass(kw_only=True)
-class SVDEnumeratedValueMap:
+class SVDEnumeratedValue:
     name: str
     description: None | str = None
     value: None | str = None  # int value, but can contain 'do not care' bits represented by >x<
@@ -66,7 +66,7 @@ class SVDEnumeratedValueMap:
 @dataclass(kw_only=True)
 class SVDDimArrayIndex:
     header_enum_name: None | str = None
-    enumerated_values_map: list[SVDEnumeratedValueMap]
+    enumerated_values_map: list[SVDEnumeratedValue]
     parent: "None | SVDPeripheral | SVDCluster | SVDRegister | SVDField" = None
 
 
@@ -118,7 +118,7 @@ class SVDEnumeratedValueContainer:
     name: None | str = None
     header_enum_name: None | str = None
     usage: None | EnumUsageType = None
-    enumerated_values_map: list[SVDEnumeratedValueMap]
+    enumerated_values_map: list[SVDEnumeratedValue]
     derived_from: None | str = None
     parent: "None | SVDField" = None
 

@@ -12,7 +12,7 @@ from svdsuite.model.parse import (
     SVDField,
     SVDRegister,
     SVDCluster,
-    SVDEnumeratedValueMap,
+    SVDEnumeratedValue,
     SVDDimArrayIndex,
 )
 
@@ -151,7 +151,7 @@ class SVDCPUSerializer(XMLSerializable):
 
 
 class SVDEnumeratedValueMapSerializer(XMLSerializable):
-    def __init__(self, enumerated_value_map: SVDEnumeratedValueMap):
+    def __init__(self, enumerated_value_map: SVDEnumeratedValue):
         self.enumerated_value_map = enumerated_value_map
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]

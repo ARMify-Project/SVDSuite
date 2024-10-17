@@ -20,7 +20,7 @@ from svdsuite.model.parse import (
     SVDDevice,
     SVDDimArrayIndex,
     SVDEnumeratedValueContainer,
-    SVDEnumeratedValueMap,
+    SVDEnumeratedValue,
     SVDField,
     SVDInterrupt,
     SVDPeripheral,
@@ -77,7 +77,7 @@ class EnumeratedValueMap:
     description: None | str = None
     value: None | str = None  # int value, but can contain 'do not care' bits represented by >x<
     is_default: None | bool = None
-    parsed: SVDEnumeratedValueMap
+    parsed: SVDEnumeratedValue
 
 
 @dataclass(kw_only=True)

@@ -9,7 +9,7 @@ from svdsuite.model.parse import (
     SVDDevice,
     SVDDimArrayIndex,
     SVDEnumeratedValueContainer,
-    SVDEnumeratedValueMap,
+    SVDEnumeratedValue,
     SVDField,
     SVDInterrupt,
     SVDPeripheral,
@@ -726,8 +726,8 @@ class Parser:
     def _parse_enumerated_values_map(
         self,
         parent_element: lxml.etree._Element,  # pyright: ignore[reportPrivateUsage]
-    ) -> list[SVDEnumeratedValueMap]:
-        enumerated_values_map: list[SVDEnumeratedValueMap] = []
+    ) -> list[SVDEnumeratedValue]:
+        enumerated_values_map: list[SVDEnumeratedValue] = []
         for enumerated_value_element in parent_element.findall("enumeratedValue"):
             name = self._parse_element_text("name", enumerated_value_element, optional=False)
             description = self._parse_element_text("description", enumerated_value_element, optional=True)
@@ -737,7 +737,7 @@ class Parser:
             )
 
             enumerated_values_map.append(
-                SVDEnumeratedValueMap(name=name, description=description, value=value, is_default=is_default)
+                SVDEnumeratedValue(name=name, description=description, value=value, is_default=is_default)
             )
 
         return enumerated_values_map
