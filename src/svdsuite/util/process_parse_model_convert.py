@@ -91,27 +91,27 @@ def process_parse_convert_cpu(cpu: CPU) -> SVDCPU:
     return svd_cpu
 
 
-def process_parse_convert_enumerated_value_map(value_map: EnumeratedValue) -> SVDEnumeratedValue:
+def process_parse_convert_enumerated_value(value: EnumeratedValue) -> SVDEnumeratedValue:
     return SVDEnumeratedValue(
-        name=value_map.name,
-        description=value_map.description,
-        value=value_map.value,
-        is_default=value_map.is_default,
+        name=value.name,
+        description=value.description,
+        value=value.value,
+        is_default=value.is_default,
         parent=None,  # set by parent enumerated value or dim array index
     )
 
 
 def process_parse_convert_dim_array_index(index: DimArrayIndex) -> SVDDimArrayIndex:
-    value_maps = [process_parse_convert_enumerated_value_map(value_map) for value_map in index.enumerated_values_map]
+    enumerated_values = [process_parse_convert_enumerated_value(value_map) for value_map in index.enumerated_values_map]
 
     svd_index = SVDDimArrayIndex(
         header_enum_name=index.header_enum_name,
-        enumerated_values_map=value_maps,
+        enumerated_values=enumerated_values,
         parent=None,  # set by parent field
     )
 
-    for value_map in value_maps:
-        value_map.parent = svd_index
+    for enumerated_value in enumerated_values:
+        enumerated_value.parent = svd_index
 
     return svd_index
 
@@ -144,26 +144,28 @@ def process_parse_convert_write_constraint(constraint: WriteConstraint) -> SVDWr
     )
 
 
-def process_parse_convert_enumerated_value(value: EnumeratedValueContainer) -> SVDEnumeratedValueContainer:
-    value_maps = [process_parse_convert_enumerated_value_map(value_map) for value_map in value.enumerated_values_map]
+def process_parse_convert_enumerated_value_container(value: EnumeratedValueContainer) -> SVDEnumeratedValueContainer:
+    enumerated_values = [process_parse_convert_enumerated_value(value_map) for value_map in value.enumerated_values_map]
 
     svd_value = SVDEnumeratedValueContainer(
         name=value.name,
         header_enum_name=value.header_enum_name,
         usage=value.usage,
-        enumerated_values_map=value_maps,
+        enumerated_values=enumerated_values,
         derived_from=value.derived_from,
         parent=None,  # set by parent field
     )
 
-    for value_map in value_maps:
-        value_map.parent = svd_value
+    for enumerated_value in enumerated_values:
+        enumerated_value.parent = svd_value
 
     return svd_value
 
 
 def process_parse_convert_field(field: Field) -> SVDField:
-    enumerated_value_containers = [process_parse_convert_enumerated_value(value) for value in field.enumerated_values]
+    enumerated_value_containers = [
+        process_parse_convert_enumerated_value_container(value) for value in field.enumerated_values
+    ]
 
     svd_field = SVDField(
         name=field.name,

@@ -195,11 +195,11 @@ def fixture_create_enumerated_value():
 def fixture_create_dim_array_index():
     def _(
         header_enum_name: None | str = "FSMC_EnumArray",
-        enumerated_values_map: None | list[SVDEnumeratedValue] = None,
+        enumerated_values: None | list[SVDEnumeratedValue] = None,
     ) -> SVDDimArrayIndex:
         return SVDDimArrayIndex(
             header_enum_name=header_enum_name,
-            enumerated_values_map=[] if enumerated_values_map is None else enumerated_values_map,
+            enumerated_values=[] if enumerated_values is None else enumerated_values,
         )
 
     return _
@@ -261,14 +261,14 @@ def fixture_create_enumerated_value_container():
         name: None | str = "TimerIntSelect",
         header_enum_name: None | str = "TimerIntSelect_Enum",
         usage: None | EnumUsageType = EnumUsageType.READ,
-        enumerated_values_map: None | list[SVDEnumeratedValue] = None,
+        enumerated_values: None | list[SVDEnumeratedValue] = None,
         derived_from: None | str = "der.from",
     ) -> SVDEnumeratedValueContainer:
         return SVDEnumeratedValueContainer(
             name=name,
             header_enum_name=header_enum_name,
             usage=usage,
-            enumerated_values_map=[] if enumerated_values_map is None else enumerated_values_map,
+            enumerated_values=[] if enumerated_values is None else enumerated_values,
             derived_from=derived_from,
         )
 

@@ -1247,17 +1247,17 @@ class TestDimArrayIndexParsing:
         assert len(device.peripherals) > 0
         assert isinstance(device.peripherals[0], SVDPeripheral)
         assert device.peripherals[0].dim_array_index is not None
-        assert len(device.peripherals[0].dim_array_index.enumerated_values_map) == 2
-        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values_map[0], SVDEnumeratedValue)
-        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values_map[1], SVDEnumeratedValue)
-        assert device.peripherals[0].dim_array_index.enumerated_values_map[0].name == "UART0"
-        assert device.peripherals[0].dim_array_index.enumerated_values_map[0].description == "UART0 Peripheral"
-        assert device.peripherals[0].dim_array_index.enumerated_values_map[0].value == "0"
-        assert device.peripherals[0].dim_array_index.enumerated_values_map[0].is_default is None
-        assert device.peripherals[0].dim_array_index.enumerated_values_map[1].name == "UART1"
-        assert device.peripherals[0].dim_array_index.enumerated_values_map[1].description is None
-        assert device.peripherals[0].dim_array_index.enumerated_values_map[1].value is None
-        assert device.peripherals[0].dim_array_index.enumerated_values_map[1].is_default is True
+        assert len(device.peripherals[0].dim_array_index.enumerated_values) == 2
+        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values[0], SVDEnumeratedValue)
+        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values[1], SVDEnumeratedValue)
+        assert device.peripherals[0].dim_array_index.enumerated_values[0].name == "UART0"
+        assert device.peripherals[0].dim_array_index.enumerated_values[0].description == "UART0 Peripheral"
+        assert device.peripherals[0].dim_array_index.enumerated_values[0].value == "0"
+        assert device.peripherals[0].dim_array_index.enumerated_values[0].is_default is None
+        assert device.peripherals[0].dim_array_index.enumerated_values[1].name == "UART1"
+        assert device.peripherals[0].dim_array_index.enumerated_values[1].description is None
+        assert device.peripherals[0].dim_array_index.enumerated_values[1].value is None
+        assert device.peripherals[0].dim_array_index.enumerated_values[1].is_default is True
 
     def test_enumerated_values_map_parent(self, get_device: Callable[[], SVDDevice]):
         device = get_device()
@@ -1265,14 +1265,14 @@ class TestDimArrayIndexParsing:
         assert len(device.peripherals) > 0
         assert isinstance(device.peripherals[0], SVDPeripheral)
         assert device.peripherals[0].dim_array_index is not None
-        assert len(device.peripherals[0].dim_array_index.enumerated_values_map) == 2
-        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values_map[0], SVDEnumeratedValue)
-        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values_map[1], SVDEnumeratedValue)
+        assert len(device.peripherals[0].dim_array_index.enumerated_values) == 2
+        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values[0], SVDEnumeratedValue)
+        assert isinstance(device.peripherals[0].dim_array_index.enumerated_values[1], SVDEnumeratedValue)
 
         dim_array_index = device.peripherals[0].dim_array_index
 
-        assert dim_array_index.enumerated_values_map[0].parent == dim_array_index
-        assert dim_array_index.enumerated_values_map[1].parent == dim_array_index
+        assert dim_array_index.enumerated_values[0].parent == dim_array_index
+        assert dim_array_index.enumerated_values[1].parent == dim_array_index
 
 
 class TestEnumeratedValueParsing:
@@ -1295,8 +1295,8 @@ class TestEnumeratedValueParsing:
 
         assert len(device.peripherals) > 0
         assert device.peripherals[0].dim_array_index is not None
-        assert len(device.peripherals[0].dim_array_index.enumerated_values_map) > 0
-        assert device.peripherals[0].dim_array_index.enumerated_values_map[0].name == expected
+        assert len(device.peripherals[0].dim_array_index.enumerated_values) > 0
+        assert device.peripherals[0].dim_array_index.enumerated_values[0].name == expected
 
     @pytest.mark.parametrize(
         "test_input,expected",
@@ -1314,8 +1314,8 @@ class TestEnumeratedValueParsing:
 
         assert len(device.peripherals) > 0
         assert device.peripherals[0].dim_array_index is not None
-        assert len(device.peripherals[0].dim_array_index.enumerated_values_map) > 0
-        assert device.peripherals[0].dim_array_index.enumerated_values_map[0].description == expected
+        assert len(device.peripherals[0].dim_array_index.enumerated_values) > 0
+        assert device.peripherals[0].dim_array_index.enumerated_values[0].description == expected
 
     @pytest.mark.parametrize(
         "test_input,expected",
@@ -1333,8 +1333,8 @@ class TestEnumeratedValueParsing:
 
         assert len(device.peripherals) > 0
         assert device.peripherals[0].dim_array_index is not None
-        assert len(device.peripherals[0].dim_array_index.enumerated_values_map) > 0
-        assert device.peripherals[0].dim_array_index.enumerated_values_map[0].value == expected
+        assert len(device.peripherals[0].dim_array_index.enumerated_values) > 0
+        assert device.peripherals[0].dim_array_index.enumerated_values[0].value == expected
 
     @pytest.mark.parametrize(
         "test_input,expected",
@@ -1358,8 +1358,8 @@ class TestEnumeratedValueParsing:
 
         assert len(device.peripherals) > 0
         assert device.peripherals[0].dim_array_index is not None
-        assert len(device.peripherals[0].dim_array_index.enumerated_values_map) > 0
-        assert device.peripherals[0].dim_array_index.enumerated_values_map[0].is_default == expected
+        assert len(device.peripherals[0].dim_array_index.enumerated_values) > 0
+        assert device.peripherals[0].dim_array_index.enumerated_values[0].is_default == expected
 
 
 class TestAddressBlockParsing:
@@ -2807,21 +2807,11 @@ class TestEnumeratedValueContainerParsing:
         assert len(device.peripherals[0].registers_clusters[1].fields) > 0
         assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers) > 0
         assert (
-            len(
-                device.peripherals[0]
-                .registers_clusters[1]
-                .fields[0]
-                .enumerated_value_containers[0]
-                .enumerated_values_map
-            )
+            len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers[0].enumerated_values)
             == 3
         )
         assert isinstance(
-            device.peripherals[0]
-            .registers_clusters[1]
-            .fields[0]
-            .enumerated_value_containers[0]
-            .enumerated_values_map[0],
+            device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers[0].enumerated_values[0],
             SVDEnumeratedValue,
         )
 
@@ -2834,20 +2824,14 @@ class TestEnumeratedValueContainerParsing:
         assert len(device.peripherals[0].registers_clusters[1].fields) > 0
         assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers) > 1
         assert (
-            len(
-                device.peripherals[0]
-                .registers_clusters[1]
-                .fields[0]
-                .enumerated_value_containers[0]
-                .enumerated_values_map
-            )
+            len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers[0].enumerated_values)
             == 3
         )
 
         enumerated_values0 = device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers[0]
         enumerated_values1 = device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers[1]
 
-        assert enumerated_values0.enumerated_values_map[0].parent == enumerated_values0
-        assert enumerated_values0.enumerated_values_map[1].parent == enumerated_values0
-        assert enumerated_values0.enumerated_values_map[2].parent == enumerated_values0
-        assert enumerated_values1.enumerated_values_map[0].parent == enumerated_values1
+        assert enumerated_values0.enumerated_values[0].parent == enumerated_values0
+        assert enumerated_values0.enumerated_values[1].parent == enumerated_values0
+        assert enumerated_values0.enumerated_values[2].parent == enumerated_values0
+        assert enumerated_values1.enumerated_values[0].parent == enumerated_values1

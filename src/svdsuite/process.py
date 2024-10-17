@@ -682,7 +682,7 @@ class _ProcessField:
                         else EnumUsageType.READ_WRITE
                     ),
                     enumerated_values_map=self._process_enumerated_values_map(
-                        parsed_enumerated_value.enumerated_values_map
+                        parsed_enumerated_value.enumerated_values
                     ),
                     derived_from=parsed_enumerated_value.derived_from,
                     parsed=parsed_enumerated_value,

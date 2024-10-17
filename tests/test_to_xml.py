@@ -45,7 +45,7 @@ from svdsuite.serialize import (
     SVDFieldSerializer,
     SVDRegisterSerializer,
     SVDClusterSerializer,
-    SVDEnumeratedValueMapSerializer,
+    SVDEnumeratedValueSerializer,
     SVDDimArrayIndexSerializer,
 )
 
@@ -95,7 +95,7 @@ def fixture_svd_obj_to_xml_str() -> Callable[[SVDObject], str]:
         elif isinstance(svd_obj, SVDCluster):
             serializer = SVDClusterSerializer(svd_obj)
         elif isinstance(svd_obj, SVDEnumeratedValue):
-            serializer = SVDEnumeratedValueMapSerializer(svd_obj)
+            serializer = SVDEnumeratedValueSerializer(svd_obj)
         elif isinstance(svd_obj, SVDDimArrayIndex):  # pyright: ignore[reportUnnecessaryIsInstance]
             serializer = SVDDimArrayIndexSerializer(svd_obj)
         else:
@@ -240,7 +240,7 @@ def fixture_create_dim_array_index():
     ) -> SVDDimArrayIndex:
         return SVDDimArrayIndex(
             header_enum_name=header_enum_name,
-            enumerated_values_map=[] if enumerated_values_map is None else enumerated_values_map,
+            enumerated_values=[] if enumerated_values_map is None else enumerated_values_map,
         )
 
     return _
@@ -309,7 +309,7 @@ def fixture_create_enumerated_value_container():
             name=name,
             header_enum_name=header_enum_name,
             usage=usage,
-            enumerated_values_map=[] if enumerated_values_map is None else enumerated_values_map,
+            enumerated_values=[] if enumerated_values_map is None else enumerated_values_map,
             derived_from=derived_from,
         )
 

@@ -150,23 +150,23 @@ class SVDCPUSerializer(XMLSerializable):
         return element
 
 
-class SVDEnumeratedValueMapSerializer(XMLSerializable):
-    def __init__(self, enumerated_value_map: SVDEnumeratedValue):
-        self.enumerated_value_map = enumerated_value_map
+class SVDEnumeratedValueSerializer(XMLSerializable):
+    def __init__(self, enumerated_value: SVDEnumeratedValue):
+        self.enumerated_value = enumerated_value
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]
         element = lxml.etree.Element("enumeratedValue")
 
-        element.append(self._append_element("name", text=self.enumerated_value_map.name))
+        element.append(self._append_element("name", text=self.enumerated_value.name))
 
-        if self.enumerated_value_map.description is not None:
-            element.append(self._append_element("description", text=self.enumerated_value_map.description))
+        if self.enumerated_value.description is not None:
+            element.append(self._append_element("description", text=self.enumerated_value.description))
 
-        if self.enumerated_value_map.value is not None:
-            element.append(self._append_element("value", text=str(self.enumerated_value_map.value)))
+        if self.enumerated_value.value is not None:
+            element.append(self._append_element("value", text=str(self.enumerated_value.value)))
 
-        if self.enumerated_value_map.is_default is not None:
-            element.append(self._append_element("isDefault", text=str(self.enumerated_value_map.is_default).lower()))
+        if self.enumerated_value.is_default is not None:
+            element.append(self._append_element("isDefault", text=str(self.enumerated_value.is_default).lower()))
 
         return element
 
@@ -182,11 +182,11 @@ class SVDDimArrayIndexSerializer(XMLSerializable):
             element.append(self._append_element("headerEnumName", text=self.dim_array_index.header_enum_name))
 
         # ensure that we get <dimArrayIndex ... ></dimArrayIndex> and not <dimArrayIndex ... />
-        if len(element) == 0 and not self.dim_array_index.enumerated_values_map:
+        if len(element) == 0 and not self.dim_array_index.enumerated_values:
             element.text = ""
 
-        for value_map in self.dim_array_index.enumerated_values_map:
-            element.append(SVDEnumeratedValueMapSerializer(value_map).to_xml())
+        for enumerated_value in self.dim_array_index.enumerated_values:
+            element.append(SVDEnumeratedValueSerializer(enumerated_value).to_xml())
 
         return element
 
@@ -277,11 +277,11 @@ class SVDEnumeratedValueContainerSerializer(XMLSerializable):
             element.append(self._append_element("usage", text=self.value.usage.value))
 
         # ensure that we get <enumeratedValues ... ></enumeratedValues> and not <enumeratedValues ... />
-        if len(element) == 0 and not self.value.enumerated_values_map:
+        if len(element) == 0 and not self.value.enumerated_values:
             element.text = ""
 
-        for value_map in self.value.enumerated_values_map:
-            element.append(SVDEnumeratedValueMapSerializer(value_map).to_xml())
+        for enumerated_value in self.value.enumerated_values:
+            element.append(SVDEnumeratedValueSerializer(enumerated_value).to_xml())
 
         return element
 

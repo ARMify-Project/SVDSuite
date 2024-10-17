@@ -66,7 +66,7 @@ class SVDEnumeratedValue:
 @dataclass(kw_only=True)
 class SVDDimArrayIndex:
     header_enum_name: None | str = None
-    enumerated_values_map: list[SVDEnumeratedValue]
+    enumerated_values: list[SVDEnumeratedValue]
     parent: "None | SVDPeripheral | SVDCluster | SVDRegister | SVDField" = None
 
 
@@ -118,7 +118,7 @@ class SVDEnumeratedValueContainer:
     name: None | str = None
     header_enum_name: None | str = None
     usage: None | EnumUsageType = None
-    enumerated_values_map: list[SVDEnumeratedValue]
+    enumerated_values: list[SVDEnumeratedValue]
     derived_from: None | str = None
     parent: "None | SVDField" = None
 

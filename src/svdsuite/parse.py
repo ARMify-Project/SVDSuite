@@ -550,7 +550,7 @@ class Parser:
             name = self._parse_element_text("name", container_element, optional=True)
             header_enum_name = self._parse_element_text("headerEnumName", container_element, optional=True)
             usage = self._parse_element_text("usage", container_element, optional=True)
-            enumerated_values_map = self._parse_enumerated_values_map(container_element)
+            enumerated_values = self._parse_enumerated_values(container_element)
 
             if usage is not None:
                 usage = EnumUsageType.from_str(usage)
@@ -559,12 +559,12 @@ class Parser:
                 name=name,
                 header_enum_name=header_enum_name,
                 usage=usage,
-                enumerated_values_map=enumerated_values_map,
+                enumerated_values=enumerated_values,
                 derived_from=derived_from,
             )
 
-            for enumerated_value_map in enumerated_value_container.enumerated_values_map:
-                enumerated_value_map.parent = enumerated_value_container
+            for enumerated_value in enumerated_value_container.enumerated_values:
+                enumerated_value.parent = enumerated_value_container
 
             enumerated_value_containers.append(enumerated_value_container)
 
@@ -712,22 +712,20 @@ class Parser:
             return None
 
         header_enum_name = self._parse_element_text("headerEnumName", dim_array_index_element, optional=True)
-        enumerated_values_map = self._parse_enumerated_values_map(dim_array_index_element)
+        enumerated_values = self._parse_enumerated_values(dim_array_index_element)
 
-        dim_array_index = SVDDimArrayIndex(
-            header_enum_name=header_enum_name, enumerated_values_map=enumerated_values_map
-        )
+        dim_array_index = SVDDimArrayIndex(header_enum_name=header_enum_name, enumerated_values=enumerated_values)
 
-        for enumerated_value_map in dim_array_index.enumerated_values_map:
-            enumerated_value_map.parent = dim_array_index
+        for enumerated_value in dim_array_index.enumerated_values:
+            enumerated_value.parent = dim_array_index
 
         return dim_array_index
 
-    def _parse_enumerated_values_map(
+    def _parse_enumerated_values(
         self,
         parent_element: lxml.etree._Element,  # pyright: ignore[reportPrivateUsage]
     ) -> list[SVDEnumeratedValue]:
-        enumerated_values_map: list[SVDEnumeratedValue] = []
+        enumerated_values: list[SVDEnumeratedValue] = []
         for enumerated_value_element in parent_element.findall("enumeratedValue"):
             name = self._parse_element_text("name", enumerated_value_element, optional=False)
             description = self._parse_element_text("description", enumerated_value_element, optional=True)
@@ -736,8 +734,8 @@ class Parser:
                 self._parse_element_text("isDefault", enumerated_value_element, optional=True)
             )
 
-            enumerated_values_map.append(
+            enumerated_values.append(
                 SVDEnumeratedValue(name=name, description=description, value=value, is_default=is_default)
             )
 
-        return enumerated_values_map
+        return enumerated_values
