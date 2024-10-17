@@ -83,7 +83,7 @@ class EnumeratedValue:
 @dataclass(kw_only=True)
 class DimArrayIndex:
     header_enum_name: None | str = None
-    enumerated_values_map: list[EnumeratedValue]
+    enumerated_values: list[EnumeratedValue]
     parsed: SVDDimArrayIndex
 
 
@@ -117,7 +117,7 @@ class EnumeratedValueContainer:
     name: None | str = None
     header_enum_name: None | str = None
     usage: EnumUsageType = EnumUsageType.READ_WRITE
-    enumerated_values_map: list[EnumeratedValue]
+    enumerated_values: list[EnumeratedValue]
     derived_from: None | str = None
     parsed: SVDEnumeratedValueContainer
 

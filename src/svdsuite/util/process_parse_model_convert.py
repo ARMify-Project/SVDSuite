@@ -102,7 +102,7 @@ def process_parse_convert_enumerated_value(value: EnumeratedValue) -> SVDEnumera
 
 
 def process_parse_convert_dim_array_index(index: DimArrayIndex) -> SVDDimArrayIndex:
-    enumerated_values = [process_parse_convert_enumerated_value(value_map) for value_map in index.enumerated_values_map]
+    enumerated_values = [process_parse_convert_enumerated_value(value) for value in index.enumerated_values]
 
     svd_index = SVDDimArrayIndex(
         header_enum_name=index.header_enum_name,
@@ -145,7 +145,7 @@ def process_parse_convert_write_constraint(constraint: WriteConstraint) -> SVDWr
 
 
 def process_parse_convert_enumerated_value_container(value: EnumeratedValueContainer) -> SVDEnumeratedValueContainer:
-    enumerated_values = [process_parse_convert_enumerated_value(value_map) for value_map in value.enumerated_values_map]
+    enumerated_values = [process_parse_convert_enumerated_value(value) for value in value.enumerated_values]
 
     svd_value = SVDEnumeratedValueContainer(
         name=value.name,

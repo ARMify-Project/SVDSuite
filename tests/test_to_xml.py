@@ -236,11 +236,11 @@ def fixture_create_enumerated_value():
 def fixture_create_dim_array_index():
     def _(
         header_enum_name: None | str = "FSMC_EnumArray",
-        enumerated_values_map: None | list[SVDEnumeratedValue] = None,
+        enumerated_values: None | list[SVDEnumeratedValue] = None,
     ) -> SVDDimArrayIndex:
         return SVDDimArrayIndex(
             header_enum_name=header_enum_name,
-            enumerated_values=[] if enumerated_values_map is None else enumerated_values_map,
+            enumerated_values=[] if enumerated_values is None else enumerated_values,
         )
 
     return _
@@ -302,14 +302,14 @@ def fixture_create_enumerated_value_container():
         name: None | str = "TimerIntSelect",
         header_enum_name: None | str = "TimerIntSelect_Enum",
         usage: None | EnumUsageType = EnumUsageType.READ,
-        enumerated_values_map: None | list[SVDEnumeratedValue] = None,
+        enumerated_values: None | list[SVDEnumeratedValue] = None,
         derived_from: None | str = "der.from",
     ) -> SVDEnumeratedValueContainer:
         return SVDEnumeratedValueContainer(
             name=name,
             header_enum_name=header_enum_name,
             usage=usage,
-            enumerated_values=[] if enumerated_values_map is None else enumerated_values_map,
+            enumerated_values=[] if enumerated_values is None else enumerated_values,
             derived_from=derived_from,
         )
 
@@ -1577,7 +1577,7 @@ class TestSVDCPU:
         assert dedent_xml(expected_xml) == svd_obj_to_xml_str(cpu)
 
 
-class TestSVDEnumeratedValueMap:
+class TestSVDEnumeratedValue:
     @pytest.mark.parametrize("test_input, expected", [("testname", "testname")])
     def test_name(
         self,
@@ -1588,7 +1588,7 @@ class TestSVDEnumeratedValueMap:
         test_input: Any,
         expected: Any,
     ):
-        enumerated_value_map = create_enumerated_value(name=test_input)
+        enumerated_value = create_enumerated_value(name=test_input)
 
         expected_xml = f"""\
         <enumeratedValue>
@@ -1598,7 +1598,7 @@ class TestSVDEnumeratedValueMap:
         </enumeratedValue>
         """
 
-        assert dedent_xml(expected_xml) == svd_obj_to_xml_str(enumerated_value_map)
+        assert dedent_xml(expected_xml) == svd_obj_to_xml_str(enumerated_value)
 
     @pytest.mark.parametrize("test_input, expected", [("test", "test"), pytest.param(None, None)])
     def test_description(
@@ -1610,7 +1610,7 @@ class TestSVDEnumeratedValueMap:
         test_input: Any,
         expected: Any,
     ):
-        enumerated_value_map = create_enumerated_value(description=test_input, value=None, is_default=True)
+        enumerated_value = create_enumerated_value(description=test_input, value=None, is_default=True)
 
         expected_xml = f"""\
         <enumeratedValue>
@@ -1620,7 +1620,7 @@ class TestSVDEnumeratedValueMap:
         </enumeratedValue>
         """
 
-        assert dedent_xml(expected_xml) == svd_obj_to_xml_str(enumerated_value_map)
+        assert dedent_xml(expected_xml) == svd_obj_to_xml_str(enumerated_value)
 
     @pytest.mark.parametrize(
         "test_input, expected", [("1", "1"), ("0b1111", "0b1111"), ("0b111x", "0b111x"), pytest.param(None, None)]
@@ -1634,7 +1634,7 @@ class TestSVDEnumeratedValueMap:
         test_input: Any,
         expected: Any,
     ):
-        enumerated_value_map = create_enumerated_value(value=test_input)
+        enumerated_value = create_enumerated_value(value=test_input)
 
         expected_xml = f"""\
         <enumeratedValue>
@@ -1644,7 +1644,7 @@ class TestSVDEnumeratedValueMap:
         </enumeratedValue>
         """
 
-        assert dedent_xml(expected_xml) == svd_obj_to_xml_str(enumerated_value_map)
+        assert dedent_xml(expected_xml) == svd_obj_to_xml_str(enumerated_value)
 
     @pytest.mark.parametrize("test_input, expected", [(True, "true"), (False, "false"), pytest.param(None, None)])
     def test_is_default(
@@ -1656,7 +1656,7 @@ class TestSVDEnumeratedValueMap:
         test_input: Any,
         expected: Any,
     ):
-        enumerated_value_map = create_enumerated_value(is_default=test_input, value=None)
+        enumerated_value = create_enumerated_value(is_default=test_input, value=None)
 
         expected_xml = f"""\
         <enumeratedValue>
@@ -1666,7 +1666,7 @@ class TestSVDEnumeratedValueMap:
         </enumeratedValue>
         """
 
-        assert dedent_xml(expected_xml) == svd_obj_to_xml_str(enumerated_value_map)
+        assert dedent_xml(expected_xml) == svd_obj_to_xml_str(enumerated_value)
 
 
 class TestSVDDimArrayIndex:
@@ -1683,7 +1683,7 @@ class TestSVDDimArrayIndex:
     ):
         dim_array_index = create_dim_array_index(
             header_enum_name=test_input,
-            enumerated_values_map=[
+            enumerated_values=[
                 create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0"),
                 create_enumerated_value(name="TIMER0", description="TIMER0 Peripheral", value="1"),
             ],
@@ -1707,7 +1707,7 @@ class TestSVDDimArrayIndex:
 
         assert dedent_xml(expected_xml) == svd_obj_to_xml_str(dim_array_index)
 
-    def test_with_empty_enumerated_values_map(
+    def test_with_empty_enumerated_values(
         self,
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         dedent_xml: Callable[[str], str],
@@ -1723,7 +1723,7 @@ class TestSVDDimArrayIndex:
 
         assert dedent_xml(expected_xml) == svd_obj_to_xml_str(dim_array_index)
 
-    def test_with_empty_enumerated_values_map_and_nothing_else(
+    def test_with_empty_enumerated_values_and_nothing_else(
         self,
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         dedent_xml: Callable[[str], str],
@@ -1989,7 +1989,7 @@ class TestSVDWriteConstraint:
         assert dedent_xml(expected_xml) == svd_obj_to_xml_str(write_constraint)
 
 
-class TestSVDEnumeratedValue:
+class TestSVDEnumeratedValueContainer:
     @pytest.mark.parametrize("test_input, expected", [("test.name.a", "test.name.a"), pytest.param(None, None)])
     def test_derived_from(
         self,
@@ -2003,7 +2003,7 @@ class TestSVDEnumeratedValue:
     ):
         enumerated_value = create_enumerated_value_container(
             derived_from=test_input,
-            enumerated_values_map=[
+            enumerated_values=[
                 create_enumerated_value(name="disabled", description="The clock source is turned off", value="0"),
                 create_enumerated_value(name="enabled", description="The clock source is running", value="1"),
             ],
@@ -2042,7 +2042,7 @@ class TestSVDEnumeratedValue:
     ):
         enumerated_value = create_enumerated_value_container(
             name=test_input,
-            enumerated_values_map=[
+            enumerated_values=[
                 create_enumerated_value(name="disabled", description="The clock source is turned off", value="0"),
                 create_enumerated_value(name="enabled", description="The clock source is running", value="1"),
             ],
@@ -2081,7 +2081,7 @@ class TestSVDEnumeratedValue:
     ):
         enumerated_value = create_enumerated_value_container(
             header_enum_name=test_input,
-            enumerated_values_map=[
+            enumerated_values=[
                 create_enumerated_value(name="disabled", description="The clock source is turned off", value="0"),
                 create_enumerated_value(name="enabled", description="The clock source is running", value="1"),
             ],
@@ -2123,7 +2123,7 @@ class TestSVDEnumeratedValue:
     ):
         enumerated_value = create_enumerated_value_container(
             usage=test_input,
-            enumerated_values_map=[
+            enumerated_values=[
                 create_enumerated_value(name="disabled", description="The clock source is turned off", value="0"),
                 create_enumerated_value(name="enabled", description="The clock source is running", value="1"),
             ],
@@ -2149,13 +2149,13 @@ class TestSVDEnumeratedValue:
 
         assert dedent_xml(expected_xml) == svd_obj_to_xml_str(enumerated_value)
 
-    def test_with_empty_enumerated_values_map(
+    def test_with_empty_enumerated_values(
         self,
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         dedent_xml: Callable[[str], str],
         create_enumerated_value_container: Callable[..., SVDEnumeratedValueContainer],
     ):
-        enumerated_value = create_enumerated_value_container(enumerated_values_map=None)
+        enumerated_value = create_enumerated_value_container(enumerated_values=None)
 
         expected_xml = """\
         <enumeratedValues derivedFrom="der.from">
@@ -2167,14 +2167,14 @@ class TestSVDEnumeratedValue:
 
         assert dedent_xml(expected_xml) == svd_obj_to_xml_str(enumerated_value)
 
-    def test_with_empty_enumerated_values_map_and_nothing_else(
+    def test_with_empty_enumerated_values_and_nothing_else(
         self,
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         dedent_xml: Callable[[str], str],
         create_enumerated_value_container: Callable[..., SVDEnumeratedValueContainer],
     ):
         enumerated_value = create_enumerated_value_container(
-            derived_from=None, name=None, header_enum_name=None, usage=None, enumerated_values_map=None
+            derived_from=None, name=None, header_enum_name=None, usage=None, enumerated_values=None
         )
 
         expected_xml = "<enumeratedValues></enumeratedValues>"
@@ -2236,9 +2236,7 @@ class TestSVDField:
             dim_name="dimName",
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
         )
@@ -2295,9 +2293,7 @@ class TestSVDField:
             dim_name="dimName",
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
         )
@@ -2354,9 +2350,7 @@ class TestSVDField:
             dim_name="dimName",
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
         )
@@ -2413,9 +2407,7 @@ class TestSVDField:
             dim_name=test_input,
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
         )
@@ -2834,8 +2826,8 @@ class TestSVDField:
         field = create_field(
             write_constraint=None,
             enumerated_value_containers=[
-                create_enumerated_value_container(enumerated_values_map=[create_enumerated_value()]),
-                create_enumerated_value_container(enumerated_values_map=[create_enumerated_value(name="disabled")]),
+                create_enumerated_value_container(enumerated_values=[create_enumerated_value()]),
+                create_enumerated_value_container(enumerated_values=[create_enumerated_value(name="disabled")]),
             ],
         )
 
@@ -2930,9 +2922,7 @@ class TestSVDRegister:
             dim_name="dimName",
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
         )
@@ -2991,9 +2981,7 @@ class TestSVDRegister:
             dim_name="dimName",
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
         )
@@ -3052,9 +3040,7 @@ class TestSVDRegister:
             dim_name="dimName",
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
         )
@@ -3113,9 +3099,7 @@ class TestSVDRegister:
             dim_name=test_input,
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
             write_constraint=create_write_constraint(range_=(0, 1)),
         )
@@ -3894,9 +3878,7 @@ class TestSVDCluster:
             dim_name="dimName",
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
         )
 
@@ -3943,9 +3925,7 @@ class TestSVDCluster:
             dim_name="dimName",
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
         )
 
@@ -3992,9 +3972,7 @@ class TestSVDCluster:
             dim_name="dimName",
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
         )
 
@@ -4041,9 +4019,7 @@ class TestSVDCluster:
             dim_name=test_input,
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
         )
 
@@ -4533,9 +4509,7 @@ class TestSVDPeripheral:
             dim_name="dimName",
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
         )
 
@@ -4587,9 +4561,7 @@ class TestSVDPeripheral:
             dim_name="dimName",
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
         )
 
@@ -4641,9 +4613,7 @@ class TestSVDPeripheral:
             dim_name="dimName",
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
         )
 
@@ -4695,9 +4665,7 @@ class TestSVDPeripheral:
             dim_name=test_input,
             dim_array_index=create_dim_array_index(
                 header_enum_name="FSMC_EnumArray",
-                enumerated_values_map=[
-                    create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")
-                ],
+                enumerated_values=[create_enumerated_value(name="UART0", description="UART0 Peripheral", value="0")],
             ),
         )
 

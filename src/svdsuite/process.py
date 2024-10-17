@@ -684,7 +684,7 @@ class _ProcessField:
                         if parsed_enumerated_value_container.usage is not None
                         else EnumUsageType.READ_WRITE
                     ),
-                    enumerated_values_map=self._process_enumerated_values_map(
+                    enumerated_values=self._process_enumerated_values(
                         parsed_enumerated_value_container.enumerated_values
                     ),
                     derived_from=parsed_enumerated_value_container.derived_from,
@@ -694,12 +694,10 @@ class _ProcessField:
 
         return enumerated_value_containers
 
-    def _process_enumerated_values_map(
-        self, parsed_enumerated_values_map: list[SVDEnumeratedValue]
-    ) -> list[EnumeratedValue]:
-        enumerated_values_map: list[EnumeratedValue] = []
-        for parsed_enumerated_value in parsed_enumerated_values_map:
-            enumerated_values_map.append(
+    def _process_enumerated_values(self, parsed_enumerated_values: list[SVDEnumeratedValue]) -> list[EnumeratedValue]:
+        enumerated_values: list[EnumeratedValue] = []
+        for parsed_enumerated_value in parsed_enumerated_values:
+            enumerated_values.append(
                 EnumeratedValue(
                     name=parsed_enumerated_value.name,
                     description=parsed_enumerated_value.description,
@@ -709,7 +707,7 @@ class _ProcessField:
                 )
             )
 
-        return enumerated_values_map
+        return enumerated_values
 
 
 class _ProccessedRegistersClusters:

@@ -1241,7 +1241,7 @@ class TestDimArrayIndexParsing:
         assert device.peripherals[0].dim_array_index is not None
         assert device.peripherals[0].dim_array_index.header_enum_name == expected
 
-    def test_enumerated_values_map(self, get_device: Callable[[], SVDDevice]):
+    def test_enumerated_values(self, get_device: Callable[[], SVDDevice]):
         device = get_device()
 
         assert len(device.peripherals) > 0
@@ -1259,7 +1259,7 @@ class TestDimArrayIndexParsing:
         assert device.peripherals[0].dim_array_index.enumerated_values[1].value is None
         assert device.peripherals[0].dim_array_index.enumerated_values[1].is_default is True
 
-    def test_enumerated_values_map_parent(self, get_device: Callable[[], SVDDevice]):
+    def test_enumerated_values_parent(self, get_device: Callable[[], SVDDevice]):
         device = get_device()
 
         assert len(device.peripherals) > 0
@@ -2798,7 +2798,7 @@ class TestEnumeratedValueContainerParsing:
         assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers) > 0
         assert device.peripherals[0].registers_clusters[1].fields[0].enumerated_value_containers[0].usage == expected
 
-    def test_enumerated_values_map(self, get_device: Callable[[], SVDDevice]):
+    def test_enumerated_values(self, get_device: Callable[[], SVDDevice]):
         device = get_device()
 
         assert len(device.peripherals) > 0
@@ -2815,7 +2815,7 @@ class TestEnumeratedValueContainerParsing:
             SVDEnumeratedValue,
         )
 
-    def test_enumerated_values_map_parent(self, get_device: Callable[[], SVDDevice]):
+    def test_enumerated_values_parent(self, get_device: Callable[[], SVDDevice]):
         device = get_device()
 
         assert len(device.peripherals) > 0
