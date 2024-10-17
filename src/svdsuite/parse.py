@@ -8,7 +8,7 @@ from svdsuite.model.parse import (
     SVDCluster,
     SVDDevice,
     SVDDimArrayIndex,
-    SVDEnumeratedValue,
+    SVDEnumeratedValueContainer,
     SVDEnumeratedValueMap,
     SVDField,
     SVDInterrupt,
@@ -543,8 +543,8 @@ class Parser:
 
     def _parse_enumerated_values(
         self, field_element: lxml.etree._Element  # pyright: ignore[reportPrivateUsage]
-    ) -> list[SVDEnumeratedValue]:
-        enumerated_values: list[SVDEnumeratedValue] = []
+    ) -> list[SVDEnumeratedValueContainer]:
+        enumerated_values: list[SVDEnumeratedValueContainer] = []
         for enumerated_value_element in field_element.findall("enumeratedValues"):
             derived_from = self._parse_element_attribute("derivedFrom", enumerated_value_element, optional=True)
             name = self._parse_element_text("name", enumerated_value_element, optional=True)
@@ -555,7 +555,7 @@ class Parser:
             if usage is not None:
                 usage = EnumUsageType.from_str(usage)
 
-            enumerated_value = SVDEnumeratedValue(
+            enumerated_value = SVDEnumeratedValueContainer(
                 name=name,
                 header_enum_name=header_enum_name,
                 usage=usage,

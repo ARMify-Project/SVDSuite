@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<device schemaVersion="1.3"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd">
+  <vendor>ARM Ltd.</vendor>
+  <vendorID>ARM</vendorID>
+  <name>parser</name>
+  <series>ARMCM3</series>
+  <version>1.2</version>
+  <description>This is a description</description>
+  <licenseText>
+    ARM Limited (ARM) is supplying this software for use with Cortex-M\n
+    processor based microcontroller, but can be equally used for other\n
+    suitable  processor architectures. This file can be freely distributed.\n
+    Modifications to this file shall be clearly marked.\n
+    \n
+    THIS SOFTWARE IS PROVIDED "AS IS".  NO WARRANTIES, WHETHER EXPRESS, IMPLIED\n
+    OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF\n
+    MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE.\n
+    ARM SHALL NOT, IN ANY CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR\n
+    CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
+  </licenseText>
+
+  <cpu>
+    <name>CM0+</name>
+    <revision>r1p0</revision>
+    <endian>little</endian>
+    <mpuPresent>0</mpuPresent>
+    <fpuPresent>0</fpuPresent>
+    <fpuDP>0</fpuDP>
+    <dspPresent>0</dspPresent>
+    <icachePresent>0</icachePresent>
+    <dcachePresent>0</dcachePresent>
+    <itcmPresent>0</itcmPresent>
+    <dtcmPresent>0</dtcmPresent>
+    <vtorPresent>0</vtorPresent>
+    <nvicPrioBits>3</nvicPrioBits>
+    <vendorSystickConfig>0</vendorSystickConfig>
+    <deviceNumInterrupts>10</deviceNumInterrupts>
+    <sauNumRegions>2</sauNumRegions>
+
+    <sauRegionsConfig enabled="true" protectionWhenDisabled="n">
+      <region enabled="true" name="SAU1">
+        <base>0x10001000</base>
+        <limit>0x10005000</limit>
+        <access>n</access>
+      </region>
+      <region enabled="0">
+        <base>0x10005000</base>
+        <limit>0x10007000</limit>
+        <access>c</access>
+      </region>
+
+    </sauRegionsConfig>
+
+  </cpu>
+
+  <headerSystemFilename>asd</headerSystemFilename>
+  <headerDefinitionsPrefix>fff</headerDefinitionsPrefix>
+  <addressUnitBits>32</addressUnitBits>
+  <width>32</width>
+  <size>32</size>
+  <access>read-only</access>
+  <protection>s</protection>
+  <resetValue>0x00000000</resetValue>
+  <resetMask>0xFFFFFFFF</resetMask>
+
+  <peripherals>
+    <peripheral derivedFrom="teststr">
+      <dim>4</dim>
+      <dimIncrement>0x400</dimIncrement>
+      <dimIndex>0,1,2,3</dimIndex>
+      <dimName>Timer</dimName>
+      <dimArrayIndex>
+        <headerEnumName>FSMC_EnumArray</headerEnumName>
+        <enumeratedValue>
+          <name>UART0</name>
+          <description>UART0 Peripheral</description>
+          <value>0</value>
+          <isDefault></isDefault>
+        </enumeratedValue>
+        <enumeratedValue>
+          <name>UART1</name>
+          <value></value>
+          <isDefault>1</isDefault>
+        </enumeratedValue>
+      </dimArrayIndex>
+      <name>Timer[%s]</name>
+      <version>1.0</version>
+      <description>Timer 1 is a standard timer ...</description>
+      <alternatePeripheral>TestAlternate</alternatePeripheral>
+      <groupName>TestGroupName</groupName>
+      <prependToName>PreTest</prependToName>
+      <appendToName>AppendTest</appendToName>
+      <headerStructName>HeadTest</headerStructName>
+      <disableCondition>(System->ClockControl->apbEnable == 0)</disableCondition>
+      <baseAddress>0x40002000</baseAddress>
+      <size>32</size>
+      <access>read-write</access>
+      <protection>n</protection>
+      <resetValue>0x00000000</resetValue>
+      <resetMask>0xFFFFFFFF</resetMask>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x400</size>
+        <usage>registers</usage>
+        <protection>s</protection>
+      </addressBlock>
+      <addressBlock>
+        <offset>0x400</offset>
+        <size>0x800</size>
+        <usage>registers</usage>
+        <protection>n</protection>
+      </addressBlock>
+      <interrupt>
+        <name>TIM0</name>
+        <description>This is a description</description>
+        <value>3</value>
+      </interrupt>
+      <interrupt>
+        <name>TIM1</name>
+        <description>This is a second description</description>
+        <value>4</value>
+      </interrupt>
+      <registers>
+        <cluster derivedFrom="teststr">
+          <dim>4</dim>
+          <dimIncrement>0x400</dimIncrement>
+          <dimIndex>0,1,2,3</dimIndex>
+          <dimName>Cluster</dimName>
+          <dimArrayIndex>
+            <headerEnumName>FSMC_EnumArray</headerEnumName>
+            <enumeratedValue>
+              <name>UART0</name>
+              <description>UART0 Peripheral</description>
+              <value>0</value>
+              <isDefault></isDefault>
+            </enumeratedValue>
+            <enumeratedValue>
+              <name>UART1</name>
+              <value></value>
+              <isDefault>1</isDefault>
+            </enumeratedValue>
+          </dimArrayIndex>
+          <name>Cluster[%s]</name>
+          <description>This is a cluster</description>
+          <alternateCluster>ClusterOrig</alternateCluster>
+          <headerStructName>ClusterHeaderStruct</headerStructName>
+          <addressOffset>0x700</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <protection>n</protection>
+          <resetValue>0x00000000</resetValue>
+          <resetMask>0xFFFFFFFF</resetMask>
+          <register derivedFrom="teststr">
+            <name>ClusterCtrl0</name>
+            <description>Cluster Control Register</description>
+            <addressOffset>0x0</addressOffset>
+            <access>read-write</access>
+            <resetValue>0x00008001</resetValue>
+            <resetMask>0x0000ffff</resetMask>
+            <size>32</size>
+          </register>
+          <cluster derivedFrom="teststr">
+            <name>ClusterInner</name>
+            <description>Cluster description</description>
+            <addressOffset>0x700</addressOffset>
+            <cluster derivedFrom="teststr">
+              <name>ClusterInner</name>
+              <description>Cluster description</description>
+              <addressOffset>0x700</addressOffset>
+            </cluster>
+          </cluster>
+          <register derivedFrom="teststr">
+            <name>ClusterCtrl1</name>
+            <description>Cluster Control Register</description>
+            <addressOffset>0x0</addressOffset>
+            <access>read-write</access>
+            <resetValue>0x00008001</resetValue>
+            <resetMask>0x0000ffff</resetMask>
+            <size>32</size>
+          </register>
+        </cluster>
+        <register derivedFrom="teststr">
+          <dim>4</dim>
+          <dimIncrement>0x400</dimIncrement>
+          <dimIndex>0,1,2,3</dimIndex>
+          <dimName>Cluster</dimName>
+          <dimArrayIndex>
+            <headerEnumName>FSMC_EnumArray</headerEnumName>
+            <enumeratedValue>
+              <name>UART0</name>
+              <description>UART0 Peripheral</description>
+              <value>0</value>
+              <isDefault></isDefault>
+            </enumeratedValue>
+            <enumeratedValue>
+              <name>UART1</name>
+              <value></value>
+              <isDefault>1</isDefault>
+            </enumeratedValue>
+          </dimArrayIndex>
+          <name>TimerCtrl%s</name>
+          <displayName>TimerCtrl0</displayName>
+          <description>Timer Control Register</description>
+          <alternateGroup>AltGroup</alternateGroup>
+          <alternateRegister>AltRegister</alternateRegister>
+          <addressOffset>0x0</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <protection>n</protection>
+          <resetValue>0x00000000</resetValue>
+          <resetMask>0xFFFFFFFF</resetMask>
+          <dataType>int64_t</dataType>
+          <modifiedWriteValues>zeroToClear</modifiedWriteValues>
+          <writeConstraint>
+            <writeAsRead>true</writeAsRead>
+            <useEnumeratedValues>true</useEnumeratedValues>
+            <range>
+              <minimum>2</minimum>
+              <maximum>4</maximum>
+            </range>
+          </writeConstraint>
+          <readAction>clear</readAction>
+          <fields>
+            <field derivedFrom="teststr">
+              <dim>4</dim>
+              <dimIncrement>0x400</dimIncrement>
+              <dimIndex>0,1,2,3</dimIndex>
+              <dimName>Cluster</dimName>
+              <dimArrayIndex>
+                <headerEnumName>FSMC_EnumArray</headerEnumName>
+                <enumeratedValue>
+                  <name>UART0</name>
+                  <description>UART0 Peripheral</description>
+                  <value>0</value>
+                  <isDefault></isDefault>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>UART1</name>
+                  <value></value>
+                  <isDefault>1</isDefault>
+                </enumeratedValue>
+              </dimArrayIndex>
+              <name>BIT%s</name>
+              <description>test</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>5</bitWidth>
+              <lsb>3</lsb>
+              <msb>5</msb>
+              <bitRange>[7:0]</bitRange>
+              <access>read-write</access>
+              <modifiedWriteValues>oneToClear</modifiedWriteValues>
+              <writeConstraint>
+                <writeAsRead>true</writeAsRead>
+                <useEnumeratedValues>true</useEnumeratedValues>
+                <range>
+                  <minimum>2</minimum>
+                  <maximum>4</maximum>
+                </range>
+              </writeConstraint>
+              <readAction>clear</readAction>
+              <enumeratedValues derivedFrom="teststr">
+                <name>TimerIntSelect</name>
+                <usage>read-write</usage>
+                <headerEnumName>HeaderName</headerEnumName>
+                <enumeratedValue>
+                  <name>disabled</name>
+                  <description>The clock source clk0 is turned off.</description>
+                  <value>0</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>enabled</name>
+                  <description>The clock source clk1 is running.</description>
+                  <value>1</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>reserved</name>
+                  <description>Reserved values. Do not use.</description>
+                  <isDefault>true</isDefault>
+                </enumeratedValue>
+              </enumeratedValues>
+              <enumeratedValues>
+                <name>UARTSelect</name>
+                <usage>read-write</usage>
+                <enumeratedValue>
+                  <name>disabled</name>
+                  <description>The UART is turned off.</description>
+                  <value>0</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>enabled</name>
+                  <description>The UART is running.</description>
+                  <value>1</value>
+                </enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+  </peripherals>
+</device>

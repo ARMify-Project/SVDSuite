@@ -7,7 +7,7 @@ from svdsuite.model.parse import (
     SVDCluster,
     SVDCPU,
     SVDDevice,
-    SVDEnumeratedValue,
+    SVDEnumeratedValueContainer,
     SVDEnumeratedValueMap,
     SVDField,
     SVDInterrupt,
@@ -2688,7 +2688,7 @@ class TestFieldParsing:
         assert len(device.peripherals[0].registers_clusters[1].fields) > 0
         assert len(device.peripherals[0].registers_clusters[1].fields[0].enumerated_values) == 2
         assert isinstance(
-            device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0], SVDEnumeratedValue
+            device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0], SVDEnumeratedValueContainer
         )
         assert (
             device.peripherals[0].registers_clusters[1].fields[0].enumerated_values[0].parent

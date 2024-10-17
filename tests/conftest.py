@@ -9,7 +9,7 @@ from svdsuite.model.parse import (
     SVDCPU,
     SVDDevice,
     SVDDimArrayIndex,
-    SVDEnumeratedValue,
+    SVDEnumeratedValueContainer,
     SVDEnumeratedValueMap,
     SVDField,
     SVDInterrupt,
@@ -263,8 +263,8 @@ def fixture_create_enumerated_value():
         usage: None | EnumUsageType = EnumUsageType.READ,
         enumerated_values_map: None | list[SVDEnumeratedValueMap] = None,
         derived_from: None | str = "der.from",
-    ) -> SVDEnumeratedValue:
-        return SVDEnumeratedValue(
+    ) -> SVDEnumeratedValueContainer:
+        return SVDEnumeratedValueContainer(
             name=name,
             header_enum_name=header_enum_name,
             usage=usage,
@@ -295,7 +295,7 @@ def fixture_create_field():
         modified_write_values: None | ModifiedWriteValuesType = ModifiedWriteValuesType.ONE_TO_SET,
         write_constraint: None | SVDWriteConstraint = None,
         read_action: None | ReadActionType = ReadActionType.CLEAR,
-        enumerated_values: None | list[SVDEnumeratedValue] = None,
+        enumerated_values: None | list[SVDEnumeratedValueContainer] = None,
     ) -> SVDField:
         return SVDField(
             derived_from=derived_from,

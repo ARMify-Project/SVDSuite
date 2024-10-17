@@ -10,7 +10,7 @@ from svdsuite.parse import Parser
 from svdsuite.model.parse import (
     SVDDevice,
     SVDCPU,
-    SVDEnumeratedValue,
+    SVDEnumeratedValueContainer,
     SVDEnumeratedValueMap,
     SVDField,
     SVDPeripheral,
@@ -664,7 +664,9 @@ class _ProcessField:
 
         return (field_msb, field_lsb)
 
-    def _process_enumerated_values(self, parsed_enumerated_values: list[SVDEnumeratedValue]) -> list[EnumeratedValue]:
+    def _process_enumerated_values(
+        self, parsed_enumerated_values: list[SVDEnumeratedValueContainer]
+    ) -> list[EnumeratedValue]:
         enumerated_values: list[EnumeratedValue] = []
         for parsed_enumerated_value in parsed_enumerated_values:
             if parsed_enumerated_value.derived_from is not None:

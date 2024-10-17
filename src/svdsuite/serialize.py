@@ -8,7 +8,7 @@ from svdsuite.model.parse import (
     SVDAddressBlock,
     SVDInterrupt,
     SVDWriteConstraint,
-    SVDEnumeratedValue,
+    SVDEnumeratedValueContainer,
     SVDField,
     SVDRegister,
     SVDCluster,
@@ -258,7 +258,7 @@ class SVDWriteConstraintSerializer(XMLSerializable):
 
 
 class SVDEnumeratedValueSerializer(XMLSerializable):
-    def __init__(self, value: SVDEnumeratedValue):
+    def __init__(self, value: SVDEnumeratedValueContainer):
         self.value = value
 
     def to_xml(self) -> lxml.etree._Element:  # pyright: ignore[reportPrivateUsage]

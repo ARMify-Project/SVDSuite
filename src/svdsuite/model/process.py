@@ -19,7 +19,7 @@ from svdsuite.model.parse import (
     SVDCluster,
     SVDDevice,
     SVDDimArrayIndex,
-    SVDEnumeratedValue,
+    SVDEnumeratedValueContainer,
     SVDEnumeratedValueMap,
     SVDField,
     SVDInterrupt,
@@ -119,7 +119,7 @@ class EnumeratedValue:
     usage: EnumUsageType = EnumUsageType.READ_WRITE
     enumerated_values_map: list[EnumeratedValueMap]
     derived_from: None | str = None
-    parsed: SVDEnumeratedValue
+    parsed: SVDEnumeratedValueContainer
 
 
 @dataclass(kw_only=True)

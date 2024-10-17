@@ -60,7 +60,7 @@ class SVDEnumeratedValueMap:
     description: None | str = None
     value: None | str = None  # int value, but can contain 'do not care' bits represented by >x<
     is_default: None | bool = None
-    parent: "None | SVDEnumeratedValue | SVDDimArrayIndex" = None
+    parent: "None | SVDEnumeratedValueContainer | SVDDimArrayIndex" = None
 
 
 @dataclass(kw_only=True)
@@ -114,7 +114,7 @@ class SVDWriteConstraint:
 
 
 @dataclass(kw_only=True)
-class SVDEnumeratedValue:
+class SVDEnumeratedValueContainer:
     name: None | str = None
     header_enum_name: None | str = None
     usage: None | EnumUsageType = None
@@ -136,7 +136,7 @@ class SVDField(_SVDDimElementGroup):
     modified_write_values: None | ModifiedWriteValuesType = None
     write_constraint: None | SVDWriteConstraint = None
     read_action: None | ReadActionType = None
-    enumerated_values: list[SVDEnumeratedValue] = field(default_factory=list)
+    enumerated_values: list[SVDEnumeratedValueContainer] = field(default_factory=list)
     derived_from: None | str = None
     parent: "None | SVDRegister" = None
 

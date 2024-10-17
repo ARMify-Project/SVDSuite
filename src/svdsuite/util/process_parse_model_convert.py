@@ -4,7 +4,7 @@ from svdsuite.model.parse import (
     SVDCluster,
     SVDDevice,
     SVDDimArrayIndex,
-    SVDEnumeratedValue,
+    SVDEnumeratedValueContainer,
     SVDEnumeratedValueMap,
     SVDField,
     SVDInterrupt,
@@ -144,10 +144,10 @@ def process_parse_convert_write_constraint(constraint: WriteConstraint) -> SVDWr
     )
 
 
-def process_parse_convert_enumerated_value(value: EnumeratedValue) -> SVDEnumeratedValue:
+def process_parse_convert_enumerated_value(value: EnumeratedValue) -> SVDEnumeratedValueContainer:
     value_maps = [process_parse_convert_enumerated_value_map(value_map) for value_map in value.enumerated_values_map]
 
-    svd_value = SVDEnumeratedValue(
+    svd_value = SVDEnumeratedValueContainer(
         name=value.name,
         header_enum_name=value.header_enum_name,
         usage=value.usage,

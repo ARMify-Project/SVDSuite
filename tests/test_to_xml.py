@@ -8,7 +8,7 @@ from svdsuite.model.parse import (
     SVDCPU,
     SVDDevice,
     SVDDimArrayIndex,
-    SVDEnumeratedValue,
+    SVDEnumeratedValueContainer,
     SVDEnumeratedValueMap,
     SVDField,
     SVDInterrupt,
@@ -58,7 +58,7 @@ SVDObject = (
     | SVDAddressBlock
     | SVDInterrupt
     | SVDWriteConstraint
-    | SVDEnumeratedValue
+    | SVDEnumeratedValueContainer
     | SVDField
     | SVDRegister
     | SVDCluster
@@ -86,7 +86,7 @@ def fixture_svd_obj_to_xml_str() -> Callable[[SVDObject], str]:
             serializer = SVDInterruptSerializer(svd_obj)
         elif isinstance(svd_obj, SVDWriteConstraint):
             serializer = SVDWriteConstraintSerializer(svd_obj)
-        elif isinstance(svd_obj, SVDEnumeratedValue):
+        elif isinstance(svd_obj, SVDEnumeratedValueContainer):
             serializer = SVDEnumeratedValueSerializer(svd_obj)
         elif isinstance(svd_obj, SVDField):
             serializer = SVDFieldSerializer(svd_obj)
@@ -304,8 +304,8 @@ def fixture_create_enumerated_value():
         usage: None | EnumUsageType = EnumUsageType.READ,
         enumerated_values_map: None | list[SVDEnumeratedValueMap] = None,
         derived_from: None | str = "der.from",
-    ) -> SVDEnumeratedValue:
-        return SVDEnumeratedValue(
+    ) -> SVDEnumeratedValueContainer:
+        return SVDEnumeratedValueContainer(
             name=name,
             header_enum_name=header_enum_name,
             usage=usage,
@@ -336,7 +336,7 @@ def fixture_create_field():
         modified_write_values: None | ModifiedWriteValuesType = ModifiedWriteValuesType.ONE_TO_SET,
         write_constraint: None | SVDWriteConstraint = None,
         read_action: None | ReadActionType = ReadActionType.CLEAR,
-        enumerated_values: None | list[SVDEnumeratedValue] = None,
+        enumerated_values: None | list[SVDEnumeratedValueContainer] = None,
     ) -> SVDField:
         return SVDField(
             derived_from=derived_from,
@@ -1996,7 +1996,7 @@ class TestSVDEnumeratedValue:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_attrib: Callable[[str, None | str], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
         create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
         test_input: Any,
         expected: Any,
@@ -2035,7 +2035,7 @@ class TestSVDEnumeratedValue:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
         create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
         test_input: Any,
         expected: Any,
@@ -2074,7 +2074,7 @@ class TestSVDEnumeratedValue:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
         create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
         test_input: Any,
         expected: Any,
@@ -2116,7 +2116,7 @@ class TestSVDEnumeratedValue:
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         create_element: Callable[[str, Any], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
         create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
         test_input: Any,
         expected: Any,
@@ -2153,7 +2153,7 @@ class TestSVDEnumeratedValue:
         self,
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
     ):
         enumerated_value = create_enumerated_value(enumerated_values_map=None)
 
@@ -2171,7 +2171,7 @@ class TestSVDEnumeratedValue:
         self,
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
     ):
         enumerated_value = create_enumerated_value(
             derived_from=None, name=None, header_enum_name=None, usage=None, enumerated_values_map=None
@@ -2827,7 +2827,7 @@ class TestSVDField:
         self,
         svd_obj_to_xml_str: Callable[[SVDObject], str],
         dedent_xml: Callable[[str], str],
-        create_enumerated_value: Callable[..., SVDEnumeratedValue],
+        create_enumerated_value: Callable[..., SVDEnumeratedValueContainer],
         create_enumerated_value_map: Callable[..., SVDEnumeratedValueMap],
         create_field: Callable[..., SVDField],
     ):
