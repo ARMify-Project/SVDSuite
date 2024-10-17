@@ -72,7 +72,7 @@ class CPU:
 
 
 @dataclass(kw_only=True)
-class EnumeratedValueMap:
+class EnumeratedValue:
     name: str
     description: None | str = None
     value: None | str = None  # int value, but can contain 'do not care' bits represented by >x<
@@ -83,7 +83,7 @@ class EnumeratedValueMap:
 @dataclass(kw_only=True)
 class DimArrayIndex:
     header_enum_name: None | str = None
-    enumerated_values_map: list[EnumeratedValueMap]
+    enumerated_values_map: list[EnumeratedValue]
     parsed: SVDDimArrayIndex
 
 
@@ -117,7 +117,7 @@ class EnumeratedValueContainer:
     name: None | str = None
     header_enum_name: None | str = None
     usage: EnumUsageType = EnumUsageType.READ_WRITE
-    enumerated_values_map: list[EnumeratedValueMap]
+    enumerated_values_map: list[EnumeratedValue]
     derived_from: None | str = None
     parsed: SVDEnumeratedValueContainer
 

@@ -26,7 +26,7 @@ from svdsuite.model.process import (
     Device,
     CPU,
     EnumeratedValueContainer,
-    EnumeratedValueMap,
+    EnumeratedValue,
     Field,
     Peripheral,
     SauRegion,
@@ -693,11 +693,11 @@ class _ProcessField:
 
     def _process_enumerated_values_map(
         self, parsed_enumerated_values_map: list[SVDEnumeratedValue]
-    ) -> list[EnumeratedValueMap]:
-        enumerated_values_map: list[EnumeratedValueMap] = []
+    ) -> list[EnumeratedValue]:
+        enumerated_values_map: list[EnumeratedValue] = []
         for parsed_enumerated_value in parsed_enumerated_values_map:
             enumerated_values_map.append(
-                EnumeratedValueMap(
+                EnumeratedValue(
                     name=parsed_enumerated_value.name,
                     description=parsed_enumerated_value.description,
                     value=parsed_enumerated_value.value,

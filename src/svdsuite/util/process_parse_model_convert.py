@@ -21,7 +21,7 @@ from svdsuite.model.process import (
     Device,
     DimArrayIndex,
     EnumeratedValueContainer,
-    EnumeratedValueMap,
+    EnumeratedValue,
     Field,
     Interrupt,
     Peripheral,
@@ -91,7 +91,7 @@ def process_parse_convert_cpu(cpu: CPU) -> SVDCPU:
     return svd_cpu
 
 
-def process_parse_convert_enumerated_value_map(value_map: EnumeratedValueMap) -> SVDEnumeratedValue:
+def process_parse_convert_enumerated_value_map(value_map: EnumeratedValue) -> SVDEnumeratedValue:
     return SVDEnumeratedValue(
         name=value_map.name,
         description=value_map.description,
