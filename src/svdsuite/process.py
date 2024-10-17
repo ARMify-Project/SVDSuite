@@ -191,7 +191,7 @@ class _DirectedGraph:
         parent_node: None | _Node = None,
     ) -> _Node:
         if self._find_node_by_name(full_name):
-            raise ValueError(f"Node with name {full_name} already exists in the graph")
+            raise ProcessException(f"Node with name {full_name} already exists in the graph")
 
         dim_values = self._resolve_dim_values(element)
         alternative_names = self._generate_alternative_names(element, parent_node, dim_values)
@@ -297,11 +297,11 @@ class _Resolver:
 
     def _build_resolve_graph(self) -> None:
         register_properties_device = _RegisterPropertiesInheritance(
-            size=self._parsed_device.size,
-            access=self._parsed_device.access,
-            protection=self._parsed_device.protection,
-            reset_value=self._parsed_device.reset_value,
-            reset_mask=self._parsed_device.reset_mask,
+            size=_or_if_none(self._parsed_device.size, 32),
+            access=_or_if_none(self._parsed_device.access, AccessType.READ_WRITE),
+            protection=_or_if_none(self._parsed_device.protection, ProtectionStringType.ANY),
+            reset_value=_or_if_none(self._parsed_device.reset_value, 0),
+            reset_mask=_or_if_none(self._parsed_device.reset_mask, 0xFFFFFFFF),
         )
 
         # iterate over peripherals, clusters, registers, fields to build graph and the mapping of derived_from
@@ -415,6 +415,10 @@ class ProcessException(Exception):
     pass
 
 
+class ProcessWarning(Warning):
+    pass
+
+
 class Process:
     @classmethod
     def from_svd_file(cls, path: str):
@@ -439,11 +443,11 @@ class Process:
 
     def _process_device(self, parsed_device: SVDDevice) -> Device:
         return Device(
-            size=parsed_device.size,
-            access=parsed_device.access,
-            protection=parsed_device.protection,
-            reset_value=parsed_device.reset_value,
-            reset_mask=parsed_device.reset_mask,
+            size=_or_if_none(parsed_device.size, 32),
+            access=_or_if_none(parsed_device.access, AccessType.READ_WRITE),
+            protection=_or_if_none(parsed_device.protection, ProtectionStringType.ANY),
+            reset_value=_or_if_none(parsed_device.reset_value, 0),
+            reset_mask=_or_if_none(parsed_device.reset_mask, 0xFFFFFFFF),
             vendor=parsed_device.vendor,
             vendor_id=parsed_device.vendor_id,
             name=parsed_device.name,
@@ -635,7 +639,7 @@ class _ProcessField:
         parent_name = ".".join(node.name.split(".")[:-1])
         if parent_name not in self._processed_fields:
             self._processed_fields[parent_name] = []
-        bisect.insort(self._processed_fields[parent_name], field, key=lambda x: x.lsb)
+        bisect.insort(self._processed_fields[parent_name], field, key=lambda x: (x.lsb, x.name))
 
     def _process_derived_nodes(self, derived_nodes: list[tuple[str, str]], field: Field) -> None:
         for derived_node_name, base_node_rel_name in derived_nodes:
@@ -717,7 +721,9 @@ class _ProccessedRegistersClusters:
         if name not in self._processed_registers_clusters:
             self._processed_registers_clusters[name] = []
 
-        bisect.insort(self._processed_registers_clusters[name], register_cluster, key=lambda x: x.address_offset)
+        bisect.insort(
+            self._processed_registers_clusters[name], register_cluster, key=lambda x: (x.address_offset, x.name)
+        )
 
 
 class _ProcessRegister:
@@ -1146,7 +1152,7 @@ class _ProcessPeripheral:
         )
 
     def _insert_peripheral(self, peripheral: Peripheral) -> None:
-        bisect.insort(self._processed_peripherals, peripheral, key=lambda x: x.base_address)
+        bisect.insort(self._processed_peripherals, peripheral, key=lambda x: (x.base_address, x.name))
 
     def _process_derived_nodes(self, derived_nodes: list[tuple[str, str]], peripheral: Peripheral) -> None:
         for derived_node_name, base_node_rel_name in derived_nodes:
