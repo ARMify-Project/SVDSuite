@@ -113,7 +113,7 @@ class WriteConstraint:
 
 
 @dataclass(kw_only=True)
-class EnumeratedValue:
+class EnumeratedValueContainer:
     name: None | str = None
     header_enum_name: None | str = None
     usage: EnumUsageType = EnumUsageType.READ_WRITE
@@ -132,7 +132,7 @@ class Field:
     modified_write_values: ModifiedWriteValuesType = ModifiedWriteValuesType.MODIFY
     write_constraint: None | WriteConstraint = None
     read_action: None | ReadActionType = None
-    enumerated_values: list[EnumeratedValue] = field(default_factory=list)
+    enumerated_values: list[EnumeratedValueContainer] = field(default_factory=list)
     parsed: SVDField
 
 

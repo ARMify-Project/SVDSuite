@@ -20,7 +20,7 @@ from svdsuite.model.process import (
     Cluster,
     Device,
     DimArrayIndex,
-    EnumeratedValue,
+    EnumeratedValueContainer,
     EnumeratedValueMap,
     Field,
     Interrupt,
@@ -144,7 +144,7 @@ def process_parse_convert_write_constraint(constraint: WriteConstraint) -> SVDWr
     )
 
 
-def process_parse_convert_enumerated_value(value: EnumeratedValue) -> SVDEnumeratedValueContainer:
+def process_parse_convert_enumerated_value(value: EnumeratedValueContainer) -> SVDEnumeratedValueContainer:
     value_maps = [process_parse_convert_enumerated_value_map(value_map) for value_map in value.enumerated_values_map]
 
     svd_value = SVDEnumeratedValueContainer(

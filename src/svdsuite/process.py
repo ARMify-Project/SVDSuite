@@ -25,7 +25,7 @@ from svdsuite.model.parse import (
 from svdsuite.model.process import (
     Device,
     CPU,
-    EnumeratedValue,
+    EnumeratedValueContainer,
     EnumeratedValueMap,
     Field,
     Peripheral,
@@ -666,14 +666,14 @@ class _ProcessField:
 
     def _process_enumerated_values(
         self, parsed_enumerated_values: list[SVDEnumeratedValueContainer]
-    ) -> list[EnumeratedValue]:
-        enumerated_values: list[EnumeratedValue] = []
+    ) -> list[EnumeratedValueContainer]:
+        enumerated_values: list[EnumeratedValueContainer] = []
         for parsed_enumerated_value in parsed_enumerated_values:
             if parsed_enumerated_value.derived_from is not None:
                 raise NotImplementedError("Derived from is not supported for enumerated values")
 
             enumerated_values.append(
-                EnumeratedValue(
+                EnumeratedValueContainer(
                     name=parsed_enumerated_value.name,
                     header_enum_name=parsed_enumerated_value.header_enum_name,
                     usage=(
