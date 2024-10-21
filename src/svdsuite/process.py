@@ -39,6 +39,7 @@ from svdsuite.model.process import (
 )
 from svdsuite.model.types import CPUNameType, EnumUsageType, ModifiedWriteValuesType, ProtectionStringType, AccessType
 from svdsuite.util.dim import resolve_dim
+from svdsuite.util.enumerated_value import process_binary_value_with_wildcard
 from svdsuite.util.process_parse_model_convert import process_parse_convert_device
 
 SVDElementTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField
@@ -715,6 +716,7 @@ class _ProcessField:
         enumerated_values: list[EnumeratedValue] = []
         seen_names: set[str] = set()
         seen_values: set[int] = set()
+        seen_is_default = False
 
         for parsed_enumerated_value in parsed_enumerated_values:
             processed_enumerated_values = self._process_enumerated_value(parsed_enumerated_value)
@@ -726,6 +728,12 @@ class _ProcessField:
                 if value.value in seen_values:
                     raise ProcessException(f"Duplicate enumerated value value found: {value.value}")
 
+                if value.is_default and seen_is_default:
+                    raise ProcessException("Multiple default values found")
+
+                if value.is_default:
+                    seen_is_default = True
+
                 seen_names.add(value.name)
 
                 if value.value is not None:
@@ -735,24 +743,39 @@ class _ProcessField:
 
         return enumerated_values
 
-    def _process_enumerated_value(self, parsed_enumerated_value: SVDEnumeratedValue) -> list[EnumeratedValue]:
-        if parsed_enumerated_value.value is not None:
-            try:
-                value = int(parsed_enumerated_value.value, 0)
-            except ValueError:
-                value = None
-        else:
-            value = None
+    def _process_enumerated_value(self, parsed_value: SVDEnumeratedValue) -> list[EnumeratedValue]:
+        value_list = self._convert_enumerated_value(parsed_value.value) if parsed_value.value else [None]
 
-        enumerated_value = EnumeratedValue(
-            name=parsed_enumerated_value.name,
-            description=parsed_enumerated_value.description,
-            value=value,
-            is_default=False if parsed_enumerated_value.is_default is None else parsed_enumerated_value.is_default,
-            parsed=parsed_enumerated_value,
-        )
+        enumerated_values: list[EnumeratedValue] = []
+        for value in value_list:
+            name = parsed_value.name
+            if value is not None and parsed_value.value and "x" in parsed_value.value:
+                name = f"{name}_{value}"
 
-        return [enumerated_value]
+            enumerated_values.append(
+                EnumeratedValue(
+                    name=name,
+                    description=parsed_value.description,
+                    value=value,
+                    is_default=parsed_value.is_default or False,
+                    parsed=parsed_value,
+                )
+            )
+
+        return enumerated_values
+
+    def _convert_enumerated_value(self, input_str: str) -> list[int]:
+        try:
+            if input_str.startswith("0b"):
+                return process_binary_value_with_wildcard(input_str[2:])
+            elif input_str.startswith("0x"):
+                return [int(input_str, 16)]
+            elif input_str.isdigit():
+                return [int(input_str)]
+            else:
+                raise ProcessException(f"Unrecognized format for input: '{input_str}'")
+        except ValueError as e:
+            raise ProcessException(f"Error processing input '{input_str}': {e}") from e
 
 
 class _ProccessedRegistersClusters:
