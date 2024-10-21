@@ -1846,34 +1846,34 @@ class TestEnumeratedValues:
         assert container.enumerated_values[0].value == 0
         assert container.enumerated_values[0].is_default is False
 
-        assert container.enumerated_values[1].name == "0bx00_4"
-        assert container.enumerated_values[1].description == "Description for 0bx00"
-        assert container.enumerated_values[1].value == 4
+        assert container.enumerated_values[1].name == "0bx01_1"
+        assert container.enumerated_values[1].description == "Description for 0bx01"
+        assert container.enumerated_values[1].value == 1
         assert container.enumerated_values[1].is_default is False
 
-        assert container.enumerated_values[2].name == "0bx01_1"
-        assert container.enumerated_values[2].description == "Description for 0bx01"
-        assert container.enumerated_values[2].value == 1
+        assert container.enumerated_values[2].name == "0bx10_2"
+        assert container.enumerated_values[2].description == "Description for 0bx10"
+        assert container.enumerated_values[2].value == 2
         assert container.enumerated_values[2].is_default is False
 
-        assert container.enumerated_values[3].name == "0bx01_5"
-        assert container.enumerated_values[3].description == "Description for 0bx01"
-        assert container.enumerated_values[3].value == 5
+        assert container.enumerated_values[3].name == "0bx11_3"
+        assert container.enumerated_values[3].description == "Description for 0bx11"
+        assert container.enumerated_values[3].value == 3
         assert container.enumerated_values[3].is_default is False
 
-        assert container.enumerated_values[4].name == "0bx10_2"
-        assert container.enumerated_values[4].description == "Description for 0bx10"
-        assert container.enumerated_values[4].value == 2
+        assert container.enumerated_values[4].name == "0bx00_4"
+        assert container.enumerated_values[4].description == "Description for 0bx00"
+        assert container.enumerated_values[4].value == 4
         assert container.enumerated_values[4].is_default is False
 
-        assert container.enumerated_values[5].name == "0bx10_6"
-        assert container.enumerated_values[5].description == "Description for 0bx10"
-        assert container.enumerated_values[5].value == 6
+        assert container.enumerated_values[5].name == "0bx01_5"
+        assert container.enumerated_values[5].description == "Description for 0bx01"
+        assert container.enumerated_values[5].value == 5
         assert container.enumerated_values[5].is_default is False
 
-        assert container.enumerated_values[6].name == "0bx11_3"
-        assert container.enumerated_values[6].description == "Description for 0bx11"
-        assert container.enumerated_values[6].value == 3
+        assert container.enumerated_values[6].name == "0bx10_6"
+        assert container.enumerated_values[6].description == "Description for 0bx10"
+        assert container.enumerated_values[6].value == 6
         assert container.enumerated_values[6].is_default is False
 
         assert container.enumerated_values[7].name == "0bx11_7"
@@ -1917,6 +1917,45 @@ class TestEnumeratedValues:
     def test_do_not_care_and_distinct_result_in_same_value(
         self, get_processed_device_from_testfile: Callable[[str], Device]
     ):
-        get_processed_device_from_testfile(
-            "enumerated_values/do_not_care_and_distinct_result_in_same_value.svd"
-        )
+        get_processed_device_from_testfile("enumerated_values/do_not_care_and_distinct_result_in_same_value.svd")
+
+    def test_default_extension(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        device = get_processed_device_from_testfile("enumerated_values/default_extension.svd")
+
+        assert len(device.peripherals) == 1
+        assert len(device.peripherals[0].registers_clusters) == 1
+        assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+        assert len(device.peripherals[0].registers_clusters[0].fields) == 1
+
+        assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 1
+        container = device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers[0]
+
+        assert len(container.enumerated_values) == 4
+
+        assert container.enumerated_values[0].name == "default_0"
+        assert container.enumerated_values[0].description == "Description for default"
+        assert container.enumerated_values[0].value == 0
+        assert container.enumerated_values[0].is_default is False
+
+        assert container.enumerated_values[1].name == "default_1"
+        assert container.enumerated_values[1].description == "Description for default"
+        assert container.enumerated_values[1].value == 1
+        assert container.enumerated_values[1].is_default is False
+
+        assert container.enumerated_values[2].name == "0b10"
+        assert container.enumerated_values[2].description == "Description for 0b10"
+        assert container.enumerated_values[2].value == 2
+        assert container.enumerated_values[2].is_default is False
+
+        assert container.enumerated_values[3].name == "default_3"
+        assert container.enumerated_values[3].description == "Description for default"
+        assert container.enumerated_values[3].value == 3
+        assert container.enumerated_values[3].is_default is False
+
+    @pytest.mark.xfail(
+        strict=True,
+        raises=ProcessException,
+        reason="isDefault must not have a value",
+    )
+    def test_isdefault_with_value(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        get_processed_device_from_testfile("enumerated_values/isdefault_with_value.svd")

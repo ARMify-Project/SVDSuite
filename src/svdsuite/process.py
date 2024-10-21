@@ -536,6 +536,34 @@ def _process_write_constraint(write_constraint: None | SVDWriteConstraint) -> No
     )
 
 
+class _EnumeratedValueValidator:
+    def __init__(self):
+        self._seen_names: set[str] = set()
+        self._seen_values: set[int] = set()
+        self._seen_default = None
+
+    def add_value(self, value: EnumeratedValue):
+        # Ensure enumerated value names and values are unique
+        if value.name in self._seen_names:
+            raise ProcessException(f"Duplicate enumerated value name found: {value.name}")
+        if value.value in self._seen_values:
+            raise ProcessException(f"Duplicate enumerated value value found: {value.value}")
+        if value.is_default:
+            if value.value is not None:
+                raise ProcessException("Default value must not have a value")
+            if self._seen_default:
+                raise ProcessException("Multiple default values found")
+            self._seen_default = value
+
+        # Add to seen names and values
+        self._seen_names.add(value.name)
+        if value.value is not None:
+            self._seen_values.add(value.value)
+
+    def get_default(self) -> None | EnumeratedValue:
+        return self._seen_default
+
+
 class _ProcessField:
     def __init__(self, resolver: _Resolver) -> None:
         self._resolver = resolver
@@ -592,7 +620,7 @@ class _ProcessField:
         )
         read_action = _or_if_none(parsed_field.read_action, base_element.read_action)
         enumerated_value_containers = (
-            self._process_enumerated_value_containers(parsed_field.enumerated_value_containers)
+            self._process_enumerated_value_containers(parsed_field.enumerated_value_containers, lsb, msb)
             or base_element.enumerated_value_containers
         )
 
@@ -617,7 +645,7 @@ class _ProcessField:
         write_constraint = _process_write_constraint(parsed_field.write_constraint)
         read_action = parsed_field.read_action
         enumerated_value_containers = self._process_enumerated_value_containers(
-            parsed_field.enumerated_value_containers
+            parsed_field.enumerated_value_containers, lsb, msb
         )
 
         return Field(
@@ -669,7 +697,7 @@ class _ProcessField:
         return (field_msb, field_lsb)
 
     def _process_enumerated_value_containers(
-        self, parsed_enumerated_value_containers: list[SVDEnumeratedValueContainer]
+        self, parsed_enumerated_value_containers: list[SVDEnumeratedValueContainer], lsb: int, msb: int
     ) -> list[EnumeratedValueContainer]:
         enumerated_value_containers: list[EnumeratedValueContainer] = []
         for parsed_enumerated_value_container in parsed_enumerated_value_containers:
@@ -686,7 +714,7 @@ class _ProcessField:
                         else EnumUsageType.READ_WRITE
                     ),
                     enumerated_values=self._process_enumerated_values(
-                        parsed_enumerated_value_container.enumerated_values
+                        parsed_enumerated_value_container.enumerated_values, lsb, msb
                     ),
                     derived_from=parsed_enumerated_value_container.derived_from,
                     parsed=parsed_enumerated_value_container,
@@ -712,36 +740,26 @@ class _ProcessField:
 
         return enumerated_value_containers
 
-    def _process_enumerated_values(self, parsed_enumerated_values: list[SVDEnumeratedValue]) -> list[EnumeratedValue]:
+    def _process_enumerated_values(
+        self, parsed_enumerated_values: list[SVDEnumeratedValue], lsb: int, msb: int
+    ) -> list[EnumeratedValue]:
+        enum_value_validator = _EnumeratedValueValidator()
         enumerated_values: list[EnumeratedValue] = []
-        seen_names: set[str] = set()
-        seen_values: set[int] = set()
-        seen_default: None | EnumeratedValue = None
 
         for parsed_enumerated_value in parsed_enumerated_values:
             processed_enumerated_values = self._process_enumerated_value_resolve_wildcard(parsed_enumerated_value)
 
             for value in processed_enumerated_values:
-                if value.name in seen_names:
-                    raise ProcessException(f"Duplicate enumerated value name found: {value.name}")
-
-                if value.value in seen_values:
-                    raise ProcessException(f"Duplicate enumerated value value found: {value.value}")
-
-                if value.is_default and seen_default is not None:
-                    raise ProcessException("Multiple default values found")
-
-                if value.is_default:
-                    seen_default = value
-
-                seen_names.add(value.name)
-
-                if value.value is not None:
-                    seen_values.add(value.value)
+                enum_value_validator.add_value(value)
 
             enumerated_values.extend(processed_enumerated_values)
 
-        return enumerated_values
+        if default_enumerated_value := enum_value_validator.get_default():
+            enumerated_values = self._extend_enumerated_values_with_default(
+                enumerated_values, default_enumerated_value, lsb, msb
+            )
+
+        return sorted(enumerated_values, key=lambda ev: ev.value if ev.value is not None else 0)
 
     def _process_enumerated_value_resolve_wildcard(self, parsed_value: SVDEnumeratedValue) -> list[EnumeratedValue]:
         value_list = self._convert_enumerated_value(parsed_value.value) if parsed_value.value else [None]
@@ -763,6 +781,27 @@ class _ProcessField:
             )
 
         return enumerated_values
+
+    def _extend_enumerated_values_with_default(
+        self, enumerated_values: list[EnumeratedValue], default: EnumeratedValue, lsb: int, msb: int
+    ) -> list[EnumeratedValue]:
+        covered_values = {value.value for value in enumerated_values if value.value is not None}
+        all_possible_values = set(range(pow(2, msb - lsb + 1)))
+
+        uncovered_values = all_possible_values - covered_values
+
+        for value in uncovered_values:
+            enumerated_values.append(
+                EnumeratedValue(
+                    name=f"{default.name}_{value}",
+                    description=default.description,
+                    value=value,
+                    is_default=False,
+                    parsed=default.parsed,
+                )
+            )
+
+        return [value for value in enumerated_values if not value.is_default]
 
     def _convert_enumerated_value(self, input_str: str) -> list[int]:
         try:
