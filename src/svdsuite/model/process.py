@@ -76,7 +76,7 @@ class EnumeratedValue:
     name: str
     description: None | str = None
     value: None | int = None
-    is_default: None | bool = None
+    is_default: bool = False
     parsed: SVDEnumeratedValue
 
 
