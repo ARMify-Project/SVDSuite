@@ -716,10 +716,10 @@ class _ProcessField:
         enumerated_values: list[EnumeratedValue] = []
         seen_names: set[str] = set()
         seen_values: set[int] = set()
-        seen_is_default = False
+        seen_default: None | EnumeratedValue = None
 
         for parsed_enumerated_value in parsed_enumerated_values:
-            processed_enumerated_values = self._process_enumerated_value(parsed_enumerated_value)
+            processed_enumerated_values = self._process_enumerated_value_resolve_wildcard(parsed_enumerated_value)
 
             for value in processed_enumerated_values:
                 if value.name in seen_names:
@@ -728,11 +728,11 @@ class _ProcessField:
                 if value.value in seen_values:
                     raise ProcessException(f"Duplicate enumerated value value found: {value.value}")
 
-                if value.is_default and seen_is_default:
+                if value.is_default and seen_default is not None:
                     raise ProcessException("Multiple default values found")
 
                 if value.is_default:
-                    seen_is_default = True
+                    seen_default = value
 
                 seen_names.add(value.name)
 
@@ -743,7 +743,7 @@ class _ProcessField:
 
         return enumerated_values
 
-    def _process_enumerated_value(self, parsed_value: SVDEnumeratedValue) -> list[EnumeratedValue]:
+    def _process_enumerated_value_resolve_wildcard(self, parsed_value: SVDEnumeratedValue) -> list[EnumeratedValue]:
         value_list = self._convert_enumerated_value(parsed_value.value) if parsed_value.value else [None]
 
         enumerated_values: list[EnumeratedValue] = []
