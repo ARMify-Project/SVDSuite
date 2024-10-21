@@ -3,7 +3,7 @@ import pytest
 
 from svdsuite.process import Process, ProcessException, ProcessWarning
 from svdsuite.model.process import Device, Register, Cluster
-from svdsuite.model.types import AccessType, ProtectionStringType, EnumeratedTokenType
+from svdsuite.model.types import AccessType, EnumUsageType, ProtectionStringType, EnumeratedTokenType
 
 
 @pytest.fixture(name="get_processed_device_from_testfile")
@@ -1694,4 +1694,120 @@ class TestEnumeratedValues:
         assert len(device.peripherals[0].registers_clusters) == 1
         assert isinstance(device.peripherals[0].registers_clusters[0], Register)
         assert len(device.peripherals[0].registers_clusters[0].fields) == 1
+
         assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 1
+        container = device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers[0]
+        assert container.name == "FieldAEnumeratedValue"
+        assert container.usage == EnumUsageType.READ_WRITE
+        assert len(container.enumerated_values) == 4
+
+        assert container.enumerated_values[0].name == "0b00"
+        assert container.enumerated_values[0].description == "Description for 0b00"
+        assert container.enumerated_values[0].value == 0b00
+        assert container.enumerated_values[0].is_default is False
+
+        assert container.enumerated_values[1].name == "0b01"
+        assert container.enumerated_values[1].description == "Description for 0b01"
+        assert container.enumerated_values[1].value == 0b01
+        assert container.enumerated_values[1].is_default is False
+
+        assert container.enumerated_values[2].name == "0b10"
+        assert container.enumerated_values[2].description == "Description for 0b10"
+        assert container.enumerated_values[2].value == 0b10
+        assert container.enumerated_values[2].is_default is False
+
+        assert container.enumerated_values[3].name == "0b11"
+        assert container.enumerated_values[3].description == "Description for 0b11"
+        assert container.enumerated_values[3].value == 0b11
+        assert container.enumerated_values[3].is_default is False
+
+    @pytest.mark.xfail(
+        strict=True,
+        raises=ProcessException,
+        reason="Too many <enumeratedValues> container specified",
+    )
+    def test_three_containers(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        get_processed_device_from_testfile("enumerated_values/three_containers.svd")
+
+    def test_default_usage(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        device = get_processed_device_from_testfile("enumerated_values/default_usage.svd")
+
+        assert len(device.peripherals) == 1
+        assert len(device.peripherals[0].registers_clusters) == 1
+        assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+        assert len(device.peripherals[0].registers_clusters[0].fields) == 1
+
+        assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 1
+        container = device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers[0]
+        assert container.name == "FieldAEnumeratedValue"
+        assert container.usage == EnumUsageType.READ_WRITE
+
+    @pytest.mark.parametrize(
+        "first_input,second_input,expected1,expected2",
+        [
+            pytest.param("read", "write", EnumUsageType.READ, EnumUsageType.WRITE),
+            pytest.param("write", "read", EnumUsageType.WRITE, EnumUsageType.READ),
+            pytest.param("read", "read", None, None, marks=pytest.mark.xfail(strict=True, raises=ProcessException)),
+            pytest.param("write", "write", None, None, marks=pytest.mark.xfail(strict=True, raises=ProcessException)),
+            pytest.param(
+                "read", "read-write", None, None, marks=pytest.mark.xfail(strict=True, raises=ProcessException)
+            ),
+            pytest.param(
+                "write", "read-write", None, None, marks=pytest.mark.xfail(strict=True, raises=ProcessException)
+            ),
+            pytest.param(
+                "read-write", "read", None, None, marks=pytest.mark.xfail(strict=True, raises=ProcessException)
+            ),
+            pytest.param(
+                "read-write", "write", None, None, marks=pytest.mark.xfail(strict=True, raises=ProcessException)
+            ),
+        ],
+    )
+    def test_usage_combinations(
+        self,
+        first_input: str,
+        second_input: str,
+        expected1: None | EnumUsageType,
+        expected2: None | EnumUsageType,
+        get_test_svd_file_content: Callable[[str], bytes],
+    ):
+        file_name = "enumerated_values/usage_combinations.svd"
+
+        file_content = get_test_svd_file_content(file_name)
+        file_content = file_content.replace(b"FIRST_INPUT", first_input.encode())
+        file_content = file_content.replace(b"SECOND_INPUT", second_input.encode())
+
+        device = Process.from_xml_content(file_content).get_processed_device()
+
+        assert len(device.peripherals) == 1
+        assert len(device.peripherals[0].registers_clusters) == 1
+        assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+        assert len(device.peripherals[0].registers_clusters[0].fields) == 1
+
+        assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 2
+
+        container1 = device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers[0]
+        assert container1.usage == expected1
+
+        container2 = device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers[1]
+        assert container2.usage == expected2
+
+    @pytest.mark.xfail(
+        strict=True,
+        raises=ProcessException,
+        reason="Value name already defined in other container",
+    )
+    def test_value_name_already_defined_other_container(
+        self, get_processed_device_from_testfile: Callable[[str], Device]
+    ):
+        get_processed_device_from_testfile("enumerated_values/value_name_already_defined_other_container.svd")
+
+    @pytest.mark.xfail(
+        strict=True,
+        raises=ProcessException,
+        reason="Value name already defined in container",
+    )
+    def test_value_name_already_defined_same_container(
+        self, get_processed_device_from_testfile: Callable[[str], Device]
+    ):
+        get_processed_device_from_testfile("enumerated_values/value_name_already_defined_same_container.svd")

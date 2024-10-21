@@ -692,22 +692,56 @@ class _ProcessField:
                 )
             )
 
+        if len(enumerated_value_containers) > 2:
+            raise ProcessException("Only one or two enumerated value containers are supported")
+
+        if len(enumerated_value_containers) == 2:
+            usages = {enumerated_value_containers[0].usage, enumerated_value_containers[1].usage}
+            if usages != {EnumUsageType.READ, EnumUsageType.WRITE}:
+                raise ProcessException("Only one read and one write enumerated value container is supported")
+
+            ct1 = enumerated_value_containers[0]
+            ct2 = enumerated_value_containers[1]
+            if ct1.name == ct2.name and any(
+                ev1.name == ev2.name for ev1 in ct1.enumerated_values for ev2 in ct2.enumerated_values
+            ):
+                raise ProcessException(
+                    "Enumerated value containers must have unique value names if the container have the same name"
+                )
+
         return enumerated_value_containers
 
     def _process_enumerated_values(self, parsed_enumerated_values: list[SVDEnumeratedValue]) -> list[EnumeratedValue]:
         enumerated_values: list[EnumeratedValue] = []
+        seen_names: set[str] = set()
         for parsed_enumerated_value in parsed_enumerated_values:
-            enumerated_values.append(
-                EnumeratedValue(
-                    name=parsed_enumerated_value.name,
-                    description=parsed_enumerated_value.description,
-                    value=parsed_enumerated_value.value,
-                    is_default=parsed_enumerated_value.is_default,
-                    parsed=parsed_enumerated_value,
-                )
-            )
+            processed_enumerated_values = self._process_enumerated_value(parsed_enumerated_value)
+            for value in processed_enumerated_values:
+                if value.name in seen_names:
+                    raise ProcessException(f"Duplicate enumerated value name found: {value.name}")
+                seen_names.add(value.name)
+            enumerated_values.extend(processed_enumerated_values)
 
         return enumerated_values
+
+    def _process_enumerated_value(self, parsed_enumerated_value: SVDEnumeratedValue) -> list[EnumeratedValue]:
+        if parsed_enumerated_value.value is not None:
+            try:
+                value = int(parsed_enumerated_value.value, 0)
+            except ValueError:
+                value = None
+        else:
+            value = None
+
+        enumerated_value = EnumeratedValue(
+            name=parsed_enumerated_value.name,
+            description=parsed_enumerated_value.description,
+            value=value,
+            is_default=False if parsed_enumerated_value.is_default is None else parsed_enumerated_value.is_default,
+            parsed=parsed_enumerated_value,
+        )
+
+        return [enumerated_value]
 
 
 class _ProccessedRegistersClusters:

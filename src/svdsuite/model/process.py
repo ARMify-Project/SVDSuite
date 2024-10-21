@@ -75,7 +75,7 @@ class CPU:
 class EnumeratedValue:
     name: str
     description: None | str = None
-    value: None | str = None  # int value, but can contain 'do not care' bits represented by >x<
+    value: None | int = None
     is_default: None | bool = None
     parsed: SVDEnumeratedValue
 
