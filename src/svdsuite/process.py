@@ -714,12 +714,23 @@ class _ProcessField:
     def _process_enumerated_values(self, parsed_enumerated_values: list[SVDEnumeratedValue]) -> list[EnumeratedValue]:
         enumerated_values: list[EnumeratedValue] = []
         seen_names: set[str] = set()
+        seen_values: set[int] = set()
+
         for parsed_enumerated_value in parsed_enumerated_values:
             processed_enumerated_values = self._process_enumerated_value(parsed_enumerated_value)
+
             for value in processed_enumerated_values:
                 if value.name in seen_names:
                     raise ProcessException(f"Duplicate enumerated value name found: {value.name}")
+
+                if value.value in seen_values:
+                    raise ProcessException(f"Duplicate enumerated value value found: {value.value}")
+
                 seen_names.add(value.name)
+
+                if value.value is not None:
+                    seen_values.add(value.value)
+
             enumerated_values.extend(processed_enumerated_values)
 
         return enumerated_values

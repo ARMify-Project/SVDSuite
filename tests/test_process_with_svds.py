@@ -1811,3 +1811,11 @@ class TestEnumeratedValues:
         self, get_processed_device_from_testfile: Callable[[str], Device]
     ):
         get_processed_device_from_testfile("enumerated_values/value_name_already_defined_same_container.svd")
+
+    @pytest.mark.xfail(
+        strict=True,
+        raises=ProcessException,
+        reason="Value already defined in container",
+    )
+    def test_value_already_defined(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        get_processed_device_from_testfile("enumerated_values/value_already_defined.svd")
