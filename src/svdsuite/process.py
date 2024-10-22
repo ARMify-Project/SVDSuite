@@ -216,7 +216,7 @@ class _DirectedGraph:
             self.outgoing_edges_count[from_node] += 1
             self.next_node.discard(from_node)
         else:
-            raise ValueError("Both nodes must exist in the graph")
+            raise ProcessException("Both nodes must exist in the graph")
 
     def get_next_node_without_outgoing_edges(self) -> None | _Node:
         try:
