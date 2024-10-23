@@ -3,7 +3,15 @@ import pytest
 
 from svdsuite.process import Process, ProcessException, ProcessWarning
 from svdsuite.model.process import Device, Register, Cluster
-from svdsuite.model.types import AccessType, EnumUsageType, ProtectionStringType, EnumeratedTokenType
+from svdsuite.model.types import (
+    AccessType,
+    EnumUsageType,
+    ProtectionStringType,
+    EnumeratedTokenType,
+    DataTypeType,
+    ModifiedWriteValuesType,
+    ReadActionType,
+)
 
 
 @pytest.fixture(name="get_processed_device_from_testfile")
@@ -2433,3 +2441,169 @@ class TestClusterInheritanceViaDerivedFrom:
         assert device.peripherals[0].registers_clusters[1].registers_clusters[0].name == "RegisterA"
         assert device.peripherals[0].registers_clusters[1].registers_clusters[0].address_offset == 0x0
         assert device.peripherals[0].registers_clusters[1].registers_clusters[0].size == 32
+
+
+class TestRegisterInheritanceViaDerivedFrom:
+    def test_simple_inheritance_backward_reference_same_scope(
+        self, get_processed_device_from_testfile: Callable[[str], Device]
+    ):
+        device = get_processed_device_from_testfile(
+            "register_inheritance_via_derivedfrom/simple_inheritance_backward_reference_same_scope.svd"
+        )
+
+        assert len(device.peripherals) == 1
+        assert len(device.peripherals[0].registers_clusters) == 2
+
+        assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+        assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
+        assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
+        assert device.peripherals[0].registers_clusters[0].size == 32
+        assert len(device.peripherals[0].registers_clusters[0].fields) == 1
+        assert device.peripherals[0].registers_clusters[0].fields[0].name == "FieldA"
+        assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 0
+        assert device.peripherals[0].registers_clusters[0].fields[0].msb == 2
+
+        assert isinstance(device.peripherals[0].registers_clusters[1], Register)
+        assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
+        assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
+        assert device.peripherals[0].registers_clusters[1].size == 32
+        assert len(device.peripherals[0].registers_clusters[1].fields) == 1
+        assert device.peripherals[0].registers_clusters[1].fields[0].name == "FieldA"
+        assert device.peripherals[0].registers_clusters[1].fields[0].lsb == 0
+        assert device.peripherals[0].registers_clusters[1].fields[0].msb == 2
+
+    def test_simple_inheritance_forward_reference_same_scope(
+        self, get_processed_device_from_testfile: Callable[[str], Device]
+    ):
+        device = get_processed_device_from_testfile(
+            "register_inheritance_via_derivedfrom/simple_inheritance_forward_reference_same_scope.svd"
+        )
+
+        assert len(device.peripherals) == 1
+        assert len(device.peripherals[0].registers_clusters) == 2
+
+        assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+        assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
+        assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
+        assert device.peripherals[0].registers_clusters[0].size == 32
+        assert len(device.peripherals[0].registers_clusters[0].fields) == 1
+        assert device.peripherals[0].registers_clusters[0].fields[0].name == "FieldA"
+        assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 0
+        assert device.peripherals[0].registers_clusters[0].fields[0].msb == 2
+
+        assert isinstance(device.peripherals[0].registers_clusters[1], Register)
+        assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
+        assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
+        assert device.peripherals[0].registers_clusters[1].size == 32
+        assert len(device.peripherals[0].registers_clusters[1].fields) == 1
+        assert device.peripherals[0].registers_clusters[1].fields[0].name == "FieldA"
+        assert device.peripherals[0].registers_clusters[1].fields[0].lsb == 0
+        assert device.peripherals[0].registers_clusters[1].fields[0].msb == 2
+
+    def test_simple_inheritance_backward_reference_different_scope(
+        self, get_processed_device_from_testfile: Callable[[str], Device]
+    ):
+        device = get_processed_device_from_testfile(
+            "register_inheritance_via_derivedfrom/simple_inheritance_backward_reference_different_scope.svd"
+        )
+
+        assert len(device.peripherals) == 2
+
+        assert len(device.peripherals[0].registers_clusters) == 1
+        assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+        assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
+        assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
+        assert device.peripherals[0].registers_clusters[0].size == 32
+        assert len(device.peripherals[0].registers_clusters[0].fields) == 1
+        assert device.peripherals[0].registers_clusters[0].fields[0].name == "FieldA"
+        assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 0
+        assert device.peripherals[0].registers_clusters[0].fields[0].msb == 2
+
+        assert len(device.peripherals[1].registers_clusters) == 1
+        assert isinstance(device.peripherals[1].registers_clusters[0], Register)
+        assert device.peripherals[1].registers_clusters[0].name == "RegisterA"
+        assert device.peripherals[1].registers_clusters[0].address_offset == 0x0
+        assert device.peripherals[1].registers_clusters[0].size == 32
+        assert len(device.peripherals[1].registers_clusters[0].fields) == 1
+        assert device.peripherals[1].registers_clusters[0].fields[0].name == "FieldA"
+        assert device.peripherals[1].registers_clusters[0].fields[0].lsb == 0
+        assert device.peripherals[1].registers_clusters[0].fields[0].msb == 2
+
+    def test_simple_inheritance_forward_reference_different_scope(
+        self, get_processed_device_from_testfile: Callable[[str], Device]
+    ):
+        device = get_processed_device_from_testfile(
+            "register_inheritance_via_derivedfrom/simple_inheritance_forward_reference_different_scope.svd"
+        )
+
+        assert len(device.peripherals) == 2
+
+        assert len(device.peripherals[0].registers_clusters) == 1
+        assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+        assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
+        assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
+        assert device.peripherals[0].registers_clusters[0].size == 32
+        assert len(device.peripherals[0].registers_clusters[0].fields) == 1
+        assert device.peripherals[0].registers_clusters[0].fields[0].name == "FieldA"
+        assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 0
+        assert device.peripherals[0].registers_clusters[0].fields[0].msb == 2
+
+        assert len(device.peripherals[1].registers_clusters) == 1
+        assert isinstance(device.peripherals[1].registers_clusters[0], Register)
+        assert device.peripherals[1].registers_clusters[0].name == "RegisterA"
+        assert device.peripherals[1].registers_clusters[0].address_offset == 0x0
+        assert device.peripherals[1].registers_clusters[0].size == 32
+        assert len(device.peripherals[1].registers_clusters[0].fields) == 1
+        assert device.peripherals[1].registers_clusters[0].fields[0].name == "FieldA"
+        assert device.peripherals[1].registers_clusters[0].fields[0].lsb == 0
+        assert device.peripherals[1].registers_clusters[0].fields[0].msb == 2
+
+    def test_value_inheritance(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        device = get_processed_device_from_testfile("register_inheritance_via_derivedfrom/value_inheritance.svd")
+
+        assert len(device.peripherals) == 1
+        assert len(device.peripherals[0].registers_clusters) == 2
+
+        assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+        assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
+        assert device.peripherals[0].registers_clusters[0].display_name == "RegisterA"
+        assert device.peripherals[0].registers_clusters[0].description == "RegisterA description"
+        assert device.peripherals[0].registers_clusters[0].alternate_register == "RegisterC"
+        assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
+        assert device.peripherals[0].registers_clusters[0].size == 16
+        assert device.peripherals[0].registers_clusters[0].access == AccessType.READ_ONLY
+        assert device.peripherals[0].registers_clusters[0].protection == ProtectionStringType.SECURE
+        assert device.peripherals[0].registers_clusters[0].reset_value == 0xDEAD
+        assert device.peripherals[0].registers_clusters[0].reset_mask == 0xC0DE
+        assert device.peripherals[0].registers_clusters[0].data_type == DataTypeType.UINT32_T
+        assert device.peripherals[0].registers_clusters[0].modified_write_values == ModifiedWriteValuesType.ONE_TO_CLEAR
+        assert device.peripherals[0].registers_clusters[0].write_constraint is not None
+        assert device.peripherals[0].registers_clusters[0].write_constraint.write_as_read is True
+        assert device.peripherals[0].registers_clusters[0].read_action == ReadActionType.MODIFY
+        assert len(device.peripherals[0].registers_clusters[0].fields) == 1
+        assert device.peripherals[0].registers_clusters[0].fields[0].name == "FieldA"
+        assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 0
+        assert device.peripherals[0].registers_clusters[0].fields[0].msb == 2
+        assert device.peripherals[0].registers_clusters[0].fields[0].access == AccessType.READ_ONLY
+
+        assert isinstance(device.peripherals[0].registers_clusters[1], Register)
+        assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
+        assert device.peripherals[0].registers_clusters[1].display_name == "RegisterB"
+        assert device.peripherals[0].registers_clusters[1].description == "RegisterA description"
+        assert device.peripherals[0].registers_clusters[1].alternate_register == "RegisterC"
+        assert device.peripherals[0].registers_clusters[1].address_offset == 0x2
+        assert device.peripherals[0].registers_clusters[1].size == 16
+        assert device.peripherals[0].registers_clusters[1].access == AccessType.READ_ONLY
+        assert device.peripherals[0].registers_clusters[1].protection == ProtectionStringType.SECURE
+        assert device.peripherals[0].registers_clusters[1].reset_value == 0xDEAD
+        assert device.peripherals[0].registers_clusters[1].reset_mask == 0xC0DE
+        assert device.peripherals[0].registers_clusters[1].data_type == DataTypeType.UINT32_T
+        assert device.peripherals[0].registers_clusters[1].modified_write_values == ModifiedWriteValuesType.ONE_TO_CLEAR
+        assert device.peripherals[0].registers_clusters[1].write_constraint is not None
+        assert device.peripherals[0].registers_clusters[1].write_constraint.write_as_read is True
+        assert device.peripherals[0].registers_clusters[1].read_action == ReadActionType.MODIFY
+        assert len(device.peripherals[0].registers_clusters[1].fields) == 1
+        assert device.peripherals[0].registers_clusters[1].fields[0].name == "FieldA"
+        assert device.peripherals[0].registers_clusters[1].fields[0].lsb == 0
+        assert device.peripherals[0].registers_clusters[1].fields[0].msb == 2
+        assert device.peripherals[0].registers_clusters[1].fields[0].access == AccessType.READ_ONLY
