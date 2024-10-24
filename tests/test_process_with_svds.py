@@ -2612,3 +2612,62 @@ class TestRegisterInheritanceViaDerivedFrom:
         assert device.peripherals[0].registers_clusters[1].fields[0].write_constraint is not None
         assert device.peripherals[0].registers_clusters[1].fields[0].write_constraint.write_as_read is True
 
+    def test_override_behavior(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        device = get_processed_device_from_testfile("register_inheritance_via_derivedfrom/override_behavior.svd")
+
+        assert len(device.peripherals) == 1
+        assert len(device.peripherals[0].registers_clusters) == 2
+
+        assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+        assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
+        assert device.peripherals[0].registers_clusters[0].display_name == "RegisterA"
+        assert device.peripherals[0].registers_clusters[0].description == "RegisterA description"
+        assert device.peripherals[0].registers_clusters[0].alternate_register == "RegisterC"
+        assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
+        assert device.peripherals[0].registers_clusters[0].size == 16
+        assert device.peripherals[0].registers_clusters[0].access == AccessType.READ_ONLY
+        assert device.peripherals[0].registers_clusters[0].protection == ProtectionStringType.SECURE
+        assert device.peripherals[0].registers_clusters[0].reset_value == 0xDEAD
+        assert device.peripherals[0].registers_clusters[0].reset_mask == 0xC0DE
+        assert device.peripherals[0].registers_clusters[0].data_type == DataTypeType.UINT32_T
+        assert device.peripherals[0].registers_clusters[0].modified_write_values == ModifiedWriteValuesType.ONE_TO_CLEAR
+        assert device.peripherals[0].registers_clusters[0].write_constraint is not None
+        assert device.peripherals[0].registers_clusters[0].write_constraint.write_as_read is True
+        assert device.peripherals[0].registers_clusters[0].read_action == ReadActionType.MODIFY
+        assert len(device.peripherals[0].registers_clusters[0].fields) == 1
+        assert device.peripherals[0].registers_clusters[0].fields[0].name == "FieldA"
+        assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 0
+        assert device.peripherals[0].registers_clusters[0].fields[0].msb == 2
+        assert device.peripherals[0].registers_clusters[0].fields[0].access == AccessType.READ_ONLY
+        assert device.peripherals[0].registers_clusters[0].fields[0].write_constraint is not None
+        assert device.peripherals[0].registers_clusters[0].fields[0].write_constraint.write_as_read is True
+
+        assert isinstance(device.peripherals[0].registers_clusters[1], Register)
+        assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
+        assert device.peripherals[0].registers_clusters[1].display_name == "RegisterB"
+        assert device.peripherals[0].registers_clusters[1].description == "RegisterB description"
+        assert device.peripherals[0].registers_clusters[1].alternate_register == "RegisterD"
+        assert device.peripherals[0].registers_clusters[1].address_offset == 0x2
+        assert device.peripherals[0].registers_clusters[1].size == 8
+        assert device.peripherals[0].registers_clusters[1].access == AccessType.WRITE_ONLY
+        assert device.peripherals[0].registers_clusters[1].protection == ProtectionStringType.NON_SECURE
+        assert device.peripherals[0].registers_clusters[1].reset_value == 0xAB
+        assert device.peripherals[0].registers_clusters[1].reset_mask == 0xDE
+        assert device.peripherals[0].registers_clusters[1].data_type == DataTypeType.UINT8_T
+        assert device.peripherals[0].registers_clusters[1].modified_write_values == ModifiedWriteValuesType.ONE_TO_SET
+        assert device.peripherals[0].registers_clusters[1].write_constraint is not None
+        assert device.peripherals[0].registers_clusters[1].write_constraint.use_enumerated_values is True
+        assert device.peripherals[0].registers_clusters[1].read_action == ReadActionType.SET
+        assert len(device.peripherals[0].registers_clusters[1].fields) == 2
+        assert device.peripherals[0].registers_clusters[1].fields[0].name == "FieldA"
+        assert device.peripherals[0].registers_clusters[1].fields[0].lsb == 0
+        assert device.peripherals[0].registers_clusters[1].fields[0].msb == 2
+        assert device.peripherals[0].registers_clusters[1].fields[0].access == AccessType.WRITE_ONLY
+        assert device.peripherals[0].registers_clusters[1].fields[0].write_constraint is not None
+        assert device.peripherals[0].registers_clusters[1].fields[0].write_constraint.use_enumerated_values is True
+        assert device.peripherals[0].registers_clusters[1].fields[1].name == "FieldB"
+        assert device.peripherals[0].registers_clusters[1].fields[1].lsb == 3
+        assert device.peripherals[0].registers_clusters[1].fields[1].msb == 4
+        assert device.peripherals[0].registers_clusters[1].fields[1].access == AccessType.WRITE_ONLY
+        assert device.peripherals[0].registers_clusters[1].fields[1].write_constraint is not None
+        assert device.peripherals[0].registers_clusters[1].fields[1].write_constraint.use_enumerated_values is True
