@@ -3332,6 +3332,14 @@ class TestFieldInheritanceViaDerivedFrom:
     def test_circular_inheritance(self, get_processed_device_from_testfile: Callable[[str], Device]):
         get_processed_device_from_testfile("field_inheritance_via_derivedfrom/circular_inheritance.svd")
 
+    @pytest.mark.xfail(strict=True, raises=ProcessException, reason="FieldA overlaps with FieldB")
+    def test_same_bit_range(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        get_processed_device_from_testfile("field_inheritance_via_derivedfrom/same_bit_range.svd")
+
+    @pytest.mark.xfail(strict=True, raises=ProcessException, reason="FieldA overlaps with FieldB")
+    def test_overlap_bit_range(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        get_processed_device_from_testfile("field_inheritance_via_derivedfrom/overlap_bit_range.svd")
+
     @pytest.mark.xfail(strict=True, raises=ProcessException, reason="Can't derive from self")
     def test_derive_from_self(self, get_processed_device_from_testfile: Callable[[str], Device]):
         get_processed_device_from_testfile("field_inheritance_via_derivedfrom/derive_from_self.svd")
