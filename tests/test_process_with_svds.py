@@ -2585,6 +2585,8 @@ class TestRegisterInheritanceViaDerivedFrom:
         assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 0
         assert device.peripherals[0].registers_clusters[0].fields[0].msb == 2
         assert device.peripherals[0].registers_clusters[0].fields[0].access == AccessType.READ_ONLY
+        assert device.peripherals[0].registers_clusters[0].fields[0].write_constraint is not None
+        assert device.peripherals[0].registers_clusters[0].fields[0].write_constraint.write_as_read is True
 
         assert isinstance(device.peripherals[0].registers_clusters[1], Register)
         assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
@@ -2607,3 +2609,6 @@ class TestRegisterInheritanceViaDerivedFrom:
         assert device.peripherals[0].registers_clusters[1].fields[0].lsb == 0
         assert device.peripherals[0].registers_clusters[1].fields[0].msb == 2
         assert device.peripherals[0].registers_clusters[1].fields[0].access == AccessType.READ_ONLY
+        assert device.peripherals[0].registers_clusters[1].fields[0].write_constraint is not None
+        assert device.peripherals[0].registers_clusters[1].fields[0].write_constraint.write_as_read is True
+
