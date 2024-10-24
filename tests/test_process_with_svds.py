@@ -1876,13 +1876,17 @@ class TestPeripheralInheritanceViaDerivedFrom:
         assert device.peripherals[3].registers_clusters[0].name == "RegisterA"
         assert device.peripherals[3].registers_clusters[0].size == 32
 
-    @pytest.mark.xfail(
-        strict=True,
-        raises=ProcessException,
-        reason="Two peripherals cannot have the same base address",
-    )
     def test_same_address(self, get_processed_device_from_testfile: Callable[[str], Device]):
-        get_processed_device_from_testfile("peripheral_inheritance_via_derivedfrom/same_address.svd")
+        with pytest.warns(ProcessWarning):
+            device = get_processed_device_from_testfile("peripheral_inheritance_via_derivedfrom/same_address.svd")
+
+        assert len(device.peripherals) == 2
+        assert device.peripherals[0].name == "PeripheralA"
+        assert device.peripherals[0].base_address == 0x40001000
+        assert len(device.peripherals[0].registers_clusters) == 1
+        assert device.peripherals[1].name == "PeripheralB"
+        assert device.peripherals[1].base_address == 0x40001000
+        assert len(device.peripherals[1].registers_clusters) == 1
 
     def test_block_overlap(self, get_processed_device_from_testfile: Callable[[str], Device]):
         with pytest.warns(ProcessWarning):
