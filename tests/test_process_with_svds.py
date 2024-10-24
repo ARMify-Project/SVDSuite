@@ -3035,3 +3035,153 @@ class TestFieldInheritanceViaDerivedFrom:
         assert regb_enum_container.enumerated_values[1].description == "Description for 0b1"
         assert regb_enum_container.enumerated_values[1].value == 0b1
         assert regb_enum_container.enumerated_values[1].is_default is False
+
+    def test_value_inheritance(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        device = get_processed_device_from_testfile("field_inheritance_via_derivedfrom/value_inheritance.svd")
+
+        assert len(device.peripherals) == 1
+        assert len(device.peripherals[0].registers_clusters) == 1
+
+        assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+        assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
+        assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
+        assert device.peripherals[0].registers_clusters[0].size == 32
+        assert len(device.peripherals[0].registers_clusters[0].fields) == 2
+
+        assert device.peripherals[0].registers_clusters[0].fields[0].name == "FieldA"
+        assert device.peripherals[0].registers_clusters[0].fields[0].description == "FieldA description"
+        assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 0
+        assert device.peripherals[0].registers_clusters[0].fields[0].msb == 0
+        assert device.peripherals[0].registers_clusters[0].fields[0].access == AccessType.READ_WRITE
+        assert (
+            device.peripherals[0].registers_clusters[0].fields[0].modified_write_values
+            == ModifiedWriteValuesType.ONE_TO_CLEAR
+        )
+        assert device.peripherals[0].registers_clusters[0].fields[0].write_constraint is not None
+        assert device.peripherals[0].registers_clusters[0].fields[0].write_constraint.write_as_read is True
+        assert device.peripherals[0].registers_clusters[0].fields[0].read_action == ReadActionType.MODIFY
+        assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 1
+        fielda_enum_container = device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers[0]
+        assert fielda_enum_container.name == "FieldAEnumeratedValue"
+        assert fielda_enum_container.usage == EnumUsageType.READ_WRITE
+        assert len(fielda_enum_container.enumerated_values) == 2
+        assert fielda_enum_container.enumerated_values[0].name == "0b0"
+        assert fielda_enum_container.enumerated_values[0].description == "Description for 0b0"
+        assert fielda_enum_container.enumerated_values[0].value == 0b0
+        assert fielda_enum_container.enumerated_values[0].is_default is False
+        assert fielda_enum_container.enumerated_values[1].name == "0b1"
+        assert fielda_enum_container.enumerated_values[1].description == "Description for 0b1"
+        assert fielda_enum_container.enumerated_values[1].value == 0b1
+        assert fielda_enum_container.enumerated_values[1].is_default is False
+
+        assert device.peripherals[0].registers_clusters[0].fields[1].name == "FieldB"
+        assert device.peripherals[0].registers_clusters[0].fields[1].description == "FieldA description"
+        assert device.peripherals[0].registers_clusters[0].fields[1].lsb == 1
+        assert device.peripherals[0].registers_clusters[0].fields[1].msb == 1
+        assert device.peripherals[0].registers_clusters[0].fields[1].access == AccessType.READ_WRITE
+        assert (
+            device.peripherals[0].registers_clusters[0].fields[1].modified_write_values
+            == ModifiedWriteValuesType.ONE_TO_CLEAR
+        )
+        assert device.peripherals[0].registers_clusters[0].fields[1].write_constraint is not None
+        assert device.peripherals[0].registers_clusters[0].fields[1].write_constraint.write_as_read is True
+        assert device.peripherals[0].registers_clusters[0].fields[1].read_action == ReadActionType.MODIFY
+        assert len(device.peripherals[0].registers_clusters[0].fields[1].enumerated_value_containers) == 1
+        fieldb_enum_container = device.peripherals[0].registers_clusters[0].fields[1].enumerated_value_containers[0]
+        assert fieldb_enum_container.name == "FieldAEnumeratedValue"
+        assert fieldb_enum_container.usage == EnumUsageType.READ_WRITE
+        assert len(fieldb_enum_container.enumerated_values) == 2
+        assert fieldb_enum_container.enumerated_values[0].name == "0b0"
+        assert fieldb_enum_container.enumerated_values[0].description == "Description for 0b0"
+        assert fieldb_enum_container.enumerated_values[0].value == 0b0
+        assert fieldb_enum_container.enumerated_values[0].is_default is False
+        assert fieldb_enum_container.enumerated_values[1].name == "0b1"
+        assert fieldb_enum_container.enumerated_values[1].description == "Description for 0b1"
+        assert fieldb_enum_container.enumerated_values[1].value == 0b1
+        assert fieldb_enum_container.enumerated_values[1].is_default is False
+
+    def test_override_behavior(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        device = get_processed_device_from_testfile("field_inheritance_via_derivedfrom/override_behavior.svd")
+
+        assert len(device.peripherals) == 1
+        assert len(device.peripherals[0].registers_clusters) == 1
+
+        assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+        assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
+        assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
+        assert device.peripherals[0].registers_clusters[0].size == 32
+        assert len(device.peripherals[0].registers_clusters[0].fields) == 2
+
+        assert device.peripherals[0].registers_clusters[0].fields[0].name == "FieldA"
+        assert device.peripherals[0].registers_clusters[0].fields[0].description == "FieldA description"
+        assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 0
+        assert device.peripherals[0].registers_clusters[0].fields[0].msb == 0
+        assert device.peripherals[0].registers_clusters[0].fields[0].access == AccessType.READ_WRITE
+        assert (
+            device.peripherals[0].registers_clusters[0].fields[0].modified_write_values
+            == ModifiedWriteValuesType.ONE_TO_CLEAR
+        )
+        assert device.peripherals[0].registers_clusters[0].fields[0].write_constraint is not None
+        assert device.peripherals[0].registers_clusters[0].fields[0].write_constraint.write_as_read is True
+        assert device.peripherals[0].registers_clusters[0].fields[0].read_action == ReadActionType.MODIFY
+        assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 1
+        fielda_enum_container = device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers[0]
+        assert fielda_enum_container.name == "FieldAEnumeratedValue"
+        assert fielda_enum_container.usage == EnumUsageType.READ
+        assert len(fielda_enum_container.enumerated_values) == 2
+        assert fielda_enum_container.enumerated_values[0].name == "0b0"
+        assert fielda_enum_container.enumerated_values[0].description == "Description for 0b0"
+        assert fielda_enum_container.enumerated_values[0].value == 0b0
+        assert fielda_enum_container.enumerated_values[0].is_default is False
+        assert fielda_enum_container.enumerated_values[1].name == "0b1"
+        assert fielda_enum_container.enumerated_values[1].description == "Description for 0b1"
+        assert fielda_enum_container.enumerated_values[1].value == 0b1
+        assert fielda_enum_container.enumerated_values[1].is_default is False
+
+        assert device.peripherals[0].registers_clusters[0].fields[1].name == "FieldB"
+        assert device.peripherals[0].registers_clusters[0].fields[1].description == "FieldB description"
+        assert device.peripherals[0].registers_clusters[0].fields[1].lsb == 1
+        assert device.peripherals[0].registers_clusters[0].fields[1].msb == 1
+        assert device.peripherals[0].registers_clusters[0].fields[1].access == AccessType.READ_ONLY
+        assert (
+            device.peripherals[0].registers_clusters[0].fields[1].modified_write_values
+            == ModifiedWriteValuesType.ONE_TO_SET
+        )
+        assert device.peripherals[0].registers_clusters[0].fields[1].write_constraint is not None
+        assert device.peripherals[0].registers_clusters[0].fields[1].write_constraint.use_enumerated_values is True
+        assert device.peripherals[0].registers_clusters[0].fields[1].read_action == ReadActionType.CLEAR
+        assert len(device.peripherals[0].registers_clusters[0].fields[1].enumerated_value_containers) == 2
+
+        fieldb_enum_container1 = device.peripherals[0].registers_clusters[0].fields[1].enumerated_value_containers[0]
+        assert fieldb_enum_container1.name == "FieldAEnumeratedValue"
+        assert fieldb_enum_container1.usage == EnumUsageType.READ
+        assert len(fieldb_enum_container1.enumerated_values) == 2
+        assert fieldb_enum_container1.enumerated_values[0].name == "0b0"
+        assert fieldb_enum_container1.enumerated_values[0].description == "Description for 0b0"
+        assert fieldb_enum_container1.enumerated_values[0].value == 0b0
+        assert fieldb_enum_container1.enumerated_values[0].is_default is False
+        assert fieldb_enum_container1.enumerated_values[1].name == "0b1"
+        assert fieldb_enum_container1.enumerated_values[1].description == "Description for 0b1"
+        assert fieldb_enum_container1.enumerated_values[1].value == 0b1
+        assert fieldb_enum_container1.enumerated_values[1].is_default is False
+
+        fieldb_enum_container2 = device.peripherals[0].registers_clusters[0].fields[1].enumerated_value_containers[1]
+        assert fieldb_enum_container2.name == "FieldBEnumeratedValue"
+        assert fieldb_enum_container2.usage == EnumUsageType.WRITE
+        assert len(fieldb_enum_container2.enumerated_values) == 2
+        assert fieldb_enum_container2.enumerated_values[0].name == "0b0"
+        assert fieldb_enum_container2.enumerated_values[0].description == "Description for 0b0"
+        assert fieldb_enum_container2.enumerated_values[0].value == 0b0
+        assert fieldb_enum_container2.enumerated_values[0].is_default is False
+        assert fieldb_enum_container2.enumerated_values[1].name == "0b1"
+        assert fieldb_enum_container2.enumerated_values[1].description == "Description for 0b1"
+        assert fieldb_enum_container2.enumerated_values[1].value == 0b1
+        assert fieldb_enum_container2.enumerated_values[1].is_default is False
+
+    @pytest.mark.xfail(
+        strict=True,
+        raises=ProcessException,
+        reason="Field 'FieldB' (<enumeratedValues> 'FieldAEnumeratedValue'): 'read-write' container already defined",
+    )
+    def test_enumerated_value_inheritance_error(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        get_processed_device_from_testfile("field_inheritance_via_derivedfrom/enumerated_value_inheritance_error.svd")
