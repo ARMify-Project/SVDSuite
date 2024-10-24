@@ -2446,6 +2446,10 @@ class TestClusterInheritanceViaDerivedFrom:
         assert device.peripherals[0].registers_clusters[1].registers_clusters[0].address_offset == 0x0
         assert device.peripherals[0].registers_clusters[1].registers_clusters[0].size == 32
 
+    @pytest.mark.xfail(strict=True, raises=ProcessException, reason="Can't derive from self")
+    def test_derive_from_self(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        get_processed_device_from_testfile("cluster_inheritance_via_derivedfrom/derive_from_self.svd")
+
 
 class TestRegisterInheritanceViaDerivedFrom:
     def test_simple_inheritance_backward_reference_same_scope(
