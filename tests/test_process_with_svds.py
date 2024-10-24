@@ -3315,3 +3315,11 @@ class TestFieldInheritanceViaDerivedFrom:
         assert fieldc_enum_container.enumerated_values[1].description == "Description for 0b1"
         assert fieldc_enum_container.enumerated_values[1].value == 0b1
         assert fieldc_enum_container.enumerated_values[1].is_default is False
+
+    @pytest.mark.xfail(strict=True, raises=ProcessException, reason="Circular inheritance is not supported")
+    def test_circular_inheritance(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        get_processed_device_from_testfile("field_inheritance_via_derivedfrom/circular_inheritance.svd")
+
+    @pytest.mark.xfail(strict=True, raises=ProcessException, reason="Can't derive from self")
+    def test_derive_from_self(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        get_processed_device_from_testfile("field_inheritance_via_derivedfrom/derive_from_self.svd")
