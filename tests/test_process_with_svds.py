@@ -3441,3 +3441,96 @@ class TestEnumeratedValuesInheritanceViaDerivedFrom:
         assert fieldb_enum_container.enumerated_values[1].description == "Description for 0b1"
         assert fieldb_enum_container.enumerated_values[1].value == 0b1
         assert fieldb_enum_container.enumerated_values[1].is_default is False
+
+
+class TestDerivedFromPathResolving:
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "PeripheralA.ClusterA.ClusterB.RegisterA",
+            "ClusterA.ClusterB.RegisterA",
+            pytest.param(
+                "PeripheralAA.ClusterA.ClusterB.RegisterA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "PeripheralA.ClusterAA.ClusterB.RegisterA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "PeripheralA.ClusterA.ClusterBB.RegisterA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "PeripheralA.ClusterA.ClusterB.RegisterAA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "PeripheralA.ClusterB.RegisterA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "PeripheralA.ClusterA.RegisterA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "PeripheralA.RegisterA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "RegisterA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "ClusterB.RegisterA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "ClusterA.RegisterA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+        ],
+    )
+    def test_register_level_same_peripheral_with_nested_cluster(
+        self,
+        path: str,
+        get_test_svd_file_content: Callable[[str], bytes],
+    ):
+        file_name = "derivedfrom_path_resolving/register_level_same_peripheral_with_nested_cluster.svd"
+
+        file_content = get_test_svd_file_content(file_name)
+        file_content = file_content.replace(b"PATH", path.encode())
+
+        device = Process.from_xml_content(file_content).get_processed_device()
+
+        assert len(device.peripherals) == 1
+        assert len(device.peripherals[0].registers_clusters) == 2
+
+        assert isinstance(device.peripherals[0].registers_clusters[0], Cluster)
+        assert device.peripherals[0].registers_clusters[0].name == "ClusterA"
+        assert len(device.peripherals[0].registers_clusters[0].registers_clusters) == 1
+
+        assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[0], Cluster)
+        assert device.peripherals[0].registers_clusters[0].registers_clusters[0].name == "ClusterB"
+        assert len(device.peripherals[0].registers_clusters[0].registers_clusters[0].registers_clusters) == 1
+
+        registera = device.peripherals[0].registers_clusters[0].registers_clusters[0].registers_clusters[0]
+        assert isinstance(registera, Register)
+        assert registera.name == "RegisterA"
+        assert registera.address_offset == 0x0
+        assert registera.size == 32
+        assert len(registera.fields) == 1
+
+        assert registera.fields[0].name == "FieldA"
+        assert registera.fields[0].lsb == 0
+        assert registera.fields[0].msb == 0
+
+        assert isinstance(device.peripherals[0].registers_clusters[1], Register)
+        assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
+        assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
+        assert device.peripherals[0].registers_clusters[1].size == 32
+        assert len(device.peripherals[0].registers_clusters[1].fields) == 1
+
+        assert device.peripherals[0].registers_clusters[1].fields[0].name == "FieldA"
+        assert device.peripherals[0].registers_clusters[1].fields[0].lsb == 0
+        assert device.peripherals[0].registers_clusters[1].fields[0].msb == 0
