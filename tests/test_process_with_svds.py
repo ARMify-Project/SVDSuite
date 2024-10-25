@@ -3491,12 +3491,12 @@ class TestDerivedFromPathResolving:
             ),
         ],
     )
-    def test_register_level_same_peripheral_with_nested_cluster(
+    def test_test_setup_1(
         self,
         path: str,
         get_test_svd_file_content: Callable[[str], bytes],
     ):
-        file_name = "derivedfrom_path_resolving/register_level_same_peripheral_with_nested_cluster.svd"
+        file_name = "derivedfrom_path_resolving/test_setup_1.svd"
 
         file_content = get_test_svd_file_content(file_name)
         file_content = file_content.replace(b"PATH", path.encode())
@@ -3554,12 +3554,12 @@ class TestDerivedFromPathResolving:
             ),
         ],
     )
-    def test_register_level_same_peripheral_elements_same_name(
+    def test_test_setup_2(
         self,
         path: str,
         get_test_svd_file_content: Callable[[str], bytes],
     ):
-        file_name = "derivedfrom_path_resolving/register_level_same_peripheral_elements_same_name.svd"
+        file_name = "derivedfrom_path_resolving/test_setup_2.svd"
 
         file_content = get_test_svd_file_content(file_name)
         file_content = file_content.replace(b"PATH", path.encode())
