@@ -3534,3 +3534,67 @@ class TestDerivedFromPathResolving:
         assert device.peripherals[0].registers_clusters[1].fields[0].name == "FieldA"
         assert device.peripherals[0].registers_clusters[1].fields[0].lsb == 0
         assert device.peripherals[0].registers_clusters[1].fields[0].msb == 0
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "SameA.SameA.SameA.SameA",  # can't be processed with svdconv
+            "SameA.SameA.SameA",  # can't be processed with svdconv
+            pytest.param(
+                "SameA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "SameA.SameA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "SameA.SameA.SameA.SameA.SameA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+        ],
+    )
+    def test_register_level_same_peripheral_elements_same_name(
+        self,
+        path: str,
+        get_test_svd_file_content: Callable[[str], bytes],
+    ):
+        file_name = "derivedfrom_path_resolving/register_level_same_peripheral_elements_same_name.svd"
+
+        file_content = get_test_svd_file_content(file_name)
+        file_content = file_content.replace(b"PATH", path.encode())
+
+        device = Process.from_xml_content(file_content).get_processed_device()
+
+        assert len(device.peripherals) == 1
+        assert device.peripherals[0].name == "SameA"
+        assert len(device.peripherals[0].registers_clusters) == 2
+
+        assert isinstance(device.peripherals[0].registers_clusters[0], Cluster)
+        assert device.peripherals[0].registers_clusters[0].name == "SameA"
+        assert len(device.peripherals[0].registers_clusters[0].registers_clusters) == 1
+
+        assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[0], Cluster)
+        assert device.peripherals[0].registers_clusters[0].registers_clusters[0].name == "SameA"
+        assert len(device.peripherals[0].registers_clusters[0].registers_clusters[0].registers_clusters) == 1
+
+        registera = device.peripherals[0].registers_clusters[0].registers_clusters[0].registers_clusters[0]
+        assert isinstance(registera, Register)
+        assert registera.name == "SameA"
+        assert registera.address_offset == 0x0
+        assert registera.size == 32
+        assert len(registera.fields) == 1
+
+        assert registera.fields[0].name == "SameA"
+        assert registera.fields[0].lsb == 0
+        assert registera.fields[0].msb == 0
+
+        assert isinstance(device.peripherals[0].registers_clusters[1], Register)
+        assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
+        assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
+        assert device.peripherals[0].registers_clusters[1].size == 32
+        assert len(device.peripherals[0].registers_clusters[1].fields) == 1
+
+        assert device.peripherals[0].registers_clusters[1].fields[0].name == "SameA"
+        assert device.peripherals[0].registers_clusters[1].fields[0].lsb == 0
+        assert device.peripherals[0].registers_clusters[1].fields[0].msb == 0
