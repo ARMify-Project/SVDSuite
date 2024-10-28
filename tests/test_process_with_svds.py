@@ -3704,3 +3704,64 @@ class TestDerivedFromPathResolving:
         assert device.peripherals[1].registers_clusters[0].name == "RegisterA"
         assert len(device.peripherals[1].registers_clusters[0].fields) == 1
         assert device.peripherals[1].registers_clusters[0].fields[0].name == "FieldA"
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "PeripheralA.ClusterA.ClusterB.RegisterA.FieldA.FieldAEnumeratedValue",
+            pytest.param(
+                "ClusterA.ClusterB.RegisterA.FieldA.FieldAEnumeratedValue",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "ClusterB.RegisterA.FieldA.FieldAEnumeratedValue",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "RegisterA.FieldA.FieldAEnumeratedValue",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "FieldA.FieldAEnumeratedValue",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "FieldAEnumeratedValue",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+        ],
+    )
+    def test_test_setup_6(
+        self,
+        path: str,
+        get_test_svd_file_content: Callable[[str], bytes],
+    ):
+        file_name = "derivedfrom_path_resolving/test_setup_6.svd"
+
+        file_content = get_test_svd_file_content(file_name)
+        file_content = file_content.replace(b"PATH", path.encode())
+
+        device = Process.from_xml_content(file_content).get_processed_device()
+
+        assert len(device.peripherals) == 1
+        assert len(device.peripherals[0].registers_clusters) == 1
+        assert isinstance(device.peripherals[0].registers_clusters[0], Cluster)
+        assert device.peripherals[0].registers_clusters[0].name == "ClusterA"
+        assert len(device.peripherals[0].registers_clusters[0].registers_clusters) == 1
+        assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[0], Cluster)
+        assert device.peripherals[0].registers_clusters[0].registers_clusters[0].name == "ClusterB"
+        assert len(device.peripherals[0].registers_clusters[0].registers_clusters[0].registers_clusters) == 1
+        registera = device.peripherals[0].registers_clusters[0].registers_clusters[0].registers_clusters[0]
+        assert isinstance(registera, Register)
+        assert registera.name == "RegisterA"
+        assert len(registera.fields) == 2
+
+        assert registera.fields[0].name == "FieldA"
+        assert len(registera.fields[0].enumerated_value_containers) == 1
+        assert registera.fields[0].enumerated_value_containers[0].name == "FieldAEnumeratedValue"
+        assert len(registera.fields[0].enumerated_value_containers[0].enumerated_values) == 2
+
+        assert registera.fields[1].name == "FieldB"
+        assert len(registera.fields[1].enumerated_value_containers) == 1
+        assert registera.fields[1].enumerated_value_containers[0].name == "FieldAEnumeratedValue"
+        assert len(registera.fields[1].enumerated_value_containers[0].enumerated_values) == 2
