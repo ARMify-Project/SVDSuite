@@ -3634,3 +3634,39 @@ class TestDerivedFromPathResolving:
         assert device.peripherals[1].registers_clusters[1].name == "RegisterB"
         assert len(device.peripherals[1].registers_clusters[1].fields) == 1
         assert device.peripherals[1].registers_clusters[1].fields[0].name == "FieldB"
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "ElementA.RegisterA",
+            pytest.param(
+                "ElementA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "RegisterA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+        ],
+    )
+    def test_test_setup_4(
+        self,
+        path: str,
+        get_test_svd_file_content: Callable[[str], bytes],
+    ):
+        file_name = "derivedfrom_path_resolving/test_setup_4.svd"
+
+        file_content = get_test_svd_file_content(file_name)
+        file_content = file_content.replace(b"PATH", path.encode())
+
+        device = Process.from_xml_content(file_content).get_processed_device()
+
+        assert len(device.peripherals) == 2
+
+        assert device.peripherals[1].name == "PeripheralA"
+        assert len(device.peripherals[1].registers_clusters) == 3
+
+        assert isinstance(device.peripherals[1].registers_clusters[2], Register)
+        assert device.peripherals[1].registers_clusters[2].name == "RegisterB"
+        assert len(device.peripherals[1].registers_clusters[2].fields) == 1
+        assert device.peripherals[1].registers_clusters[2].fields[0].name == "FieldB"
