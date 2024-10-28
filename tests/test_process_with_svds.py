@@ -3639,6 +3639,7 @@ class TestDerivedFromPathResolving:
         "path",
         [
             "ElementA.RegisterA",
+            "ElementB.RegisterA",
             pytest.param(
                 "ElementA",
                 marks=pytest.mark.xfail(strict=True, raises=ProcessException),
