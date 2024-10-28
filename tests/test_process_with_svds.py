@@ -3765,3 +3765,51 @@ class TestDerivedFromPathResolving:
         assert len(registera.fields[1].enumerated_value_containers) == 1
         assert registera.fields[1].enumerated_value_containers[0].name == "FieldAEnumeratedValue"
         assert len(registera.fields[1].enumerated_value_containers[0].enumerated_values) == 2
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "PeripheralA.RegisterA",
+            "PeripheralB.RegisterA",
+            "PeripheralB.RegisterA_RegisterX",
+            pytest.param(
+                "PeripheralC.RegisterA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "RegisterA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "PeripheralA.RegisterB",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+            pytest.param(
+                "PeripheralB.RegisterB",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+        ],
+    )
+    def test_test_setup_7(
+        self,
+        path: str,
+        get_test_svd_file_content: Callable[[str], bytes],
+    ):
+        file_name = "derivedfrom_path_resolving/test_setup_7.svd"
+
+        file_content = get_test_svd_file_content(file_name)
+        file_content = file_content.replace(b"PATH", path.encode())
+
+        device = Process.from_xml_content(file_content).get_processed_device()
+
+        assert len(device.peripherals) == 3
+
+        assert device.peripherals[2].name == "PeripheralC"
+        assert len(device.peripherals[2].registers_clusters) == 1
+        assert isinstance(device.peripherals[2].registers_clusters[0], Register)
+        assert device.peripherals[2].registers_clusters[0].name == "RegisterA"
+
+        if "_RegisterX" in path:
+            assert device.peripherals[2].registers_clusters[0].description == "PeripheralB_RegisterA"
+        else:
+            assert device.peripherals[2].registers_clusters[0].description == "PeripheralA_RegisterA"
