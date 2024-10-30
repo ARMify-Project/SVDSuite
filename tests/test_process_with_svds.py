@@ -2454,6 +2454,28 @@ class TestClusterInheritanceViaDerivedFrom:
     def test_derive_from_self(self, get_processed_device_from_testfile: Callable[[str], Device]):
         get_processed_device_from_testfile("cluster_inheritance_via_derivedfrom/derive_from_self.svd")
 
+    def test_size_inheritance(self, get_processed_device_from_testfile: Callable[[str], Device]):
+        device = get_processed_device_from_testfile("cluster_inheritance_via_derivedfrom/size_inheritance.svd")
+
+        assert len(device.peripherals) == 1
+        assert len(device.peripherals[0].registers_clusters) == 2
+
+        assert isinstance(device.peripherals[0].registers_clusters[1], Cluster)
+        assert device.peripherals[0].registers_clusters[1].name == "ClusterB"
+        assert device.peripherals[0].registers_clusters[1].address_offset == 0x1
+        assert device.peripherals[0].registers_clusters[1].size == 8
+        assert len(device.peripherals[0].registers_clusters[1].registers_clusters) == 2
+
+        assert isinstance(device.peripherals[0].registers_clusters[1].registers_clusters[0], Register)
+        assert device.peripherals[0].registers_clusters[1].registers_clusters[0].name == "RegisterA"
+        assert device.peripherals[0].registers_clusters[1].registers_clusters[0].address_offset == 0x0
+        assert device.peripherals[0].registers_clusters[1].registers_clusters[0].size == 8
+
+        assert isinstance(device.peripherals[0].registers_clusters[1].registers_clusters[1], Register)
+        assert device.peripherals[0].registers_clusters[1].registers_clusters[1].name == "RegisterB"
+        assert device.peripherals[0].registers_clusters[1].registers_clusters[1].address_offset == 0x1
+        assert device.peripherals[0].registers_clusters[1].registers_clusters[1].size == 8
+
 
 class TestRegisterInheritanceViaDerivedFrom:
     def test_simple_inheritance_backward_reference_same_scope(
