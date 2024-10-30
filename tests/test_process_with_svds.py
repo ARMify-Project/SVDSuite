@@ -3835,3 +3835,69 @@ class TestDerivedFromPathResolving:
             assert device.peripherals[2].registers_clusters[0].description == "PeripheralB_RegisterA"
         else:
             assert device.peripherals[2].registers_clusters[0].description == "PeripheralA_RegisterA"
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "ClusterA.RegisterA",
+            "ClusterB.RegisterA",
+            "PeripheralA.ClusterA.RegisterA",
+            "PeripheralA.ClusterB.RegisterA",
+            pytest.param(
+                "RegisterA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+        ],
+    )
+    def test_test_setup_8(
+        self,
+        path: str,
+        get_test_svd_file_content: Callable[[str], bytes],
+    ):
+        file_name = "derivedfrom_path_resolving/test_setup_8.svd"
+
+        file_content = get_test_svd_file_content(file_name)
+        file_content = file_content.replace(b"PATH", path.encode())
+
+        device = Process.from_xml_content(file_content).get_processed_device()
+
+        assert len(device.peripherals) == 1
+        assert len(device.peripherals[0].registers_clusters) == 3
+
+        assert device.peripherals[0].registers_clusters[2].name == "RegisterC"
+        assert device.peripherals[0].registers_clusters[2].description == "RegisterA description"
+        assert device.peripherals[0].registers_clusters[2].address_offset == 0xC
+        assert device.peripherals[0].registers_clusters[2].size == 32
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "ClusterA.RegisterA",
+            "ClusterB.RegisterA",
+            "PeripheralA.ClusterA.RegisterA",
+            "PeripheralA.ClusterB.RegisterA",
+            pytest.param(
+                "RegisterA",
+                marks=pytest.mark.xfail(strict=True, raises=ProcessException),
+            ),
+        ],
+    )
+    def test_test_setup_9(
+        self,
+        path: str,
+        get_test_svd_file_content: Callable[[str], bytes],
+    ):
+        file_name = "derivedfrom_path_resolving/test_setup_9.svd"
+
+        file_content = get_test_svd_file_content(file_name)
+        file_content = file_content.replace(b"PATH", path.encode())
+
+        device = Process.from_xml_content(file_content).get_processed_device()
+
+        assert len(device.peripherals) == 1
+        assert len(device.peripherals[0].registers_clusters) == 3
+
+        assert device.peripherals[0].registers_clusters[2].name == "RegisterC"
+        assert device.peripherals[0].registers_clusters[2].description == "RegisterA description"
+        assert device.peripherals[0].registers_clusters[2].address_offset == 0xC
+        assert device.peripherals[0].registers_clusters[2].size == 32
