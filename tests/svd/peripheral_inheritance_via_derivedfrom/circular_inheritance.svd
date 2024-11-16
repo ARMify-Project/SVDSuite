@@ -15,7 +15,7 @@
   <addressUnitBits>8</addressUnitBits>
   <width>32</width>
   <peripherals>
-    <peripheral derivedFrom="PeripheralB">
+    <peripheral derivedFrom="PeripheralC">
       <name>PeripheralA</name>
       <baseAddress>0x40001000</baseAddress>
       <addressBlock>
@@ -33,6 +33,10 @@
     <peripheral derivedFrom="PeripheralA">
       <name>PeripheralB</name>
       <baseAddress>0x40002000</baseAddress>
+    </peripheral>
+    <peripheral derivedFrom="PeripheralB">
+      <name>PeripheralC</name>
+      <baseAddress>0x40003000</baseAddress>
     </peripheral>
   </peripherals>
 </device>
