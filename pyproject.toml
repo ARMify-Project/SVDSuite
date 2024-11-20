@@ -28,7 +28,7 @@ classifiers = [
   "Topic :: Scientific/Engineering",
   "Typing :: Typed",
 ]
-dependencies = ["lxml>=4.9.3"]
+dependencies = ["lxml>=4.9.3", "rustworkx>=0.15.1"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.1.1"]

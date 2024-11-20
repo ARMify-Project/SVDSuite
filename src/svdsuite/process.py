@@ -1,415 +1,60 @@
-from collections import defaultdict
+from __future__ import annotations  # TODO fix graph drawing and remove this
+from enum import Enum, auto
+from typing import TypeAlias, cast, Any, Callable
 import itertools
-from dataclasses import dataclass
-from typing import TypeAlias, TypeVar, Self, Optional
-import copy
+from abc import ABC
 import re
-import bisect
+import copy
+import tempfile
+import rustworkx as rx
+from rustworkx.visualization import graphviz_draw  # pyright: ignore[reportUnknownVariableType]
 
 from svdsuite.parse import Parser
 from svdsuite.model.parse import (
     SVDDevice,
     SVDCPU,
-    SVDEnumeratedValueContainer,
-    SVDEnumeratedValue,
-    SVDField,
-    SVDPeripheral,
-    SVDSauRegion,
     SVDSauRegionsConfig,
+    SVDSauRegion,
+    SVDPeripheral,
+    SVDCluster,
+    SVDRegister,
+    SVDField,
+    SVDEnumeratedValueContainer,
     SVDAddressBlock,
     SVDInterrupt,
-    SVDRegister,
-    SVDCluster,
+    SVDEnumeratedValue,
     SVDWriteConstraint,
 )
 from svdsuite.model.process import (
     Device,
     CPU,
-    EnumeratedValueContainer,
-    EnumeratedValue,
-    Field,
-    Peripheral,
-    SauRegion,
     SauRegionsConfig,
+    SauRegion,
+    Peripheral,
+    Cluster,
+    Register,
+    Field,
+    EnumeratedValueContainer,
     AddressBlock,
     Interrupt,
-    Register,
-    Cluster,
+    EnumeratedValue,
     WriteConstraint,
 )
-from svdsuite.model.types import CPUNameType, EnumUsageType, ModifiedWriteValuesType, ProtectionStringType, AccessType
+from svdsuite.util.process_parse_model_convert import process_parse_convert_device
+from svdsuite.model.types import AccessType, ProtectionStringType, CPUNameType, EnumUsageType, ModifiedWriteValuesType
 from svdsuite.util.dim import resolve_dim
 from svdsuite.util.enumerated_value import process_binary_value_with_wildcard
-from svdsuite.util.process_parse_model_convert import process_parse_convert_device
-
-SVDElementTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField
-
-T = TypeVar("T")
+from svdsuite.util.html_generator import HTMLGenerator
 
 
-def _or_if_none(a: Optional[T], b: Optional[T]) -> Optional[T]:
+ParsedPeripheralTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField | SVDEnumeratedValueContainer
+ParsedDimablePeripheralTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField
+ProcessedPeripheralTypes: TypeAlias = Peripheral | Cluster | Register | Field | EnumeratedValueContainer
+ProcessedDimablePeripheralTypes: TypeAlias = Peripheral | Cluster | Register | Field
+
+
+def _or_if_none[T](a: None | T, b: None | T) -> None | T:
     return a if a is not None else b
-
-
-@dataclass
-class _RegisterPropertiesInheritance:
-    size: None | int = None
-    access: None | AccessType = None
-    protection: None | ProtectionStringType = None
-    reset_value: None | int = None
-    reset_mask: None | int = None
-
-    def get_obj(
-        self,
-        size: None | int,
-        access: None | AccessType,
-        protection: None | ProtectionStringType,
-        reset_value: None | int,
-        reset_mask: None | int,
-    ) -> Self:
-        attributes: dict[str, None | int | AccessType | ProtectionStringType] = {
-            "size": size,
-            "access": access,
-            "protection": protection,
-            "reset_value": reset_value,
-            "reset_mask": reset_mask,
-        }
-        new_obj = None
-        for attr, new_value in attributes.items():
-            if new_value is not None and getattr(self, attr) != new_value:
-                if new_obj is None:
-                    new_obj = copy.deepcopy(self)
-                setattr(new_obj, attr, new_value)
-        return new_obj if new_obj is not None else self
-
-
-class _RegisterClusterMap:
-    def __init__(self):
-        # list of tuples (start, end, reference)
-        self.regions: list[tuple[int, int, Cluster | Register]] = []
-
-    def add_region(self, start: int, end: int, reference: Cluster | Register) -> None:
-        def region_key(region: tuple[int, int, Cluster | Register]) -> tuple[int, int, str]:
-            return (region[0], region[1], region[2].name)
-
-        bisect.insort(self.regions, (start, end, reference), key=region_key)
-
-    def get_highest_region(self) -> tuple[int, int, Cluster | Register]:
-        return self.regions[-1]
-
-    def merge_and_overwrite_with(self, other: "_RegisterClusterMap") -> None:
-        """
-        Merges the current _RegisterClusterMap with another _RegisterClusterMap.
-        Overlapping regions from the current map are overwritten by the regions from 'other'.
-        """
-
-        def region_overlaps(
-            region1: tuple[int, int, Cluster | Register], region2: tuple[int, int, Cluster | Register]
-        ) -> bool:
-            start1, end1, _ = region1
-            start2, end2, _ = region2
-            return start1 <= end2 and end1 >= start2
-
-        for other_region in other.regions:
-            overlapping_regions = [region for region in self.regions if region_overlaps(region, other_region)]
-            for region in overlapping_regions:
-                self.regions.remove(region)
-
-            self.add_region(*other_region)
-
-    @staticmethod
-    def build_map_from_registers_clusters(
-        registers_clusters: list[Register | Cluster],
-    ) -> "_RegisterClusterMap":
-        memory_map = _RegisterClusterMap()
-        for register_cluster in registers_clusters:
-            if isinstance(register_cluster, Cluster):
-                cluster_map = _RegisterClusterMap.build_map_from_registers_clusters(register_cluster.registers_clusters)
-                memory_map.add_region(
-                    register_cluster.address_offset,
-                    register_cluster.address_offset + cluster_map.get_highest_region()[1],
-                    register_cluster,
-                )
-
-            if isinstance(register_cluster, Register):
-                register_size_bit = register_cluster.size
-
-                if register_size_bit % 8 != 0:
-                    raise ValueError(f"register size of {register_cluster.name} is not a multiple of 8")
-
-                register_size_byte = register_size_bit // 8
-
-                memory_map.add_region(
-                    register_cluster.address_offset,
-                    register_cluster.address_offset + register_size_byte - 1,
-                    register_cluster,
-                )
-
-        return memory_map
-
-
-class _Node:
-    def __init__(
-        self,
-        name: str,
-        element: SVDElementTypes,
-        alternative_names: set[str],
-        dim_values: list[str],
-        register_properties: _RegisterPropertiesInheritance,
-    ) -> None:
-        self.name: str = name
-        self.element = element
-        self.alternative_names: set[str] = alternative_names
-        self.dim_values: list[str] = dim_values
-        self.register_properties = register_properties
-        self._hash = hash(self.name)
-
-    def __repr__(self) -> str:
-        return f"Node({self.name}, {self.element})"
-
-    def __hash__(self) -> int:
-        return self._hash
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, _Node):
-            return NotImplemented
-        return self.name == other.name
-
-
-class _DirectedGraph:
-    def __init__(self) -> None:
-        self.incoming_edges: defaultdict[_Node, list[_Node]] = defaultdict(list)
-        self.outgoing_edges_count: dict[_Node, int] = {}
-        self.next_node: set[_Node] = set()
-        self.node_lookup: dict[str, _Node] = {}
-        self.alternative_name_lookup: dict[str, _Node] = {}
-
-    def add_node(
-        self,
-        full_name: str,
-        element: SVDElementTypes,
-        register_properties: _RegisterPropertiesInheritance,
-        parent_node: None | _Node = None,
-    ) -> _Node:
-        if self._find_node_by_name(full_name):
-            raise ProcessException(f"Node with name {full_name} already exists in the graph")
-
-        dim_values = self._resolve_dim_values(element)
-        alternative_names = self._generate_alternative_names(element, parent_node, dim_values)
-
-        node = _Node(full_name, element, alternative_names, dim_values, register_properties)
-
-        self.next_node.add(node)
-        self.outgoing_edges_count[node] = 0
-        self.node_lookup[full_name] = node
-        for alt_name in alternative_names:
-            self.alternative_name_lookup[alt_name] = node
-
-        return node
-
-    def add_edge(self, from_name: str, to_name: str) -> None:
-        from_node = self._find_node_by_name(from_name)
-        to_node = self._find_node_by_name(to_name)
-
-        if from_node is not None and to_node is not None:
-            self.incoming_edges[to_node].append(from_node)
-            self.outgoing_edges_count[from_node] += 1
-            self.next_node.discard(from_node)
-        else:
-            raise ProcessException("Both nodes must exist in the graph")
-
-    def get_next_node_without_outgoing_edges(self) -> None | _Node:
-        try:
-            return self.next_node.pop()
-        except KeyError:
-            return None
-
-    def mark_node_as_completed(self, node: _Node):
-        for predecessor in self.incoming_edges[node]:
-            self.outgoing_edges_count[predecessor] -= 1
-            if self.outgoing_edges_count[predecessor] == 0:
-                self.next_node.add(predecessor)
-
-    def _generate_alternative_names(
-        self, element: SVDElementTypes, parent_node: None | _Node, dim_values: list[str]
-    ) -> set[str]:
-        alternative_names: set[str] = set()
-
-        if isinstance(element, SVDPeripheral):
-            alternative_names = set(dim_values)
-        else:
-            if parent_node is None:
-                raise ValueError("Parent node must be provided for cluster, register, field")
-
-            alternative_names.update(self._combine_names(parent_node.alternative_names, set([element.name])))
-            alternative_names.update(self._combine_names(set([parent_node.name]), set(dim_values)))
-            alternative_names.update(self._combine_names(parent_node.alternative_names, set(dim_values)))
-
-        return alternative_names
-
-    def _resolve_dim_values(self, element: SVDElementTypes) -> list[str]:
-        if element.dim is not None:
-            return resolve_dim(element.name, element.dim, element.dim_index)
-        return []
-
-    def _combine_names(self, names1: set[str], names2: set[str]) -> set[str]:
-        return {f"{item1}.{item2}" for item1, item2 in itertools.product(names1, names2)}
-
-    def _find_node_by_name(self, name: str) -> None | _Node:
-        if name in self.node_lookup:
-            return self.node_lookup[name]
-        if name in self.alternative_name_lookup:
-            return self.alternative_name_lookup[name]
-
-        return None
-
-
-class _Resolver:
-    def __init__(self, parsed_device: SVDDevice) -> None:
-        self._parsed_device = parsed_device
-        self._graph = _DirectedGraph()
-        self._derived_mapping: list[tuple[str, str]] = []
-
-        self._build_resolve_graph()
-
-    def resolve_next_node(self) -> None | _Node:
-        node = self._graph.get_next_node_without_outgoing_edges()
-
-        if node is not None:
-            self._graph.mark_node_as_completed(node)
-
-        return node
-
-    def find_derived_nodes(self, node: _Node) -> list[tuple[str, str]]:
-        result: list[tuple[str, str]] = []
-        for derived_node_name, base_node_name in self._derived_mapping:
-            if base_node_name == node.name or base_node_name in node.alternative_names:
-                if "." in base_node_name:
-                    element_derived_rel_name = base_node_name.split(".")[-1]
-                else:
-                    element_derived_rel_name = base_node_name
-
-                if "%s" in element_derived_rel_name:
-                    element_derived_rel_name = node.dim_values[0]
-
-                result.append((derived_node_name, element_derived_rel_name))
-
-        return result
-
-    def _build_resolve_graph(self) -> None:
-        register_properties_device = _RegisterPropertiesInheritance(
-            size=_or_if_none(self._parsed_device.size, 32),
-            access=_or_if_none(self._parsed_device.access, AccessType.READ_WRITE),
-            protection=_or_if_none(self._parsed_device.protection, ProtectionStringType.ANY),
-            reset_value=_or_if_none(self._parsed_device.reset_value, 0),
-            reset_mask=_or_if_none(self._parsed_device.reset_mask, 0xFFFFFFFF),
-        )
-
-        # iterate over peripherals, clusters, registers, fields to build graph and the mapping of derived_from
-        for parsed_peripheral in self._parsed_device.peripherals:
-            register_properties_peripheral = register_properties_device.get_obj(
-                parsed_peripheral.size,
-                parsed_peripheral.access,
-                parsed_peripheral.protection,
-                parsed_peripheral.reset_value,
-                parsed_peripheral.reset_mask,
-            )
-
-            peripheral_node = self._graph.add_node(
-                parsed_peripheral.name, parsed_peripheral, register_properties_peripheral
-            )
-
-            if parsed_peripheral.derived_from is not None:
-                self._derived_mapping.append((parsed_peripheral.name, parsed_peripheral.derived_from))
-
-            stack = [
-                (item, parsed_peripheral.name, peripheral_node, register_properties_peripheral)
-                for item in parsed_peripheral.registers_clusters
-            ]
-            while stack:
-                register_cluster, current_path, peripheral_node_, register_properties_parent = stack.pop(0)
-                if isinstance(register_cluster, SVDCluster):
-                    self._handle_cluster(
-                        register_cluster, current_path, peripheral_node_, register_properties_parent, stack
-                    )
-                if isinstance(register_cluster, SVDRegister):
-                    self._handle_register(register_cluster, current_path, peripheral_node_, register_properties_parent)
-
-        # add edges for derived_from
-        for element_name, derived_from_name in self._derived_mapping:
-            self._graph.add_edge(element_name, derived_from_name)
-
-    def _handle_cluster(
-        self,
-        cluster: SVDCluster,
-        current_path: str,
-        parent_node: _Node,
-        register_properties_parent: _RegisterPropertiesInheritance,
-        stack: list[tuple[SVDRegister | SVDCluster, str, _Node, _RegisterPropertiesInheritance]],
-    ) -> None:
-        register_properties_cluster = register_properties_parent.get_obj(
-            cluster.size,
-            cluster.access,
-            cluster.protection,
-            cluster.reset_value,
-            cluster.reset_mask,
-        )
-
-        cluster_name = f"{current_path}.{cluster.name}"
-        cluster_node = self._graph.add_node(cluster_name, cluster, register_properties_cluster, parent_node)
-        self._graph.add_edge(current_path, cluster_name)
-        self._handle_derived_from(cluster_name, cluster.derived_from, current_path)
-
-        stack.extend(
-            (nested_item, cluster_name, cluster_node, register_properties_cluster)
-            for nested_item in cluster.registers_clusters
-        )
-
-    def _handle_register(
-        self,
-        register: SVDRegister,
-        current_path: str,
-        parent_node: _Node,
-        register_properties_parent: _RegisterPropertiesInheritance,
-    ) -> None:
-        register_properties_register = register_properties_parent.get_obj(
-            register.size,
-            register.access,
-            register.protection,
-            register.reset_value,
-            register.reset_mask,
-        )
-
-        register_name = f"{current_path}.{register.name}"
-        register_node = self._graph.add_node(register_name, register, register_properties_register, parent_node)
-        self._graph.add_edge(current_path, register_name)
-        self._handle_derived_from(register_name, register.derived_from, current_path)
-
-        for field in register.fields:
-            self._handle_field(field, register_name, register_node, register_properties_register.access)
-
-    def _handle_field(
-        self, field: SVDField, register_name: str, parent_node: _Node, register_access: None | AccessType
-    ) -> None:
-        register_properties_field = _RegisterPropertiesInheritance(
-            size=None,
-            access=field.access if field.access is not None else register_access,
-            protection=None,
-            reset_value=None,
-            reset_mask=None,
-        )
-
-        field_name = f"{register_name}.{field.name}"
-        self._graph.add_node(field_name, field, register_properties_field, parent_node)
-        self._graph.add_edge(register_name, field_name)
-        self._handle_derived_from(field_name, field.derived_from, register_name)
-
-    def _handle_derived_from(self, derived_node_name: str, element_name: None | str, path: str) -> None:
-        if element_name is not None:
-            if "." not in element_name:
-                self._derived_mapping.append((derived_node_name, f"{path}.{element_name}"))
-            else:
-                self._derived_mapping.append((derived_node_name, element_name))
 
 
 class ProcessException(Exception):
@@ -422,19 +67,20 @@ class ProcessWarning(Warning):
 
 class Process:
     @classmethod
-    def from_svd_file(cls, path: str):
-        return cls(Parser.from_svd_file(path).get_parsed_device())
+    def from_svd_file(cls, path: str, resolver_logging_file_path: None | str = None):
+        return cls(Parser.from_svd_file(path).get_parsed_device(), resolver_logging_file_path)
 
     @classmethod
-    def from_xml_str(cls, xml_str: str):
-        return cls(Parser.from_xml_content(xml_str.encode()).get_parsed_device())
+    def from_xml_str(cls, xml_str: str, resolver_logging_file_path: None | str = None):
+        return cls(Parser.from_xml_content(xml_str.encode()).get_parsed_device(), resolver_logging_file_path)
 
     @classmethod
-    def from_xml_content(cls, content: bytes):
-        return cls(Parser.from_xml_content(content).get_parsed_device())
+    def from_xml_content(cls, content: bytes, resolver_logging_file_path: None | str = None):
+        return cls(Parser.from_xml_content(content).get_parsed_device(), resolver_logging_file_path)
 
-    def __init__(self, parsed_device: SVDDevice) -> None:
-        self._processed_device = self._process_device(parsed_device)
+    def __init__(self, parsed_device: SVDDevice, resolver_logging_file_path: None | str) -> None:
+        resolver_logging_file_path = "/home/fedora/resolver_logging.html"  # TODO remove (debug)
+        self._processed_device = self._process_device(parsed_device, resolver_logging_file_path)
 
     def get_processed_device(self) -> Device:
         return self._processed_device
@@ -442,13 +88,19 @@ class Process:
     def convert_processed_device_to_svd_device(self) -> SVDDevice:
         return process_parse_convert_device(self._processed_device)
 
-    def _process_device(self, parsed_device: SVDDevice) -> Device:
-        return Device(
-            size=_or_if_none(parsed_device.size, 32),
-            access=_or_if_none(parsed_device.access, AccessType.READ_WRITE),
-            protection=_or_if_none(parsed_device.protection, ProtectionStringType.ANY),
-            reset_value=_or_if_none(parsed_device.reset_value, 0),
-            reset_mask=_or_if_none(parsed_device.reset_mask, 0xFFFFFFFF),
+    def _process_device(self, parsed_device: SVDDevice, resolver_logging_file_path: None | str) -> Device:
+        size = _or_if_none(parsed_device.size, 32)
+        access = _or_if_none(parsed_device.access, AccessType.READ_WRITE)
+        protection = _or_if_none(parsed_device.protection, ProtectionStringType.ANY)
+        reset_value = _or_if_none(parsed_device.reset_value, 0)
+        reset_mask = _or_if_none(parsed_device.reset_mask, 0xFFFFFFFF)
+
+        device = Device(
+            size=size,
+            access=access,
+            protection=protection,
+            reset_value=reset_value,
+            reset_mask=reset_mask,
             vendor=parsed_device.vendor,
             vendor_id=parsed_device.vendor_id,
             name=parsed_device.name,
@@ -461,9 +113,13 @@ class Process:
             header_definitions_prefix=parsed_device.header_definitions_prefix,
             address_unit_bits=parsed_device.address_unit_bits,
             width=parsed_device.width,
-            peripherals=_ProcessPeripheralElements(parsed_device).process_peripherals(),
+            peripherals=[],  # will be added in _ProcessPeripheralElements
             parsed=parsed_device,
         )
+
+        _ProcessPeripheralElements(device, resolver_logging_file_path)
+
+        return device
 
     def _process_cpu(self, parsed_cpu: None | SVDCPU) -> None | CPU:
         if parsed_cpu is None:
@@ -524,16 +180,922 @@ class Process:
         return regions
 
 
-def _process_write_constraint(write_constraint: None | SVDWriteConstraint) -> None | WriteConstraint:
-    if write_constraint is None:
+class _ElementLevel(Enum):
+    DEVICE = "Device"
+    PERIPHERAL = "Peripheral"
+    CLUSTER = "Cluster"
+    REGISTER = "Register"
+    FIELD = "Field"
+    ENUMCONT = "Enum"
+
+
+class _NodeStatus(Enum):
+    UNPROCESSED = auto()  # black
+    PROCESSED = auto()  # blue
+
+
+class _EdgeType(Enum):
+    CHILD_UNRESOLVED = auto()  # black
+    CHILD_RESOLVED = auto()  # blue
+    PLACEHOLDER = auto()  # red
+    DERIVE = auto()  # green
+
+
+class _ResolverNode(ABC):
+    _node_counter = itertools.count()
+
+    def __init__(self):
+        self._node_id = next(self._node_counter)
+
+    @property
+    def node_id(self) -> int:
+        return self._node_id
+
+
+class _PlaceholderNode(_ResolverNode):
+    def __init__(self, derive_path: str):
+        self._derive_path = derive_path
+
+        super().__init__()
+
+    @property
+    def derive_path(self) -> str:
+        return self._derive_path
+
+
+class _ElementNode(_ResolverNode):
+    def __init__(
+        self,
+        name: None | str,
+        level: _ElementLevel,
+        status: _NodeStatus,
+        parsed: SVDDevice | ParsedPeripheralTypes,
+        processed: None | Device | ProcessedPeripheralTypes = None,
+        is_dim_template: bool = False,
+    ):
+        self._name = name
+        self._level = level
+        self.status = status
+        self._parsed = parsed
+        self._is_dim_template = is_dim_template
+        self._processed = processed
+
+        super().__init__()
+
+    @property
+    def name(self) -> None | str:
+        return self._name
+
+    @property
+    def level(self) -> _ElementLevel:
+        return self._level
+
+    @property
+    def parsed(self) -> SVDDevice | ParsedPeripheralTypes:
+        return self._parsed
+
+    @property
+    def is_dim_template(self) -> bool:
+        return self._is_dim_template
+
+    @is_dim_template.setter
+    def is_dim_template(self, is_dim_template: bool):
+        if self._is_dim_template is True and is_dim_template is False:
+            raise ProcessException("is_dim_template attribute is already set to True and can't be set to False")
+
+        self._is_dim_template = is_dim_template
+
+    @property
+    def node_id(self) -> int:
+        return self._node_id
+
+    @property
+    def processed(self) -> Device | ProcessedPeripheralTypes:
+        if self._processed is None:
+            raise ProcessException(f"Processed attribute of node '{self.name}' is None")
+
+        return self._processed
+
+    @property
+    def processed_or_none(self) -> None | Device | ProcessedPeripheralTypes:
+        return self._processed
+
+    @processed.setter
+    def processed(self, processed: ProcessedPeripheralTypes):
+        if self._processed is not None:
+            raise ProcessException(f"Processed attribute of node '{self.name}' is already set")
+
+        self._processed = processed
+
+
+class _ResolverGraphException(Exception):
+    pass
+
+
+class _ResolverGraph:
+    def __init__(self):
+        self._graph: rx.PyDiGraph[_ResolverNode, _EdgeType] = rx.PyDiGraph(  # pylint: disable=no-member
+            check_cycle=True
+        )
+        self._node_id_to_rx_index: dict[int, int] = {}
+        self._rx_index_to_node_id: dict[int, int] = {}
+        self._placeholders: list[_PlaceholderNode] = []
+
+    def add_root(self, root: _ElementNode):
+        rx_index = self._graph.add_node(root)
+
+        self._node_id_to_rx_index[root.node_id] = rx_index
+        self._rx_index_to_node_id[rx_index] = root.node_id
+
+    def add_element_child(self, parent: _ElementNode, child: _ElementNode, edge_type: _EdgeType):
+        parent_rx_index = self._node_id_to_rx_index[parent.node_id]
+        child_rx_index = self._graph.add_node(child)
+        self._graph.add_edge(parent_rx_index, child_rx_index, edge_type)
+
+        self._node_id_to_rx_index[child.node_id] = child_rx_index
+        self._rx_index_to_node_id[child_rx_index] = child.node_id
+
+    def add_edge(self, parent: _ElementNode, child: _ElementNode | _PlaceholderNode, edge_type: _EdgeType):
+        self._graph.add_edge(
+            self._node_id_to_rx_index[parent.node_id], self._node_id_to_rx_index[child.node_id], edge_type
+        )
+
+    def add_placeholder(self, placeholder: _PlaceholderNode, derivation_node: _ElementNode):
+        derivation_node_rx_index = self._node_id_to_rx_index[derivation_node.node_id]
+        placeholder_rx_index = self._graph.add_node(placeholder)
+        self._graph.add_edge(placeholder_rx_index, derivation_node_rx_index, _EdgeType.PLACEHOLDER)
+
+        self._node_id_to_rx_index[placeholder.node_id] = placeholder_rx_index
+        self._rx_index_to_node_id[placeholder_rx_index] = placeholder.node_id
+
+        self._placeholders.append(placeholder)
+
+    def get_placeholders(self) -> list[_PlaceholderNode]:
+        return self._placeholders
+
+    def get_placeholder_co_parent(self, placeholder: _PlaceholderNode) -> None | _ElementNode:
+        children = self._graph.successors(self._node_id_to_rx_index[placeholder.node_id])
+
+        if not children:
+            raise _ResolverGraphException(f"Placeholder '{placeholder.derive_path}' has no child")
+
+        if len(children) != 1:
+            raise _ResolverGraphException(f"Placeholder '{placeholder.derive_path}' has more than one child")
+
+        parents = self._graph.predecessors(self._node_id_to_rx_index[children[0].node_id])
+
+        # only _ElementNode nodes
+        parents = [parent for parent in parents if isinstance(parent, _ElementNode)]
+
+        if not parents:
+            return None
+
+        if len(parents) != 1:
+            raise _ResolverGraphException(f"Placeholder '{placeholder.derive_path}' has more than one co-parent")
+
+        return parents[0]
+
+    def get_element_parents(self, node: _ElementNode) -> list[_ElementNode]:
+        incoming_edges = self._graph.in_edges(self._node_id_to_rx_index[node.node_id])
+
+        parents = [
+            self._graph[parent_rx_index]
+            for parent_rx_index, _, edge_data in incoming_edges
+            if isinstance(self._graph[parent_rx_index], _ElementNode)
+            and edge_data in (_EdgeType.CHILD_UNRESOLVED, _EdgeType.CHILD_RESOLVED)
+        ]
+
+        return cast(list[_ElementNode], parents)
+
+    def get_element_childrens(self, node: _ElementNode) -> list[_ElementNode]:
+        outgoing_edges = self._graph.out_edges(self._node_id_to_rx_index[node.node_id])
+
+        children = [
+            self._graph[child_rx_index]
+            for _, child_rx_index, edge_data in outgoing_edges
+            if isinstance(self._graph[child_rx_index], _ElementNode)
+            and edge_data in (_EdgeType.CHILD_UNRESOLVED, _EdgeType.CHILD_RESOLVED)
+        ]
+
+        return cast(list[_ElementNode], children)
+
+    def get_element_siblings(self, node: _ElementNode) -> list[_ElementNode]:
+        parents = self.get_element_parents(node)
+
+        if not parents:
+            return []
+
+        # _ElementNode has one parent, except resolved dim nodes, which may have multiple with the same children
+        # hence, the first parent suffices to find siblings
+        parent = parents[0]
+
+        siblings: list[_ElementNode] = []
+        for child in self._graph.successors(self._node_id_to_rx_index[parent.node_id]):
+            if not isinstance(child, _ElementNode):
+                continue
+
+            if child.node_id == node.node_id:
+                continue
+
+            siblings.append(child)
+
+        return siblings
+
+    def remove_placeholder(self, placeholder: _PlaceholderNode):
+        self._remove_node(placeholder)
+        self._placeholders.remove(placeholder)
+
+    def remove_node(self, node: _ElementNode):
+        self._remove_node(node)
+
+    def _remove_node(self, node: _ElementNode | _PlaceholderNode):
+        rx_index = self._node_id_to_rx_index[node.node_id]
+        self._graph.remove_node(rx_index)
+
+        del self._node_id_to_rx_index[node.node_id]
+        del self._rx_index_to_node_id[rx_index]
+
+    def has_incoming_edge_of_types(self, node: _ElementNode, edge_types_to_find: set[_EdgeType]) -> bool:
+        rx_index = self._node_id_to_rx_index[node.node_id]
+        for _, _, edge_type in self._graph.in_edges(rx_index):
+            if edge_type in edge_types_to_find:
+                return True
+        return False
+
+    def get_topological_sorted_nodes(self, nodes: list[_ElementNode]) -> list[_ElementNode]:
+        def sort_key(node: _ResolverNode) -> str:
+            # correct type of node for static type checking
+            node = cast(_ElementNode, node)
+
+            # derived nodes should be processed as late as possible
+            if self.has_incoming_edge_of_types(node, {_EdgeType.DERIVE}):
+                return "B"
+
+            return "A"
+
+        subgraph = self._graph.subgraph(
+            [self._node_id_to_rx_index[node.node_id] for node in nodes if node.status == _NodeStatus.UNPROCESSED]
+        )
+
+        topological_sorted_nodes = rx.lexicographical_topological_sort(  # pylint: disable=no-member
+            subgraph, key=sort_key
+        )
+
+        # self.draw_graph("/home/fedora/subgraph.png", "png", subgraph)  # TODO remove (debug)
+
+        del subgraph
+
+        # correct type of topological_sorted_nodes for static type checking
+        return cast(list[_ElementNode], topological_sorted_nodes)
+
+    def get_element_node_by_node_id(self, node_id: int) -> None | _ElementNode:
+        try:
+            node = self._graph[self._node_id_to_rx_index[node_id]]
+        except KeyError:
+            return None
+
+        if not isinstance(node, _ElementNode):
+            return None
+
+        return node
+
+    def get_base_element_node(self, derive_node: _ElementNode) -> None | _ElementNode:
+        for parent_rx_index, _, edge_type in self._graph.in_edges(self._node_id_to_rx_index[derive_node.node_id]):
+            if edge_type == _EdgeType.DERIVE:
+                return cast(_ElementNode, self._graph[parent_rx_index])
+
         return None
 
-    return WriteConstraint(
-        write_as_read=write_constraint.write_as_read,
-        use_enumerated_values=write_constraint.use_enumerated_values,
-        range_=write_constraint.range_,
-        parsed=write_constraint,
-    )
+    def remove_edge(self, parent: _ElementNode, child: _ElementNode):
+        parent_rx_index = self._node_id_to_rx_index[parent.node_id]
+        child_rx_index = self._node_id_to_rx_index[child.node_id]
+
+        self._graph.remove_edge(parent_rx_index, child_rx_index)
+
+    def update_edge(self, parent: _ElementNode, child: _ElementNode, edge_type: _EdgeType):
+        parent_rx_index = self._node_id_to_rx_index[parent.node_id]
+        child_rx_index = self._node_id_to_rx_index[child.node_id]
+
+        self._graph.update_edge(parent_rx_index, child_rx_index, edge_type)
+
+    def get_placeholder_child(self, placeholder: _PlaceholderNode) -> _ElementNode:
+        outgoing_edges = self._graph.out_edges(self._node_id_to_rx_index[placeholder.node_id])
+
+        children = [
+            self._graph[child_rx_index]
+            for _, child_rx_index, edge_data in outgoing_edges
+            if isinstance(self._graph[child_rx_index], _ElementNode) and edge_data == _EdgeType.PLACEHOLDER
+        ]
+
+        if not children:
+            raise ProcessException(f"Placeholder '{placeholder.derive_path}' has no children")
+
+        if len(children) != 1:
+            raise ProcessException(f"Placeholder '{placeholder.derive_path}' has more than one child")
+
+        return cast(_ElementNode, children[0])
+
+    def get_placeholder_parent(self, placeholder: _PlaceholderNode) -> _ElementNode:
+        incoming_edges = self._graph.in_edges(self._node_id_to_rx_index[placeholder.node_id])
+
+        parents = [
+            self._graph[parent_rx_index]
+            for parent_rx_index, _, edge_data in incoming_edges
+            if isinstance(self._graph[parent_rx_index], _ElementNode) and edge_data == _EdgeType.PLACEHOLDER
+        ]
+
+        if not parents:
+            raise ProcessException(f"Placeholder '{placeholder.derive_path}' has no parent")
+
+        if len(parents) != 1:
+            raise ProcessException(f"Placeholder '{placeholder.derive_path}' has more than one parent")
+
+        return cast(_ElementNode, parents[0])
+
+    def replicate_descendants(self, source_node: _ElementNode, target_node: _ElementNode):
+        source_rx_index = self._node_id_to_rx_index[source_node.node_id]
+
+        # get rx_index for all descendants of source_node, excluding edges of type _EdgeType.DERIVE
+        rx_indices_to_replicate: set[int] = set()
+        visited: set[int] = set()
+        stack: list[int] = [source_rx_index]
+
+        while stack:
+            current_rx_index = stack.pop()
+            if current_rx_index in visited:
+                continue
+            visited.add(current_rx_index)
+
+            # get outgoing edges
+            for _, child_rx_index, edge_type in self._graph.out_edges(current_rx_index):
+                if edge_type == _EdgeType.DERIVE:
+                    continue
+                rx_indices_to_replicate.add(child_rx_index)
+                stack.append(child_rx_index)
+
+        # replicate the nodes and map the indicies
+        replica_mapping: dict[int, int] = {}
+        for rx_index in rx_indices_to_replicate:
+            existing_node = self._graph[rx_index]
+            new_node = self._create_replicated_node(existing_node)
+            new_node_rx_index = self._graph.add_node(new_node)
+            replica_mapping[rx_index] = new_node_rx_index
+
+            self._node_id_to_rx_index[new_node.node_id] = new_node_rx_index
+            self._rx_index_to_node_id[new_node_rx_index] = new_node.node_id
+
+            if isinstance(new_node, _PlaceholderNode):
+                self._placeholders.append(new_node)
+
+        # replicate the edges
+        for rx_index in rx_indices_to_replicate:
+            # replicate outgoing _EdgeType.PROCESSED and _EdgeType.UNPROCESSED edges
+            for _, child_rx_index, edge_type in self._graph.out_edges(rx_index):
+                if child_rx_index not in rx_indices_to_replicate:
+                    continue
+
+                self._graph.add_edge(replica_mapping[rx_index], replica_mapping[child_rx_index], edge_type)
+
+            # replicate incoming _EdgeType.DERIVE edges
+            for parent_rx_index, _, edge_type in self._graph.in_edges(rx_index):
+                if edge_type == _EdgeType.DERIVE:
+                    self._graph.add_edge(parent_rx_index, replica_mapping[rx_index], edge_type)
+
+        # find immediate children of source_node that are part of the replication
+        immediate_children = [
+            child_rx_index
+            for _, child_rx_index, _ in self._graph.out_edges(source_rx_index)
+            if child_rx_index in rx_indices_to_replicate
+        ]
+
+        # attach the replicated subgraph to target_node
+        target_rx_index = self._node_id_to_rx_index[target_node.node_id]
+        for child_rx_index in immediate_children:
+            replicated_child_rx_index = replica_mapping[child_rx_index]
+            if isinstance(self._graph[replicated_child_rx_index], _PlaceholderNode):
+                self._graph.add_edge(target_rx_index, replicated_child_rx_index, _EdgeType.PLACEHOLDER)
+            else:
+                self._graph.add_edge(
+                    target_rx_index,
+                    replicated_child_rx_index,
+                    (
+                        _EdgeType.CHILD_RESOLVED
+                        if source_node.status == _NodeStatus.PROCESSED
+                        else _EdgeType.CHILD_UNRESOLVED
+                    ),
+                )
+
+    def get_unprocessed_root_nodes(self) -> list[_ElementNode]:
+        def filter_function(node: _ResolverNode) -> bool:
+            return isinstance(node, _ElementNode) and node.status == _NodeStatus.UNPROCESSED
+
+        rx_indices = self._graph.filter_nodes(filter_function)
+
+        unprocessed_root_nodes: list[_ElementNode] = []
+        for rx_index in rx_indices:
+            for _, _, edge_data in self._graph.in_edges(rx_index):
+                if edge_data == _EdgeType.CHILD_RESOLVED:
+                    unprocessed_root_nodes.append(cast(_ElementNode, self._graph[rx_index]))
+                    break
+
+        return unprocessed_root_nodes
+
+    def get_svg(self) -> str:
+        def node_attr_fn(node: _ResolverNode) -> dict[str, str]:
+            if isinstance(node, _ElementNode):
+                if node.level == _ElementLevel.DEVICE:
+                    return {"label": "Device", "color": "blue", "fontcolor": "blue"}
+
+                return {
+                    "label": (
+                        f"{node.name}\n({node.level.value})\nId:{node.node_id}"
+                        if node.name
+                        else f"no name\n({node.level.value})\nId:{node.node_id}"
+                    ),
+                    "color": "black" if node.status == _NodeStatus.UNPROCESSED else "blue",
+                    "fontcolor": "black" if node.status == _NodeStatus.UNPROCESSED else "blue",
+                }
+            elif isinstance(node, _PlaceholderNode):
+                return {
+                    "label": f"{node.derive_path}\n(Placeholder)\nId: {node.node_id}",
+                    "color": "red",
+                    "fontcolor": "red",
+                }
+            else:
+                return {}
+
+        def edge_attr_fn(edge: _EdgeType) -> dict[str, str]:
+            if edge == _EdgeType.CHILD_UNRESOLVED:
+                return {"color": "black"}
+            elif edge == _EdgeType.CHILD_RESOLVED:
+                return {"color": "blue"}
+            elif edge == _EdgeType.PLACEHOLDER:
+                return {"color": "red"}
+            elif edge == _EdgeType.DERIVE:
+                return {"color": "green"}
+            else:
+                return {}
+
+        with tempfile.NamedTemporaryFile(mode="w+", suffix=".svg") as temp_file:
+            graphviz_draw(
+                self._graph,
+                node_attr_fn=node_attr_fn,
+                edge_attr_fn=edge_attr_fn,
+                image_type="svg",
+                filename=temp_file.name,
+            )
+            temp_file.seek(0)
+            svg_content = temp_file.read()
+
+        return svg_content
+
+    def _create_replicated_node(self, existing_node: _ResolverNode) -> _ResolverNode:
+        if isinstance(existing_node, _ElementNode):
+            return _ElementNode(
+                name=existing_node.name,
+                level=existing_node.level,
+                status=existing_node.status,
+                parsed=existing_node.parsed,
+                processed=copy.copy(existing_node.processed_or_none),
+                is_dim_template=existing_node.is_dim_template,
+            )
+
+        if isinstance(existing_node, _PlaceholderNode):
+            return _PlaceholderNode(derive_path=existing_node.derive_path)
+
+        raise ProcessException("Unknown node type")
+
+
+class _ResolverLogger:
+    def __init__(self, resolver_logging_file_path: None | str, get_svg_callback: Callable[[], str]):
+        self._resolver_logging_file_path = resolver_logging_file_path
+        self._get_svg_callback = get_svg_callback
+        self._current_round_counter = itertools.count(1)
+        self._current_round_resolved_placeholders: list[str] = []
+
+        if self._resolver_logging_file_path is not None:
+            self._html_generator = HTMLGenerator(self._resolver_logging_file_path)
+
+    @staticmethod
+    def _only_execute_if_logging_is_active[R](method: Callable[..., R]) -> Callable[..., R | None]:
+        def wrapper(self: "_ResolverLogger", *args: Any, **kwargs: Any) -> R | None:
+            if self._resolver_logging_file_path is None:  # pylint: disable=protected-access
+                return None
+            return method(self, *args, **kwargs)
+
+        return wrapper
+
+    @_only_execute_if_logging_is_active
+    def log_init_constructed_graph(self):
+        self._html_generator.add_h1("Initialization")
+        self._html_generator.add_h2("Construct Directed Graph")
+        self._html_generator.add_paragraph("Graph after construction:")
+        self._html_generator.add_svg(self._get_svg_callback())
+
+    @_only_execute_if_logging_is_active
+    def log_parent_child_relationships_for_placeholders(self):
+        self._html_generator.add_h2("Ensure Accurate Parent-Child Relationships for Placeholders")
+        self._html_generator.add_paragraph("Graph after adding parent-child relationships for placeholders:")
+        self._html_generator.add_svg(self._get_svg_callback())
+
+    @_only_execute_if_logging_is_active
+    def log_repeating_steps_start(self):
+        self._html_generator.add_h1("Repeating Steps")
+
+    @_only_execute_if_logging_is_active
+    def log_round_start(self):
+        self._html_generator.add_h2(f"{next(self._current_round_counter)}. Round")
+
+    @_only_execute_if_logging_is_active
+    def log_round_end(self):
+        self._html_generator.add_paragraph("Graph at end of round:")
+        self._html_generator.add_svg(self._get_svg_callback())
+
+    @_only_execute_if_logging_is_active
+    def log_loop_detected(self):
+        self._html_generator.add_paragraph("Loop detected")
+        self._html_generator.generate_html_file()
+
+    @_only_execute_if_logging_is_active
+    def log_repeating_steps_finished(self):
+        self._html_generator.add_paragraph("Repeating steps finished successfully")
+
+    @_only_execute_if_logging_is_active
+    def log_resolved_placeholder(self, derive_path: str):
+        self._current_round_resolved_placeholders.append(derive_path)
+
+    @_only_execute_if_logging_is_active
+    def log_resolve_placeholder_finished(self):
+        self._html_generator.add_h3("Resolve Placeholders")
+
+        if self._current_round_resolved_placeholders:
+            self._html_generator.add_scrollable_div_with_description(
+                "Resolved placeholders", "<br />".join(self._current_round_resolved_placeholders)
+            )
+            self._html_generator.add_paragraph("Graph after resolving placeholders:")
+            self._html_generator.add_svg(self._get_svg_callback())
+        else:
+            self._html_generator.add_paragraph("No placeholders resolved in this round")
+
+        self._current_round_resolved_placeholders = []
+
+    @_only_execute_if_logging_is_active
+    def log_processable_elements(self, topological_sorted_nodes: list[_ElementNode]):
+        self._html_generator.add_h3("Processable Elements")
+
+        if not topological_sorted_nodes:
+            self._html_generator.add_paragraph("No processable elements found")
+            return
+
+        self._html_generator.add_scrollable_div_with_description(
+            "Elements to process (sorted by process order ascending)",
+            "<br />".join(
+                [f"{node.node_id}: {node.name or 'no name'} ({node.level.value})" for node in topological_sorted_nodes]
+            ),
+        )
+
+    @_only_execute_if_logging_is_active
+    def log_finalize(self):
+        self._html_generator.generate_html_file()
+
+
+class _Resolver:
+    def __init__(self, resolver_logging_file_path: None | str):
+        self._resolver_graph = _ResolverGraph()
+        self._root_node_: None | _ElementNode = None
+        self.logger = _ResolverLogger(resolver_logging_file_path, self._resolver_graph.get_svg)
+
+    @property
+    def _root_node(self) -> _ElementNode:
+        if self._root_node_ is None:
+            raise ProcessException("Root node is not set")
+
+        return self._root_node_
+
+    def initialization(self, device: Device):
+        self._construct_directed_graph(device)
+        self.logger.log_init_constructed_graph()
+
+        self._ensure_accurate_parent_child_relationships_for_placeholders()
+        self.logger.log_parent_child_relationships_for_placeholders()
+
+    def resolve_placeholders(self):
+        for placeholder in list(self._resolver_graph.get_placeholders()):  # copy to avoid modifying list while iter.
+            self._resolve_placeholder(placeholder)
+
+        self.logger.log_resolve_placeholder_finished()
+
+    def get_topological_sorted_processable_elements(self) -> list[tuple[int, ParsedPeripheralTypes]]:
+        processable_nodes = self._find_processable_nodes()
+        topological_sorted_nodes = self._resolver_graph.get_topological_sorted_nodes(processable_nodes)
+
+        processable_elements: list[tuple[int, ParsedPeripheralTypes]] = []
+        for node in topological_sorted_nodes:
+            if isinstance(node.parsed, SVDDevice):
+                raise ProcessException("Device node should not be in processable nodes")
+            processable_elements.append((node.node_id, node.parsed))
+
+        self.logger.log_processable_elements(topological_sorted_nodes)
+
+        return processable_elements
+
+    def get_base_element(self, derive_node_id: int) -> tuple[ProcessedPeripheralTypes, int]:
+        derived_node = self._resolver_graph.get_element_node_by_node_id(derive_node_id)
+
+        if derived_node is None:
+            raise ProcessException(f"_ElementNode with node_id '{derive_node_id}' not found")
+
+        base_node = self._resolver_graph.get_base_element_node(derived_node)
+
+        if base_node is None:
+            raise ProcessException(f"Base node not found for node '{derived_node.name}'")
+
+        if derived_node.level != base_node.level:
+            raise ProcessException(
+                f"Node '{derived_node.name}' and its base node '{base_node.name}' have different levels"
+            )
+
+        if isinstance(base_node.processed, Device):
+            raise ProcessException("Base node can't be a Device")
+
+        return base_node.processed, base_node.node_id
+
+    def update_element(self, node_id: int, base_node_id: None | int, processed: ProcessedPeripheralTypes):
+        node = self._resolver_graph.get_element_node_by_node_id(node_id)
+        if node is None:
+            raise ProcessException(f"Element with node_id '{node_id}' not found")
+
+        self._update_element(node, base_node_id, processed)
+
+    def _update_element(
+        self,
+        node: _ElementNode,
+        base_node_id: None | int,
+        processed: ProcessedPeripheralTypes,
+        is_dim_template: bool = False,
+    ):
+        # if derived, remove the derive edge and replicate the base node's descendants as descendants of current node
+        self._finalize_derive(node, base_node_id)
+
+        # update node
+        node.status = _NodeStatus.PROCESSED
+        node.processed = processed
+        if is_dim_template:
+            node.is_dim_template = True
+
+        # update outgoing CHILD_UNRESOLVED edges to CHILD_RESOLVED
+        for child in self._resolver_graph.get_element_childrens(node):
+            self._resolver_graph.update_edge(node, child, _EdgeType.CHILD_RESOLVED)
+
+    def _finalize_derive(self, node: _ElementNode, base_node_id: None | int):
+        if base_node_id is None:
+            return
+
+        base_node = self._resolver_graph.get_element_node_by_node_id(base_node_id)
+        if base_node is None:
+            raise ProcessException(f"Base element with node_id '{base_node_id}' not found")
+
+        # remove the derive edge
+        self._resolver_graph.remove_edge(base_node, node)
+
+        # replicate the base node's descendants as descendants of current node
+        self._resolver_graph.replicate_descendants(base_node, node)
+
+    def update_dim_element(
+        self,
+        node_id: int,
+        base_node_id: None | int,
+        processed_elements: list[ProcessedDimablePeripheralTypes],
+        processed_dim_element: ProcessedDimablePeripheralTypes,
+    ):
+        node = self._resolver_graph.get_element_node_by_node_id(node_id)
+        if node is None:
+            raise ProcessException(f"Element with node_id '{node_id}' not found")
+
+        # update dim element itself (must be called before the new nodes are created in the next step)
+        self._update_element(node, base_node_id, processed_dim_element, is_dim_template=True)
+
+        # _ElementNode has one parent, except parents are also dim nodes
+        parents = self._resolver_graph.get_element_parents(node)
+
+        # create new nodes
+        new_nodes: list[_ElementNode] = []
+        for parent in parents:
+            for processed_element in processed_elements:
+                new_node = _ElementNode(
+                    name=processed_element.name,
+                    level=node.level,
+                    status=_NodeStatus.PROCESSED,
+                    parsed=node.parsed,
+                    processed=processed_element,
+                )
+                self._resolver_graph.add_element_child(parent, new_node, _EdgeType.CHILD_RESOLVED)
+                new_nodes.append(new_node)
+
+        # create edges to childs
+        for new_node in new_nodes:
+            for child in self._resolver_graph.get_element_childrens(node):
+                self._resolver_graph.add_edge(new_node, child, _EdgeType.CHILD_RESOLVED)
+
+    def _find_processable_nodes(self) -> list[_ElementNode]:
+        not_allowed_edge_types = {
+            _EdgeType.PLACEHOLDER,
+        }
+
+        result: list[_ElementNode] = []
+        visited: set[_ElementNode] = set()
+        stack: list[_ElementNode] = []
+
+        for node in self._resolver_graph.get_unprocessed_root_nodes():
+            stack.append(node)
+
+        # iterative depth search
+        while stack:
+            node = stack.pop()
+            if node in visited:
+                continue
+            visited.add(node)
+
+            if self._resolver_graph.has_incoming_edge_of_types(node, not_allowed_edge_types):
+                continue
+
+            # TODO do we need a check here if its a unprocessed node? might be an issue with processed nodes,
+            # added/copied somewhere via derivedFrom. problem might be more complex and subgraph needs new edges, or
+            # check if its an unprocessed node or not
+            result.append(node)
+
+            for child in self._resolver_graph.get_element_childrens(node):
+                stack.append(child)
+
+        return result
+
+    def _resolve_placeholder(self, placeholder: _PlaceholderNode):
+        if not self._is_placeholder_parent_resolved(placeholder):
+            return
+
+        derive_node = self._get_placeholder_derive_node(placeholder)
+        base_node = self._find_base_node(derive_node, placeholder.derive_path)
+
+        if base_node is None:
+            return
+
+        self._resolver_graph.remove_placeholder(placeholder)
+
+        try:
+            self._resolver_graph.add_edge(base_node, derive_node, _EdgeType.DERIVE)
+        except rx.DAGWouldCycle as exc:  # pylint: disable=no-member
+            message = (
+                f"Inheritance cycle detected for node '{derive_node.name}' with derive path {placeholder.derive_path}"
+            )
+            raise ProcessException(message) from exc
+
+        self.logger.log_resolved_placeholder(placeholder.derive_path)
+
+    def _find_base_node(self, derived_node: _ElementNode, derive_path: str) -> None | _ElementNode:
+        derive_path_parts = derive_path.split(".")
+        level = derived_node.level
+
+        def find_base_node_recursive(node: _ElementNode, path_parts: list[str]) -> None | _ElementNode:
+            if node.node_id == derived_node.node_id:
+                return None
+            if node.name != path_parts[0]:
+                return None
+            if len(path_parts) == 1:
+                return node if node.level == level else None
+            children = self._resolver_graph.get_element_childrens(node)
+            for child in children:
+                result = find_base_node_recursive(child, path_parts[1:])
+                if result is not None:
+                    return result
+            return None
+
+        def find_base_node_in_nodes(nodes: list[_ElementNode]) -> None | _ElementNode:
+            base_nodes: list[_ElementNode] = []
+            for node in nodes:
+                result = find_base_node_recursive(node, derive_path_parts)
+                if result:
+                    base_nodes.append(result)
+
+            if len(base_nodes) == 1:
+                return base_nodes[0]
+            elif len(base_nodes) > 1:
+                raise ProcessException(f"Multiple base nodes found for derive path '{derive_path}'")
+
+            return None
+
+        # search in same scope
+        siblings = self._resolver_graph.get_element_siblings(derived_node)
+        base_node = find_base_node_in_nodes(siblings)
+
+        if base_node is not None:
+            return base_node
+
+        # search over all peripherals
+        peripherals = self._resolver_graph.get_element_childrens(self._root_node)
+        base_node = find_base_node_in_nodes(peripherals)
+
+        return base_node
+
+    def _get_placeholder_derive_node(self, placeholder: _PlaceholderNode) -> _ElementNode:
+        return self._resolver_graph.get_placeholder_child(placeholder)
+
+    def _is_placeholder_parent_resolved(self, placeholder: _PlaceholderNode) -> bool:
+        parent = self._resolver_graph.get_placeholder_parent(placeholder)
+
+        if parent.status == _NodeStatus.PROCESSED:
+            return True
+
+        return False
+
+    def _construct_directed_graph(self, device: Device):
+        self._root_node_ = _ElementNode(
+            name="Device",
+            level=_ElementLevel.DEVICE,
+            status=_NodeStatus.PROCESSED,
+            parsed=device.parsed,
+            processed=device,
+        )
+        self._resolver_graph.add_root(self._root_node)
+        self._constr_graph_peripherals(device.parsed.peripherals, self._root_node)
+
+    def _ensure_accurate_parent_child_relationships_for_placeholders(self):
+        for placeholder in self._resolver_graph.get_placeholders():
+            co_parent = self._resolver_graph.get_placeholder_co_parent(placeholder)
+
+            if co_parent is None:
+                continue
+
+            self._resolver_graph.add_edge(co_parent, placeholder, _EdgeType.PLACEHOLDER)
+
+    def _add_child_to_graph_and_handle_derive_from(self, child_node: _ElementNode, parent_node: _ElementNode):
+        if parent_node.status == _NodeStatus.PROCESSED:
+            edge_type = _EdgeType.CHILD_RESOLVED
+        else:
+            edge_type = _EdgeType.CHILD_UNRESOLVED
+
+        self._resolver_graph.add_element_child(parent_node, child_node, edge_type)
+
+        if not isinstance(child_node.parsed, SVDDevice):
+            if child_node.parsed.derived_from is not None:
+                placeholder_node = _PlaceholderNode(derive_path=child_node.parsed.derived_from)
+                self._resolver_graph.add_placeholder(placeholder_node, child_node)
+
+    def _constr_graph_peripherals(self, parsed_peripherals: list[SVDPeripheral], parent_node: _ElementNode):
+        for parsed_peripheral in parsed_peripherals:
+            peripheral_node = _ElementNode(
+                name=parsed_peripheral.name,
+                level=_ElementLevel.PERIPHERAL,
+                status=_NodeStatus.UNPROCESSED,
+                parsed=parsed_peripheral,
+            )
+            self._add_child_to_graph_and_handle_derive_from(peripheral_node, parent_node)
+            self._constr_graph_registers_clusters(parsed_peripheral.registers_clusters, peripheral_node)
+
+    def _constr_graph_registers_clusters(
+        self, parsed_registers_clusters: list[SVDCluster | SVDRegister], parent_node: _ElementNode
+    ):
+        for parsed_register_cluster in parsed_registers_clusters:
+            if isinstance(parsed_register_cluster, SVDCluster):
+                cluster_node = _ElementNode(
+                    name=parsed_register_cluster.name,
+                    level=_ElementLevel.CLUSTER,
+                    status=_NodeStatus.UNPROCESSED,
+                    parsed=parsed_register_cluster,
+                )
+                self._add_child_to_graph_and_handle_derive_from(cluster_node, parent_node)
+                self._constr_graph_registers_clusters(parsed_register_cluster.registers_clusters, cluster_node)
+            elif isinstance(parsed_register_cluster, SVDRegister):  # pyright: ignore[reportUnnecessaryIsInstance]
+                register_node = _ElementNode(
+                    name=parsed_register_cluster.name,
+                    level=_ElementLevel.REGISTER,
+                    status=_NodeStatus.UNPROCESSED,
+                    parsed=parsed_register_cluster,
+                )
+                self._add_child_to_graph_and_handle_derive_from(register_node, parent_node)
+                self._constr_graph_fields(parsed_register_cluster.fields, register_node)
+
+    def _constr_graph_fields(self, parsed_fields: list[SVDField], parent_node: _ElementNode):
+        for parsed_field in parsed_fields:
+            field_node = _ElementNode(
+                name=parsed_field.name,
+                level=_ElementLevel.FIELD,
+                status=_NodeStatus.UNPROCESSED,
+                parsed=parsed_field,
+            )
+            self._add_child_to_graph_and_handle_derive_from(field_node, parent_node)
+            self._constr_graph_enum_containers(parsed_field.enumerated_value_containers, field_node)
+
+    def _constr_graph_enum_containers(
+        self, parsed_enum_containers: list[SVDEnumeratedValueContainer], parent_node: _ElementNode
+    ):
+        for parsed_enum_container in parsed_enum_containers:
+            enum_container_node = _ElementNode(
+                name=parsed_enum_container.name,
+                level=_ElementLevel.ENUMCONT,
+                status=_NodeStatus.UNPROCESSED,
+                parsed=parsed_enum_container,
+            )
+            self._add_child_to_graph_and_handle_derive_from(enum_container_node, parent_node)
 
 
 class _EnumeratedValueValidator:
@@ -564,119 +1126,351 @@ class _EnumeratedValueValidator:
         return self._seen_default
 
 
-class _ProcessField:
-    def __init__(self, resolver: _Resolver) -> None:
-        self._resolver = resolver
-        self._processed_fields: dict[str, list[Field]] = {}
-        self._derived_base_node_lookup: dict[str, Field] = {}
+class _ProcessPeripheralElements:
+    def __init__(self, device: Device, resolver_logging_file_path: None | str):
+        self._device = device
+        self._resolver = _Resolver(resolver_logging_file_path)
 
-    def process_field(self, node: _Node) -> None:
-        parsed_field = self._validate_svdfield(node.element)
-        derived_nodes = self._resolver.find_derived_nodes(node)
+        self._resolver.initialization(self._device)
 
-        for index in range(parsed_field.dim or 1):
-            field = self._create_field(node, parsed_field, index)
-            self._insert_field(node, field)
-            self._process_derived_nodes(derived_nodes, field)
+        self._resolver.logger.log_repeating_steps_start()
+        previous_elements: list[tuple[int, ParsedPeripheralTypes]] = []
+        while True:
+            self._resolver.logger.log_round_start()
 
-    def get_processed_field(self, name: str) -> list[Field]:
-        try:
-            return self._processed_fields[name]
-        except KeyError:
-            return []
+            self._resolver.resolve_placeholders()
+            processable_elements = self._resolver.get_topological_sorted_processable_elements()
 
-    def _validate_svdfield(self, element: SVDElementTypes) -> SVDField:
-        if not isinstance(element, SVDField):
-            raise ProcessException(f"Expected SVDField, got {type(element)}")
-        return element
+            if not processable_elements:
+                self._resolver.logger.log_repeating_steps_finished()
+                break
 
-    def _validate_access(self, access: None | AccessType) -> AccessType:
-        if access is None:
-            raise ProcessException("Access can't be None for field")
-        return access
+            if processable_elements == previous_elements:
+                self._resolver.logger.log_loop_detected()
+                raise ProcessException("Stuck in a loop, the same elements are being processed repeatedly")
 
-    def _create_field(self, node: _Node, parsed_field: SVDField, index: int) -> Field:
-        name = parsed_field.name if not node.dim_values else node.dim_values[index]
+            previous_elements = processable_elements
 
-        if node.name in self._derived_base_node_lookup:
-            return self._handle_derived_field(node, parsed_field, index, name)
+            for node_id, parsed_element in processable_elements:
+                self._process_element(node_id, parsed_element)
+
+            self._resolver.logger.log_round_end()
+
+    def _process_element(self, node_id: int, parsed_element: ParsedPeripheralTypes):
+        # get_base_element ensures that the base element has the same level as the derived element
+        base_element, base_element_id = None, None
+        if parsed_element.derived_from is not None:
+            base_element, base_element_id = self._resolver.get_base_element(node_id)
+
+        # SVDEnumeratedValueContainer is not dimable and might does not have a name
+        if isinstance(parsed_element, SVDEnumeratedValueContainer):
+            processed_enum_container = self._create_enumerated_value_container(
+                parsed_element, cast(EnumeratedValueContainer, base_element)
+            )
+            self._resolver.update_element(node_id, base_element_id, processed_enum_container)
+            return
+
+        is_dim, resolved_dim = self._resolve_dim(parsed_element, cast(ProcessedDimablePeripheralTypes, base_element))
+        processed_dimable_elements: list[ProcessedDimablePeripheralTypes] = []
+        for index, name in enumerate(resolved_dim):
+            processed_dimable_elements.append(self._create_dimable_element(index, name, parsed_element, base_element))
+
+        if not processed_dimable_elements:
+            raise ProcessException(f"No elements created for {parsed_element}")
+
+        if is_dim:
+            processed_dim_element = self._post_process_dim_elements(parsed_element.name, processed_dimable_elements)
+            self._resolver.update_dim_element(
+                node_id, base_element_id, processed_dimable_elements, processed_dim_element
+            )
         else:
-            return self._handle_non_derived_field(node, parsed_field, index, name)
+            self._resolver.update_element(node_id, base_element_id, processed_dimable_elements[0])
 
-    def _handle_derived_field(self, node: _Node, parsed_field: SVDField, index: int, name: str) -> Field:
-        base_element = self._derived_base_node_lookup[node.name]
-        description = _or_if_none(parsed_field.description, base_element.description)
+    def _post_process_dim_elements(
+        self, dim_name: str, processed_dimable_elements: list[ProcessedDimablePeripheralTypes]
+    ) -> ProcessedDimablePeripheralTypes:
+        assert len(processed_dimable_elements) >= 1
 
-        try:
-            lsb, msb = self._process_field_msb_lsb_with_increment(parsed_field, node, index)
-        except ProcessException:
-            lsb = base_element.lsb
-            msb = base_element.msb
+        processed_dim_template = copy.copy(processed_dimable_elements[0])
+        processed_dim_template.name = dim_name
 
-        access = self._validate_access(_or_if_none(parsed_field.access, base_element.access))
-        modified_write_values = parsed_field.modified_write_values or base_element.modified_write_values
+        for processed_dimable_element in processed_dimable_elements:
+            processed_dimable_element.dim = None
+            processed_dimable_element.dim_increment = None
+            processed_dimable_element.dim_index = None
+
+        return processed_dim_template
+
+    def _create_dimable_element(
+        self,
+        index: int,
+        name: str,
+        parsed_element: ParsedPeripheralTypes,
+        base_element: None | ProcessedPeripheralTypes,
+    ) -> ProcessedDimablePeripheralTypes:
+        if isinstance(parsed_element, SVDPeripheral):
+            return self._create_peripheral(index, name, parsed_element, cast(None | Peripheral, base_element))
+        elif isinstance(parsed_element, SVDCluster):
+            return self._create_cluster(index, name, parsed_element, cast(None | Cluster, base_element))
+        elif isinstance(parsed_element, SVDRegister):
+            return self._create_register(index, name, parsed_element, cast(None | Register, base_element))
+        elif isinstance(parsed_element, SVDField):
+            return self._create_field(index, name, parsed_element, cast(None | Field, base_element))
+        else:
+            raise ProcessException(f"Unknown type {type(parsed_element)} in _create_dimable_element")
+
+    def _create_peripheral(self, index: int, name: str, parsed: SVDPeripheral, base: None | Peripheral) -> Peripheral:
+        dim = _or_if_none(parsed.dim, base.dim if base else None)
+        dim_index = _or_if_none(parsed.dim_index, base.dim_index if base else None)
+        dim_increment = _or_if_none(parsed.dim_increment, base.dim_increment if base else None)
+
+        size = _or_if_none(parsed.size, base.size if base else None)
+        access = _or_if_none(parsed.access, base.access if base else None)
+        protection = _or_if_none(parsed.protection, base.protection if base else None)
+        reset_value = _or_if_none(parsed.reset_value, base.reset_value if base else None)
+        reset_mask = _or_if_none(parsed.reset_mask, base.reset_mask if base else None)
+
+        version = _or_if_none(parsed.version, base.version if base else None)
+        description = _or_if_none(parsed.description, base.description if base else None)
+        alternate_peripheral = _or_if_none(parsed.alternate_peripheral, base.alternate_peripheral if base else None)
+        group_name = _or_if_none(parsed.group_name, base.group_name if base else None)
+        prepend_to_name = _or_if_none(parsed.prepend_to_name, base.prepend_to_name if base else None)
+        append_to_name = _or_if_none(parsed.append_to_name, base.append_to_name if base else None)
+        header_struct_name = _or_if_none(parsed.header_struct_name, base.header_struct_name if base else None)
+        disable_condition = _or_if_none(parsed.disable_condition, base.disable_condition if base else None)
+        base_address = parsed.base_address if dim_increment is None else parsed.base_address + dim_increment * index
+        address_blocks = self._process_address_blocks(parsed.address_blocks)
+        interrupts = self._process_interrupts(parsed.interrupts)
+
+        return Peripheral(
+            dim=dim,
+            dim_index=dim_index,
+            dim_increment=dim_increment,
+            size=size,
+            access=access,
+            protection=protection,
+            reset_value=reset_value,
+            reset_mask=reset_mask,
+            name=name,
+            version=version,
+            description=description,
+            alternate_peripheral=alternate_peripheral,
+            group_name=group_name,
+            prepend_to_name=prepend_to_name,
+            append_to_name=append_to_name,
+            header_struct_name=header_struct_name,
+            disable_condition=disable_condition,
+            base_address=base_address,
+            address_blocks=address_blocks,
+            interrupts=interrupts,
+            registers_clusters=[],
+            parsed=parsed,
+        )
+
+    def _create_cluster(self, index: int, name: str, parsed: SVDCluster, base: None | Cluster) -> Cluster:
+        dim = _or_if_none(parsed.dim, base.dim if base else None)
+        dim_index = _or_if_none(parsed.dim_index, base.dim_index if base else None)
+        dim_increment = _or_if_none(parsed.dim_increment, base.dim_increment if base else None)
+
+        size = _or_if_none(parsed.size, base.size if base else None)
+        access = _or_if_none(parsed.access, base.access if base else None)
+        protection = _or_if_none(parsed.protection, base.protection if base else None)
+        reset_value = _or_if_none(parsed.reset_value, base.reset_value if base else None)
+        reset_mask = _or_if_none(parsed.reset_mask, base.reset_mask if base else None)
+
+        description = _or_if_none(parsed.description, base.description if base else None)
+        alternate_cluster = _or_if_none(parsed.alternate_cluster, base.alternate_cluster if base else None)
+        header_struct_name = _or_if_none(parsed.header_struct_name, base.header_struct_name if base else None)
+        address_offset = (
+            parsed.address_offset if dim_increment is None else parsed.address_offset + dim_increment * index
+        )
+
+        return Cluster(
+            dim=dim,
+            dim_index=dim_index,
+            dim_increment=dim_increment,
+            size=size,
+            access=access,
+            protection=protection,
+            reset_value=reset_value,
+            reset_mask=reset_mask,
+            name=name,
+            description=description,
+            alternate_cluster=alternate_cluster,
+            header_struct_name=header_struct_name,
+            address_offset=address_offset,
+            registers_clusters=[],
+            parsed=parsed,
+        )
+
+    def _create_register(self, index: int, name: str, parsed: SVDRegister, base: None | Register) -> Register:
+        dim = _or_if_none(parsed.dim, base.dim if base else None)
+        dim_index = _or_if_none(parsed.dim_index, base.dim_index if base else None)
+        dim_increment = _or_if_none(parsed.dim_increment, base.dim_increment if base else None)
+
+        size = _or_if_none(parsed.size, base.size if base else None)
+        access = _or_if_none(parsed.access, base.access if base else None)
+        protection = _or_if_none(parsed.protection, base.protection if base else None)
+        reset_value = _or_if_none(parsed.reset_value, base.reset_value if base else None)
+        reset_mask = _or_if_none(parsed.reset_mask, base.reset_mask if base else None)
+
+        display_name = _or_if_none(parsed.display_name, base.display_name if base else None)
+        description = _or_if_none(parsed.description, base.description if base else None)
+        alternate_group = _or_if_none(parsed.alternate_group, base.alternate_group if base else None)
+        alternate_register = _or_if_none(parsed.alternate_register, base.alternate_register if base else None)
+        address_offset = (
+            parsed.address_offset if dim_increment is None else parsed.address_offset + dim_increment * index
+        )
+        data_type = _or_if_none(parsed.data_type, base.data_type if base else None)
+        modified_write_values = (
+            parsed.modified_write_values
+            if parsed.modified_write_values is not None
+            else (base.modified_write_values if base is not None else ModifiedWriteValuesType.MODIFY)
+        )
         write_constraint = _or_if_none(
-            _process_write_constraint(parsed_field.write_constraint), base_element.write_constraint
+            self._process_write_constraint(parsed.write_constraint), base.write_constraint if base else None
         )
-        read_action = _or_if_none(parsed_field.read_action, base_element.read_action)
-        enumerated_value_containers = (
-            self._process_enumerated_value_containers(parsed_field.enumerated_value_containers, lsb, msb)
-            or base_element.enumerated_value_containers
+        read_action = _or_if_none(parsed.read_action, base.read_action if base else None)
+
+        return Register(
+            dim=dim,
+            dim_index=dim_index,
+            dim_increment=dim_increment,
+            size=size,
+            access=access,
+            protection=protection,
+            reset_value=reset_value,
+            reset_mask=reset_mask,
+            name=name,
+            display_name=display_name,
+            description=description,
+            alternate_group=alternate_group,
+            alternate_register=alternate_register,
+            address_offset=address_offset,
+            data_type=data_type,
+            modified_write_values=modified_write_values,
+            write_constraint=write_constraint,
+            read_action=read_action,
+            fields=[],
+            parsed=parsed,
         )
 
+    def _create_field(self, index: int, name: str, parsed: SVDField, base: None | Field) -> Field:
+        dim = _or_if_none(parsed.dim, base.dim if base else None)
+        dim_index = _or_if_none(parsed.dim_index, base.dim_index if base else None)
+        dim_increment = _or_if_none(parsed.dim_increment, base.dim_increment if base else None)
+
+        access = _or_if_none(parsed.access, base.access if base else None)
+
+        description = _or_if_none(parsed.description, base.description if base else None)
+        lsb, msb = self._process_field_msb_lsb_with_increment(parsed, dim_increment, index)
+        modified_write_values = (
+            parsed.modified_write_values
+            if parsed.modified_write_values is not None
+            else (base.modified_write_values if base is not None else ModifiedWriteValuesType.MODIFY)
+        )
+        write_constraint = _or_if_none(
+            self._process_write_constraint(parsed.write_constraint), base.write_constraint if base else None
+        )
+        read_action = _or_if_none(parsed.read_action, base.read_action if base else None)
+
         return Field(
+            dim=dim,
+            dim_index=dim_index,
+            dim_increment=dim_increment,
+            access=access,
             name=name,
             description=description,
             lsb=lsb,
             msb=msb,
-            access=access,
             modified_write_values=modified_write_values,
             write_constraint=write_constraint,
             read_action=read_action,
-            enumerated_value_containers=enumerated_value_containers,
-            parsed=parsed_field,
+            enumerated_value_containers=[],
+            parsed=parsed,
         )
 
-    def _handle_non_derived_field(self, node: _Node, parsed_field: SVDField, index: int, name: str) -> Field:
-        description = parsed_field.description
-        lsb, msb = self._process_field_msb_lsb_with_increment(parsed_field, node, index)
-        access = self._validate_access(node.register_properties.access)
-        modified_write_values = parsed_field.modified_write_values or ModifiedWriteValuesType.MODIFY
-        write_constraint = _process_write_constraint(parsed_field.write_constraint)
-        read_action = parsed_field.read_action
-        enumerated_value_containers = self._process_enumerated_value_containers(
-            parsed_field.enumerated_value_containers, lsb, msb
+    def _create_enumerated_value_container(
+        self, parsed_enum_container: SVDEnumeratedValueContainer, base_enum_container: None | EnumeratedValueContainer
+    ) -> EnumeratedValueContainer:
+        # deriveFrom at EnumeratedValueContainer level creates a copy of the base EnumeratedValueContainer
+        # TODO do we have to recreate enumearated_values since lsb und msb might be different in parent field?
+        if base_enum_container is not None:
+            # TODO get rid of deepcopy
+            copied_enum_container = copy.deepcopy(base_enum_container)
+            copied_enum_container.parsed = parsed_enum_container
+            return copied_enum_container
+
+        return EnumeratedValueContainer(
+            name=parsed_enum_container.name,
+            header_enum_name=parsed_enum_container.header_enum_name,
+            usage=parsed_enum_container.usage if parsed_enum_container.usage is not None else EnumUsageType.READ_WRITE,
+            # TODO add lsb and msb
+            enumerated_values=self._process_enumerated_values(parsed_enum_container.enumerated_values, 0, 0),
+            parsed=parsed_enum_container,
         )
 
-        return Field(
-            name=name,
-            description=description,
-            lsb=lsb,
-            msb=msb,
-            access=access,
-            modified_write_values=modified_write_values,
-            write_constraint=write_constraint,
-            read_action=read_action,
-            enumerated_value_containers=enumerated_value_containers,
-            parsed=parsed_field,
+    def _resolve_dim(
+        self, parsed_element: ParsedDimablePeripheralTypes, base_element: None | ProcessedDimablePeripheralTypes
+    ) -> tuple[bool, list[str]]:
+        dim = _or_if_none(parsed_element.dim, base_element.dim if base_element else None)
+        dim_index = _or_if_none(parsed_element.dim_index, base_element.dim_index if base_element else None)
+
+        if dim is None and "%s" in parsed_element.name:
+            raise ProcessException("Dim is None, but name contains '%s'")
+
+        if dim is not None and "%s" not in parsed_element.name:
+            raise ProcessException("Dim is not None, but name does not contain '%s'")
+
+        return dim is not None, resolve_dim(parsed_element.name, dim, dim_index)
+
+    def _process_address_blocks(self, parsed_address_blocks: list[SVDAddressBlock]) -> list[AddressBlock]:
+        address_blocks: list[AddressBlock] = []
+        for parsed_address_block in parsed_address_blocks:
+            address_blocks.append(
+                AddressBlock(
+                    offset=parsed_address_block.offset,
+                    size=parsed_address_block.size,
+                    usage=parsed_address_block.usage,
+                    protection=parsed_address_block.protection,
+                    parsed=parsed_address_block,
+                )
+            )
+
+        return address_blocks
+
+    def _process_interrupts(self, parsed_interrupts: list[SVDInterrupt]) -> list[Interrupt]:
+        interrupts: list[Interrupt] = []
+        for parsed_interrupt in parsed_interrupts:
+            interrupts.append(
+                Interrupt(
+                    name=parsed_interrupt.name,
+                    description=parsed_interrupt.description,
+                    value=parsed_interrupt.value,
+                    parsed=parsed_interrupt,
+                )
+            )
+
+        return interrupts
+
+    def _process_write_constraint(self, parsed_write_constraint: None | SVDWriteConstraint) -> None | WriteConstraint:
+        if parsed_write_constraint is None:
+            return None
+
+        return WriteConstraint(
+            write_as_read=parsed_write_constraint.write_as_read,
+            use_enumerated_values=parsed_write_constraint.use_enumerated_values,
+            range_=parsed_write_constraint.range_,
+            parsed=parsed_write_constraint,
         )
 
-    def _process_field_msb_lsb_with_increment(self, parsed_field: SVDField, node: _Node, index: int) -> tuple[int, int]:
+    def _process_field_msb_lsb_with_increment(
+        self, parsed_field: SVDField, dim_increment: None | int, index: int
+    ) -> tuple[int, int]:
         field_msb, field_lsb = self._process_field_msb_lsb(parsed_field)
-        lsb = field_lsb if node.element.dim_increment is None else field_lsb + node.element.dim_increment * index
-        msb = field_msb if node.element.dim_increment is None else field_msb + node.element.dim_increment * index
+        lsb = field_lsb if dim_increment is None else field_lsb + dim_increment * index
+        msb = field_msb if dim_increment is None else field_msb + dim_increment * index
         return lsb, msb
-
-    def _insert_field(self, node: _Node, field: Field) -> None:
-        parent_name = ".".join(node.name.split(".")[:-1])
-        if parent_name not in self._processed_fields:
-            self._processed_fields[parent_name] = []
-        bisect.insort(self._processed_fields[parent_name], field, key=lambda x: (x.lsb, x.name))
-
-    def _process_derived_nodes(self, derived_nodes: list[tuple[str, str]], field: Field) -> None:
-        for derived_node_name, base_node_rel_name in derived_nodes:
-            if field.name == base_node_rel_name:
-                self._derived_base_node_lookup[derived_node_name] = field
 
     def _process_field_msb_lsb(self, parsed_field: SVDField) -> tuple[int, int]:
         if parsed_field.bit_offset is not None and parsed_field.bit_width is not None:
@@ -695,50 +1489,6 @@ class _ProcessField:
             raise ProcessException("Field must have bit_offset and bit_width, lsb and msb, or bit_range")
 
         return (field_msb, field_lsb)
-
-    def _process_enumerated_value_containers(
-        self, parsed_enumerated_value_containers: list[SVDEnumeratedValueContainer], lsb: int, msb: int
-    ) -> list[EnumeratedValueContainer]:
-        enumerated_value_containers: list[EnumeratedValueContainer] = []
-        for parsed_enumerated_value_container in parsed_enumerated_value_containers:
-            if parsed_enumerated_value_container.derived_from is not None:
-                raise NotImplementedError("Derived from is not supported for enumerated values")
-
-            enumerated_value_containers.append(
-                EnumeratedValueContainer(
-                    name=parsed_enumerated_value_container.name,
-                    header_enum_name=parsed_enumerated_value_container.header_enum_name,
-                    usage=(
-                        parsed_enumerated_value_container.usage
-                        if parsed_enumerated_value_container.usage is not None
-                        else EnumUsageType.READ_WRITE
-                    ),
-                    enumerated_values=self._process_enumerated_values(
-                        parsed_enumerated_value_container.enumerated_values, lsb, msb
-                    ),
-                    derived_from=parsed_enumerated_value_container.derived_from,
-                    parsed=parsed_enumerated_value_container,
-                )
-            )
-
-        if len(enumerated_value_containers) > 2:
-            raise ProcessException("Only one or two enumerated value containers are supported")
-
-        if len(enumerated_value_containers) == 2:
-            usages = {enumerated_value_containers[0].usage, enumerated_value_containers[1].usage}
-            if usages != {EnumUsageType.READ, EnumUsageType.WRITE}:
-                raise ProcessException("Only one read and one write enumerated value container is supported")
-
-            ct1 = enumerated_value_containers[0]
-            ct2 = enumerated_value_containers[1]
-            if ct1.name == ct2.name and any(
-                ev1.name == ev2.name for ev1 in ct1.enumerated_values for ev2 in ct2.enumerated_values
-            ):
-                raise ProcessException(
-                    "Enumerated value containers must have unique value names if the container have the same name"
-                )
-
-        return enumerated_value_containers
 
     def _process_enumerated_values(
         self, parsed_enumerated_values: list[SVDEnumeratedValue], lsb: int, msb: int
@@ -813,520 +1563,5 @@ class _ProcessField:
                 return [int(input_str)]
             else:
                 raise ProcessException(f"Unrecognized format for input: '{input_str}'")
-        except ValueError as e:
-            raise ProcessException(f"Error processing input '{input_str}': {e}") from e
-
-
-class _ProccessedRegistersClusters:
-    def __init__(self) -> None:
-        self._processed_registers_clusters: dict[str, list[Cluster | Register]] = {}
-
-    def get_processed_register_cluster(self, name: str) -> list[Cluster | Register]:
-        try:
-            return self._processed_registers_clusters[name]
-        except KeyError:
-            return []
-
-    def insert_element(self, name: str, register_cluster: Cluster | Register) -> None:
-        if name not in self._processed_registers_clusters:
-            self._processed_registers_clusters[name] = []
-
-        bisect.insort(
-            self._processed_registers_clusters[name], register_cluster, key=lambda x: (x.address_offset, x.name)
-        )
-
-
-class _ProcessRegister:
-    def __init__(
-        self,
-        resolver: _Resolver,
-        process_field: _ProcessField,
-        processed_registers_clusters: _ProccessedRegistersClusters,
-    ) -> None:
-        self._resolver = resolver
-        self._process_field = process_field
-        self._processed_register_cluster = processed_registers_clusters
-        self._derived_base_node_lookup: dict[str, Register] = {}
-
-    def process_register(self, node: _Node) -> None:
-        parsed_register = self._validate_svdregister(node.element)
-        derived_nodes = self._resolver.find_derived_nodes(node)
-
-        for index in range(parsed_register.dim or 1):
-            register = self._create_register(node, parsed_register, index)
-            self._insert_register(node, register)
-            self._process_derived_nodes(derived_nodes, register)
-
-    def _validate_svdregister(self, element: SVDElementTypes) -> SVDRegister:
-        if not isinstance(element, SVDRegister):
-            raise ProcessException(f"Expected SVDRegister, got {type(element)}")
-        return element
-
-    def _create_register(self, node: _Node, parsed_register: SVDRegister, index: int) -> Register:
-        name = parsed_register.name if not node.dim_values else node.dim_values[index]
-
-        if node.name in self._derived_base_node_lookup:
-            return self._handle_derived_register(node, parsed_register, index, name)
-        else:
-            return self._handle_non_derived_register(node, parsed_register, index, name)
-
-    def _validate_register_properties(
-        self,
-        size: None | int,
-        access: None | AccessType,
-        protection: None | ProtectionStringType,
-        reset_value: None | int,
-        reset_mask: None | int,
-    ) -> tuple[int, AccessType, ProtectionStringType, int, int]:
-        if size is None:
-            raise ProcessException("Size can't be None for register")
-        if access is None:
-            raise ProcessException("Access can't be None for register")
-        if protection is None:
-            protection = ProtectionStringType.ANY
-        if reset_value is None:
-            raise ProcessException("Reset value can't be None for register")
-        if reset_mask is None:
-            raise ProcessException("Reset mask can't be None for register")
-
-        return (size, access, protection, reset_value, reset_mask)
-
-    def _handle_derived_register(self, node: _Node, parsed_register: SVDRegister, index: int, name: str) -> Register:
-        base_element = self._derived_base_node_lookup[node.name]
-
-        size, access, protection, reset_value, reset_mask = self._validate_register_properties(
-            _or_if_none(node.register_properties.size, base_element.size),
-            _or_if_none(node.register_properties.access, base_element.access),
-            _or_if_none(node.register_properties.protection, base_element.protection),
-            _or_if_none(node.register_properties.reset_value, base_element.reset_value),
-            _or_if_none(node.register_properties.reset_mask, base_element.reset_mask),
-        )
-
-        display_name = _or_if_none(parsed_register.display_name, base_element.display_name)
-        description = _or_if_none(parsed_register.description, base_element.description)
-        alternate_group = _or_if_none(parsed_register.alternate_group, base_element.alternate_group)
-        alternate_register = _or_if_none(parsed_register.alternate_register, base_element.alternate_register)
-        address_offset = (
-            parsed_register.address_offset
-            if parsed_register.dim_increment is None
-            else parsed_register.address_offset + parsed_register.dim_increment * index
-        )
-        data_type = _or_if_none(parsed_register.data_type, base_element.data_type)
-        modified_write_values = parsed_register.modified_write_values or base_element.modified_write_values
-        write_constraint = _or_if_none(
-            _process_write_constraint(parsed_register.write_constraint), base_element.write_constraint
-        )
-        read_action = _or_if_none(parsed_register.read_action, base_element.read_action)
-        fields = self._derive_fields(node.name, base_element)
-
-        return Register(
-            size=size,
-            access=access,
-            protection=protection,
-            reset_value=reset_value,
-            reset_mask=reset_mask,
-            name=name,
-            display_name=display_name,
-            description=description,
-            alternate_group=alternate_group,
-            alternate_register=alternate_register,
-            address_offset=address_offset,
-            data_type=data_type,
-            modified_write_values=modified_write_values,
-            write_constraint=write_constraint,
-            read_action=read_action,
-            fields=fields,
-            parsed=parsed_register,
-        )
-
-    def _derive_fields(self, name: str, base_element: Register) -> list[Field]:
-        def overlap(field1: Field, field2: Field) -> bool:
-            return not (field1.msb < field2.lsb or field2.msb < field1.lsb)
-
-        merged = base_element.fields[:]
-        for parsed_field in self._process_field.get_processed_field(name):
-            merged = [base_field for base_field in merged if not overlap(base_field, parsed_field)]
-            merged.append(parsed_field)
-
-        merged.sort(key=lambda field: field.lsb)
-        return merged
-
-    def _handle_non_derived_register(
-        self, node: _Node, parsed_register: SVDRegister, index: int, name: str
-    ) -> Register:
-        size, access, protection, reset_value, reset_mask = self._validate_register_properties(
-            node.register_properties.size,
-            node.register_properties.access,
-            node.register_properties.protection,
-            node.register_properties.reset_value,
-            node.register_properties.reset_mask,
-        )
-
-        display_name = parsed_register.display_name
-        description = parsed_register.description
-        alternate_group = parsed_register.alternate_group
-        alternate_register = parsed_register.alternate_register
-        address_offset = (
-            parsed_register.address_offset
-            if parsed_register.dim_increment is None
-            else parsed_register.address_offset + parsed_register.dim_increment * index
-        )
-        data_type = parsed_register.data_type
-        modified_write_values = parsed_register.modified_write_values or ModifiedWriteValuesType.MODIFY
-        write_constraint = _process_write_constraint(parsed_register.write_constraint)
-        read_action = parsed_register.read_action
-        fields = self._process_field.get_processed_field(node.name)
-
-        return Register(
-            size=size,
-            access=access,
-            protection=protection,
-            reset_value=reset_value,
-            reset_mask=reset_mask,
-            name=name,
-            display_name=display_name,
-            description=description,
-            alternate_group=alternate_group,
-            alternate_register=alternate_register,
-            address_offset=address_offset,
-            data_type=data_type,
-            modified_write_values=modified_write_values,
-            write_constraint=write_constraint,
-            read_action=read_action,
-            fields=fields,
-            parsed=parsed_register,
-        )
-
-    def _insert_register(self, node: _Node, register: Register) -> None:
-        parent_name = ".".join(node.name.split(".")[:-1])
-        self._processed_register_cluster.insert_element(parent_name, register)
-
-    def _process_derived_nodes(self, derived_nodes: list[tuple[str, str]], register: Register) -> None:
-        for derived_node_name, base_node_rel_name in derived_nodes:
-            if register.name == base_node_rel_name:
-                self._derived_base_node_lookup[derived_node_name] = register
-
-
-class _ProcessCluster:
-    def __init__(
-        self,
-        resolver: _Resolver,
-        process_register: _ProcessRegister,
-        processed_register_cluster: _ProccessedRegistersClusters,
-    ) -> None:
-        self._resolver = resolver
-        self._process_register = process_register
-        self._processed_registers_clusters = processed_register_cluster
-        self._derived_base_node_lookup: dict[str, Cluster] = {}
-
-    def process_cluster(self, node: _Node) -> None:
-        parsed_cluster = self._validate_svdcluster(node.element)
-        derived_nodes = self._resolver.find_derived_nodes(node)
-
-        for index in range(parsed_cluster.dim or 1):
-            cluster = self._create_cluster(node, parsed_cluster, index)
-            self._insert_cluster(node, cluster)
-            self._process_derived_nodes(derived_nodes, cluster)
-
-    def _validate_svdcluster(self, element: SVDElementTypes) -> SVDCluster:
-        if not isinstance(element, SVDCluster):
-            raise ProcessException(f"Expected SVDCluster, got {type(element)}")
-        return element
-
-    def _create_cluster(self, node: _Node, parsed_cluster: SVDCluster, index: int) -> Cluster:
-        name = parsed_cluster.name if not node.dim_values else node.dim_values[index]
-
-        if node.name in self._derived_base_node_lookup:
-            return self._handle_derived_cluster(node, parsed_cluster, index, name)
-        else:
-            return self._handle_non_derived_cluster(node, parsed_cluster, index, name)
-
-    def _handle_derived_cluster(self, node: _Node, parsed_cluster: SVDCluster, index: int, name: str) -> Cluster:
-        base_element = self._derived_base_node_lookup[node.name]
-
-        size = _or_if_none(node.register_properties.size, base_element.size)
-        access = _or_if_none(node.register_properties.access, base_element.access)
-        protection = _or_if_none(node.register_properties.protection, base_element.protection)
-        reset_value = _or_if_none(node.register_properties.reset_value, base_element.reset_value)
-        reset_mask = _or_if_none(node.register_properties.reset_mask, base_element.reset_mask)
-        description = _or_if_none(parsed_cluster.description, base_element.description)
-        alternate_cluster = _or_if_none(parsed_cluster.alternate_cluster, base_element.alternate_cluster)
-        header_struct_name = _or_if_none(parsed_cluster.header_struct_name, base_element.header_struct_name)
-        address_offset = (
-            parsed_cluster.address_offset
-            if parsed_cluster.dim_increment is None
-            else parsed_cluster.address_offset + parsed_cluster.dim_increment * index
-        )
-        registers_clusters = self._derive_registers_clusters(node, base_element)
-
-        return Cluster(
-            size=size,
-            access=access,
-            protection=protection,
-            reset_value=reset_value,
-            reset_mask=reset_mask,
-            name=name,
-            description=description,
-            alternate_cluster=alternate_cluster,
-            header_struct_name=header_struct_name,
-            address_offset=address_offset,
-            registers_clusters=registers_clusters,
-            parsed=parsed_cluster,
-        )
-
-    def _derive_registers_clusters(self, node: _Node, base_element: Cluster) -> list[Cluster | Register]:
-        parsed_registers_clusters = self._processed_registers_clusters.get_processed_register_cluster(node.name)
-        base_memory_map = _RegisterClusterMap.build_map_from_registers_clusters(base_element.registers_clusters)
-        parsed_memory_map = _RegisterClusterMap.build_map_from_registers_clusters(parsed_registers_clusters)
-
-        base_memory_map.merge_and_overwrite_with(parsed_memory_map)
-        return [region[2] for region in base_memory_map.regions]
-
-    def _handle_non_derived_cluster(self, node: _Node, parsed_cluster: SVDCluster, index: int, name: str) -> Cluster:
-        size = node.register_properties.size
-        access = node.register_properties.access
-        protection = node.register_properties.protection
-        reset_value = node.register_properties.reset_value
-        reset_mask = node.register_properties.reset_mask
-        description = parsed_cluster.description
-        alternate_cluster = parsed_cluster.alternate_cluster
-        header_struct_name = parsed_cluster.header_struct_name
-        address_offset = (
-            parsed_cluster.address_offset
-            if parsed_cluster.dim_increment is None
-            else parsed_cluster.address_offset + parsed_cluster.dim_increment * index
-        )
-        registers_clusters = self._processed_registers_clusters.get_processed_register_cluster(node.name)
-
-        return Cluster(
-            size=size,
-            access=access,
-            protection=protection,
-            reset_value=reset_value,
-            reset_mask=reset_mask,
-            name=name,
-            description=description,
-            alternate_cluster=alternate_cluster,
-            header_struct_name=header_struct_name,
-            address_offset=address_offset,
-            registers_clusters=registers_clusters,
-            parsed=parsed_cluster,
-        )
-
-    def _insert_cluster(self, node: _Node, cluster: Cluster) -> None:
-        parent_name = ".".join(node.name.split(".")[:-1])
-        self._processed_registers_clusters.insert_element(parent_name, cluster)
-
-    def _process_derived_nodes(self, derived_nodes: list[tuple[str, str]], cluster: Cluster) -> None:
-        for derived_node_name, base_node_rel_name in derived_nodes:
-            if cluster.name == base_node_rel_name:
-                self._derived_base_node_lookup[derived_node_name] = cluster
-
-
-class _ProcessPeripheral:
-    def __init__(self, resolver: _Resolver, processed_register_cluster: _ProccessedRegistersClusters) -> None:
-        self._resolver = resolver
-        self._processed_peripherals: list[Peripheral] = []
-        self._processed_registers_clusters = processed_register_cluster
-        self._derived_base_node_lookup: dict[str, Peripheral] = {}
-
-    def process_peripheral(self, node: _Node) -> None:
-        parsed_peripheral = self._validate_svdperipheral(node.element)
-        derived_nodes = self._resolver.find_derived_nodes(node)
-
-        for index in range(parsed_peripheral.dim or 1):
-            peripheral = self._create_peripheral(node, parsed_peripheral, index)
-            self._insert_peripheral(peripheral)
-            self._process_derived_nodes(derived_nodes, peripheral)
-
-    def get_processed_peripherals(self) -> list[Peripheral]:
-        return self._processed_peripherals
-
-    def _validate_svdperipheral(self, element: SVDElementTypes) -> SVDPeripheral:
-        if not isinstance(element, SVDPeripheral):
-            raise ProcessException(f"Expected SVDPeripheral, got {type(element)}")
-        return element
-
-    def _create_peripheral(self, node: _Node, parsed_peripheral: SVDPeripheral, index: int) -> Peripheral:
-        name = parsed_peripheral.name if not node.dim_values else node.dim_values[index]
-
-        if node.name in self._derived_base_node_lookup:
-            return self._handle_derived_peripheral(node, parsed_peripheral, index, name)
-        else:
-            return self._handle_non_derived_peripheral(node, parsed_peripheral, index, name)
-
-    def _handle_derived_peripheral(
-        self, node: _Node, parsed_peripheral: SVDPeripheral, index: int, name: str
-    ) -> Peripheral:
-        base_element = self._derived_base_node_lookup[node.name]
-
-        size = _or_if_none(node.register_properties.size, base_element.size)
-        access = _or_if_none(node.register_properties.access, base_element.access)
-        protection = _or_if_none(node.register_properties.protection, base_element.protection)
-        reset_value = _or_if_none(node.register_properties.reset_value, base_element.reset_value)
-        reset_mask = _or_if_none(node.register_properties.reset_mask, base_element.reset_mask)
-        version = _or_if_none(parsed_peripheral.version, base_element.version)
-        description = _or_if_none(parsed_peripheral.description, base_element.description)
-        alternate_peripheral = _or_if_none(parsed_peripheral.alternate_peripheral, base_element.alternate_peripheral)
-        group_name = _or_if_none(parsed_peripheral.group_name, base_element.group_name)
-        prepend_to_name = _or_if_none(parsed_peripheral.prepend_to_name, base_element.prepend_to_name)
-        append_to_name = _or_if_none(parsed_peripheral.append_to_name, base_element.append_to_name)
-        header_struct_name = _or_if_none(parsed_peripheral.header_struct_name, base_element.header_struct_name)
-        disable_condition = _or_if_none(parsed_peripheral.disable_condition, base_element.disable_condition)
-        base_address = (
-            parsed_peripheral.base_address
-            if parsed_peripheral.dim_increment is None
-            else parsed_peripheral.base_address + parsed_peripheral.dim_increment * index
-        )
-        address_blocks = self._process_address_blocks(parsed_peripheral.address_blocks, protection)
-        if not address_blocks:
-            address_blocks = base_element.address_blocks
-        interrupts = self._process_interrupts(parsed_peripheral.interrupts)
-        registers_clusters = self._derive_registers_clusters(node, base_element)
-
-        return Peripheral(
-            size=size,
-            access=access,
-            protection=protection,
-            reset_value=reset_value,
-            reset_mask=reset_mask,
-            name=name,
-            version=version,
-            description=description,
-            alternate_peripheral=alternate_peripheral,
-            group_name=group_name,
-            prepend_to_name=prepend_to_name,
-            append_to_name=append_to_name,
-            header_struct_name=header_struct_name,
-            disable_condition=disable_condition,
-            base_address=base_address,
-            address_blocks=address_blocks,
-            interrupts=interrupts,
-            registers_clusters=registers_clusters,
-            parsed=parsed_peripheral,
-        )
-
-    def _derive_registers_clusters(self, node: _Node, base_element: Peripheral) -> list[Cluster | Register]:
-        parsed_registers_clusters = self._processed_registers_clusters.get_processed_register_cluster(node.name)
-        base_memory_map = _RegisterClusterMap.build_map_from_registers_clusters(base_element.registers_clusters)
-        parsed_memory_map = _RegisterClusterMap.build_map_from_registers_clusters(parsed_registers_clusters)
-
-        base_memory_map.merge_and_overwrite_with(parsed_memory_map)
-        return [region[2] for region in base_memory_map.regions]
-
-    def _handle_non_derived_peripheral(
-        self, node: _Node, parsed_peripheral: SVDPeripheral, index: int, name: str
-    ) -> Peripheral:
-        size = node.register_properties.size
-        access = node.register_properties.access
-        protection = node.register_properties.protection
-        reset_value = node.register_properties.reset_value
-        reset_mask = node.register_properties.reset_mask
-        version = parsed_peripheral.version
-        description = parsed_peripheral.description
-        alternate_peripheral = parsed_peripheral.alternate_peripheral
-        group_name = parsed_peripheral.group_name
-        prepend_to_name = parsed_peripheral.prepend_to_name
-        append_to_name = parsed_peripheral.append_to_name
-        header_struct_name = parsed_peripheral.header_struct_name
-        disable_condition = parsed_peripheral.disable_condition
-        base_address = (
-            parsed_peripheral.base_address
-            if parsed_peripheral.dim_increment is None
-            else parsed_peripheral.base_address + parsed_peripheral.dim_increment * index
-        )
-        address_blocks = self._process_address_blocks(parsed_peripheral.address_blocks, protection)
-        interrupts = self._process_interrupts(parsed_peripheral.interrupts)
-        registers_clusters = self._processed_registers_clusters.get_processed_register_cluster(node.name)
-
-        return Peripheral(
-            size=size,
-            access=access,
-            protection=protection,
-            reset_value=reset_value,
-            reset_mask=reset_mask,
-            name=name,
-            version=version,
-            description=description,
-            alternate_peripheral=alternate_peripheral,
-            group_name=group_name,
-            prepend_to_name=prepend_to_name,
-            append_to_name=append_to_name,
-            header_struct_name=header_struct_name,
-            disable_condition=disable_condition,
-            base_address=base_address,
-            address_blocks=address_blocks,
-            interrupts=interrupts,
-            registers_clusters=registers_clusters,
-            parsed=parsed_peripheral,
-        )
-
-    def _insert_peripheral(self, peripheral: Peripheral) -> None:
-        bisect.insort(self._processed_peripherals, peripheral, key=lambda x: (x.base_address, x.name))
-
-    def _process_derived_nodes(self, derived_nodes: list[tuple[str, str]], peripheral: Peripheral) -> None:
-        for derived_node_name, base_node_rel_name in derived_nodes:
-            if peripheral.name == base_node_rel_name:
-                self._derived_base_node_lookup[derived_node_name] = peripheral
-
-    def _process_address_blocks(
-        self, parsed_address_blocks: list[SVDAddressBlock], peripheral_protection: None | ProtectionStringType
-    ) -> list[AddressBlock]:
-        address_blocks: list[AddressBlock] = []
-        for parsed_address_block in parsed_address_blocks:
-            address_blocks.append(
-                AddressBlock(
-                    offset=parsed_address_block.offset,
-                    size=parsed_address_block.size,
-                    usage=parsed_address_block.usage,
-                    protection=(
-                        parsed_address_block.protection
-                        if parsed_address_block.protection is not None
-                        else peripheral_protection
-                    ),
-                    parsed=parsed_address_block,
-                )
-            )
-
-        return address_blocks
-
-    def _process_interrupts(self, parsed_interrupts: list[SVDInterrupt]) -> list[Interrupt]:
-        interrupts: list[Interrupt] = []
-        for parsed_interrupt in parsed_interrupts:
-            interrupts.append(
-                Interrupt(
-                    name=parsed_interrupt.name,
-                    description=parsed_interrupt.description,
-                    value=parsed_interrupt.value,
-                    parsed=parsed_interrupt,
-                )
-            )
-
-        return interrupts
-
-
-class _ProcessPeripheralElements:
-    def __init__(self, parsed_device: SVDDevice) -> None:
-        self._resolver = _Resolver(parsed_device)
-        self._process_field = _ProcessField(self._resolver)
-        self._processed_registers_clusters = _ProccessedRegistersClusters()
-        self._process_register = _ProcessRegister(
-            self._resolver, self._process_field, self._processed_registers_clusters
-        )
-        self._process_cluster = _ProcessCluster(
-            self._resolver, self._process_register, self._processed_registers_clusters
-        )
-        self._process_peripheral = _ProcessPeripheral(self._resolver, self._processed_registers_clusters)
-
-    def process_peripherals(self) -> list[Peripheral]:
-        while node := self._resolver.resolve_next_node():
-            if isinstance(node.element, SVDPeripheral):
-                self._process_peripheral.process_peripheral(node)
-            if isinstance(node.element, SVDCluster):
-                self._process_cluster.process_cluster(node)
-            if isinstance(node.element, SVDRegister):
-                self._process_register.process_register(node)
-            if isinstance(node.element, SVDField):
-                self._process_field.process_field(node)
-
-        return self._process_peripheral.get_processed_peripherals()
+        except ValueError as exc:
+            raise ProcessException(f"Error processing input '{input_str}': {exc}") from exc

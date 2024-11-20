@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from svdsuite.model.types import (
     AccessType,
@@ -33,8 +33,8 @@ from svdsuite.model.parse import (
 
 @dataclass(kw_only=True)
 class SauRegion:
-    enabled: bool = True
-    name: None | str = None
+    enabled: bool
+    name: None | str
     base: int
     limit: int
     access: SauAccessType
@@ -43,9 +43,9 @@ class SauRegion:
 
 @dataclass(kw_only=True)
 class SauRegionsConfig:
-    enabled: bool = True
-    protection_when_disabled: ProtectionStringType = ProtectionStringType.SECURE
-    regions: list[SauRegion] = field(default_factory=list)
+    enabled: bool
+    protection_when_disabled: ProtectionStringType
+    regions: list[SauRegion]
     parsed: SVDSauRegionsConfig
 
 
@@ -54,35 +54,35 @@ class CPU:
     name: CPUNameType
     revision: str
     endian: EndianType
-    mpu_present: bool = False
-    fpu_present: bool = False
-    fpu_dp: bool = False
-    dsp_present: bool = False
-    icache_present: bool = False
-    dcache_present: bool = False
-    itcm_present: bool = False
-    dtcm_present: bool = False
-    vtor_present: bool = True
+    mpu_present: bool
+    fpu_present: bool
+    fpu_dp: bool
+    dsp_present: bool
+    icache_present: bool
+    dcache_present: bool
+    itcm_present: bool
+    dtcm_present: bool
+    vtor_present: bool
     nvic_prio_bits: int
     vendor_systick_config: bool
-    device_num_interrupts: None | int = None
-    sau_num_regions: None | int = None
-    sau_regions_config: None | SauRegionsConfig = None
+    device_num_interrupts: None | int
+    sau_num_regions: None | int
+    sau_regions_config: None | SauRegionsConfig
     parsed: SVDCPU
 
 
 @dataclass(kw_only=True)
 class EnumeratedValue:
     name: str
-    description: None | str = None
-    value: None | int = None
-    is_default: bool = False
+    description: None | str
+    value: None | int
+    is_default: bool
     parsed: SVDEnumeratedValue
 
 
 @dataclass(kw_only=True)
 class DimArrayIndex:
-    header_enum_name: None | str = None
+    header_enum_name: None | str
     enumerated_values: list[EnumeratedValue]
     parsed: SVDDimArrayIndex
 
@@ -92,128 +92,139 @@ class AddressBlock:
     offset: int
     size: int
     usage: EnumeratedTokenType
-    protection: None | ProtectionStringType = None
+    protection: None | ProtectionStringType
     parsed: SVDAddressBlock
 
 
 @dataclass(kw_only=True)
 class Interrupt:
     name: str
-    description: None | str = None
+    description: None | str
     value: int
     parsed: SVDInterrupt
 
 
 @dataclass(kw_only=True)
 class WriteConstraint:
-    write_as_read: None | bool = None
-    use_enumerated_values: None | bool = None
-    range_: None | tuple[int, int] = None
+    write_as_read: None | bool
+    use_enumerated_values: None | bool
+    range_: None | tuple[int, int]
     parsed: SVDWriteConstraint
 
 
 @dataclass(kw_only=True)
 class EnumeratedValueContainer:
-    name: None | str = None
-    header_enum_name: None | str = None
-    usage: EnumUsageType = EnumUsageType.READ_WRITE
+    name: None | str
+    header_enum_name: None | str
+    usage: EnumUsageType
     enumerated_values: list[EnumeratedValue]
-    derived_from: None | str = None
     parsed: SVDEnumeratedValueContainer
 
 
 @dataclass(kw_only=True)
 class Field:
+    dim: None | int
+    dim_increment: None | int
+    dim_index: None | str
     name: str
-    description: None | str = None
+    description: None | str
     lsb: int
     msb: int
-    access: AccessType
-    modified_write_values: ModifiedWriteValuesType = ModifiedWriteValuesType.MODIFY
-    write_constraint: None | WriteConstraint = None
-    read_action: None | ReadActionType = None
-    enumerated_value_containers: list[EnumeratedValueContainer] = field(default_factory=list)
+    access: None | AccessType
+    modified_write_values: ModifiedWriteValuesType
+    write_constraint: None | WriteConstraint
+    read_action: None | ReadActionType
+    enumerated_value_containers: list[EnumeratedValueContainer]
     parsed: SVDField
 
 
 @dataclass(kw_only=True)
 class Register:
-    size: int
-    access: AccessType
-    protection: ProtectionStringType
-    reset_value: int
-    reset_mask: int
+    dim: None | int
+    dim_increment: None | int
+    dim_index: None | str
+    size: None | int
+    access: None | AccessType
+    protection: None | ProtectionStringType
+    reset_value: None | int
+    reset_mask: None | int
     name: str
-    display_name: None | str = None
-    description: None | str = None
-    alternate_group: None | str = None
-    alternate_register: None | str = None
+    display_name: None | str
+    description: None | str
+    alternate_group: None | str
+    alternate_register: None | str
     address_offset: int
-    data_type: None | DataTypeType = None
-    modified_write_values: ModifiedWriteValuesType = ModifiedWriteValuesType.MODIFY
-    write_constraint: None | WriteConstraint = None
-    read_action: None | ReadActionType = None
-    fields: list[Field] = field(default_factory=list)
+    data_type: None | DataTypeType
+    modified_write_values: ModifiedWriteValuesType
+    write_constraint: None | WriteConstraint
+    read_action: None | ReadActionType
+    fields: list[Field]
     parsed: SVDRegister
 
 
 @dataclass(kw_only=True)
 class Cluster:
-    size: None | int = None
-    access: None | AccessType = None
-    protection: None | ProtectionStringType = None
-    reset_value: None | int = None
-    reset_mask: None | int = None
+    dim: None | int
+    dim_increment: None | int
+    dim_index: None | str
+    size: None | int
+    access: None | AccessType
+    protection: None | ProtectionStringType
+    reset_value: None | int
+    reset_mask: None | int
     name: str
-    description: None | str = None
-    alternate_cluster: None | str = None
-    header_struct_name: None | str = None
+    description: None | str
+    alternate_cluster: None | str
+    header_struct_name: None | str
     address_offset: int
-    registers_clusters: list["Register | Cluster"] = field(default_factory=list)
+    registers_clusters: list["Register | Cluster"]
     parsed: SVDCluster
 
 
 @dataclass(kw_only=True)
 class Peripheral:
-    size: None | int = None
-    access: None | AccessType = None
-    protection: None | ProtectionStringType = None
-    reset_value: None | int = None
-    reset_mask: None | int = None
+    dim: None | int
+    dim_increment: None | int
+    dim_index: None | str
+    size: None | int
+    access: None | AccessType
+    protection: None | ProtectionStringType
+    reset_value: None | int
+    reset_mask: None | int
     name: str
-    version: None | str = None
-    description: None | str = None
-    alternate_peripheral: None | str = None
-    group_name: None | str = None
-    prepend_to_name: None | str = None
-    append_to_name: None | str = None
-    header_struct_name: None | str = None
-    disable_condition: None | str = None
+    version: None | str
+    description: None | str
+    alternate_peripheral: None | str
+    group_name: None | str
+    prepend_to_name: None | str
+    append_to_name: None | str
+    header_struct_name: None | str
+    disable_condition: None | str
     base_address: int
-    address_blocks: list[AddressBlock] = field(default_factory=list)
-    interrupts: list[Interrupt] = field(default_factory=list)
-    registers_clusters: list[Register | Cluster] = field(default_factory=list)
+    address_blocks: list[AddressBlock]
+    interrupts: list[Interrupt]
+    registers_clusters: list[Register | Cluster]
     parsed: SVDPeripheral
 
 
 @dataclass(kw_only=True)
 class Device:
-    size: None | int = None
-    access: None | AccessType = None
-    protection: None | ProtectionStringType = None
-    reset_value: None | int = None
-    reset_mask: None | int = None
-    vendor: None | str = None
-    vendor_id: None | str = None
+    size: None | int
+    access: None | AccessType
+    protection: None | ProtectionStringType
+    reset_value: None | int
+    reset_mask: None | int
+    vendor: None | str
+    vendor_id: None | str
     name: str
-    series: None | str = None
+    series: None | str
     version: str
     description: str
-    license_text: None | str = None
-    cpu: None | CPU = None
-    header_system_filename: None | str = None
-    header_definitions_prefix: None | str = None
+    license_text: None | str
+    cpu: None | CPU
+    header_system_filename: None | str
+    header_definitions_prefix: None | str
     address_unit_bits: int
     width: int
-    peripherals: list[Peripheral] = field(default_factory=list)
+    peripherals: list[Peripheral]
     parsed: SVDDevice

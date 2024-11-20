@@ -7,7 +7,7 @@ class DimException(Exception):
 
 def resolve_dim(name: str, dim: None | int, dim_index: None | str) -> list[str]:
     if dim is None:
-        raise DimException(f"can't resolve dim for '{name}' without a dim value")
+        return [name]
     if dim < 1:
         raise DimException("dim value must be greater than 0")
 
