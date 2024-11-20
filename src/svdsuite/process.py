@@ -1,4 +1,3 @@
-from __future__ import annotations  # TODO fix graph drawing and remove this
 from enum import Enum, auto
 from typing import TypeAlias, cast, Any, Callable
 import itertools
@@ -440,8 +439,6 @@ class _ResolverGraph:
         topological_sorted_nodes = rx.lexicographical_topological_sort(  # pylint: disable=no-member
             subgraph, key=sort_key
         )
-
-        # self.draw_graph("/home/fedora/subgraph.png", "png", subgraph)  # TODO remove (debug)
 
         del subgraph
 
@@ -919,9 +916,6 @@ class _Resolver:
             if self._resolver_graph.has_incoming_edge_of_types(node, not_allowed_edge_types):
                 continue
 
-            # TODO do we need a check here if its a unprocessed node? might be an issue with processed nodes,
-            # added/copied somewhere via derivedFrom. problem might be more complex and subgraph needs new edges, or
-            # check if its an unprocessed node or not
             result.append(node)
 
             for child in self._resolver_graph.get_element_childrens(node):
