@@ -232,17 +232,6 @@ class HTMLGenerator:
         with open(self._output_file, "w", encoding="utf-8") as file:
             file.write(self.html_packer_template.replace("COMPRESSED_DATA", compressed_data))
 
-    # def generate_html_file(self):
-    #     if self._html_file_generated:
-    #         return
-    #     self._html_file_generated = True
-
-    #     html_content = self.html_content_template.replace("BODY_CONTENT", self._body_content)
-    #     html_content = html_content.replace("SVG_PAN_ZOOM_INSTANCES", self._svg_pan_zoom_instances)
-
-    #     with open(self._output_file, "w", encoding="utf-8") as file:
-    #         file.write(html_content)
-
     def _modify_svg(self, svg_content: str, svg_count: int) -> str:
         # Parse the XML content into an lxml tree
         parser = lxml.etree.XMLParser(remove_comments=True)
