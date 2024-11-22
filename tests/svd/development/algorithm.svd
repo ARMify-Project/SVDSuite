@@ -17,7 +17,7 @@
   <peripherals>
     <peripheral>
       <name>ElementA</name>
-      <baseAddress>0x40002000</baseAddress>
+      <baseAddress>0x40001000</baseAddress>
       <addressBlock>
         <offset>0x0</offset>
         <size>0x1000</size>
@@ -56,7 +56,7 @@
     </peripheral>
     <peripheral>
       <name>PeripheralA</name>
-      <baseAddress>0x40001000</baseAddress>
+      <baseAddress>0x40002000</baseAddress>
       <addressBlock>
         <offset>0x0</offset>
         <size>0x1000</size>

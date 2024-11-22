@@ -1,5 +1,6 @@
 from enum import Enum, auto
-from typing import TypeAlias, cast, Any, Callable
+from collections import defaultdict, deque
+from typing import TypeAlias, cast, Any, Callable, DefaultDict, Deque
 import itertools
 from abc import ABC
 import re
@@ -78,7 +79,7 @@ class Process:
         return cls(Parser.from_xml_content(content).get_parsed_device(), resolver_logging_file_path)
 
     def __init__(self, parsed_device: SVDDevice, resolver_logging_file_path: None | str) -> None:
-        resolver_logging_file_path = "/home/fedora/resolver_logging.html"  # TODO remove (debug)
+        # resolver_logging_file_path = "/home/fedora/resolver_logging.html"  # TODO remove (debug)
         self._processed_device = self._process_device(parsed_device, resolver_logging_file_path)
 
     def get_processed_device(self) -> Device:
@@ -597,6 +598,48 @@ class _ResolverGraph:
 
         return unprocessed_root_nodes
 
+    def bottom_up_sibling_traversal(self, finalize_siblings_cb: Callable[[_ElementNode, list[_ElementNode]], None]):
+        # TODO can probably be optimized
+
+        # Step 1: Build data structures
+        pending_children: dict[_ElementNode, int] = {}
+        children_of_node: DefaultDict[_ElementNode, list[_ElementNode]] = defaultdict(list)
+        parents_of_node: DefaultDict[_ElementNode, list[_ElementNode]] = defaultdict(list)
+
+        # Get all nodes
+        all_nodes_rx_indices = self._graph.node_indices()
+        for rx_index in all_nodes_rx_indices:
+            node = cast(_ElementNode, self._graph[rx_index])
+            # Get children
+            children = cast(list[_ElementNode], self._graph.successors(rx_index))
+            children_of_node[node].extend(children)
+            # Set pending_children[node] = number of children
+            pending_children[node] = len(children)
+            # For each child, add node as parent
+            for child in children:
+                parents_of_node[child].append(node)
+
+        # Step 2: Initialize queue with nodes whose pending_children[node] == 0 (leaves)
+        queue: Deque[_ElementNode] = deque()
+        for node, count in pending_children.items():
+            if count == 0:
+                queue.append(node)
+
+        # Step 3: Process nodes (call finalize_siblings callback) in a bottom-up manner
+        while queue:
+            node = queue.popleft()
+            # Call finalize_siblings for the node and its children, but only node is not a leaf (empty children)
+            children = children_of_node[node]
+            if children:
+                finalize_siblings_cb(node, children)
+            # For each parent of the node
+            for parent in parents_of_node[node]:
+                # Decrement pending_children[parent]
+                pending_children[parent] -= 1
+                if pending_children[parent] == 0:
+                    # Add parent to the queue
+                    queue.append(parent)
+
     def get_svg(self) -> str:
         def node_attr_fn(node: _ResolverNode) -> dict[str, str]:
             if isinstance(node, _ElementNode):
@@ -775,6 +818,9 @@ class _Resolver:
 
         self._ensure_accurate_parent_child_relationships_for_placeholders()
         self.logger.log_parent_child_relationships_for_placeholders()
+
+    def finalize_processing(self):
+        self._resolver_graph.bottom_up_sibling_traversal(self._finalize_siblings)
 
     def resolve_placeholders(self):
         for placeholder in list(self._resolver_graph.get_placeholders()):  # copy to avoid modifying list while iter.
@@ -1001,6 +1047,152 @@ class _Resolver:
 
         return False
 
+    def _finalize_siblings(self, parent: _ElementNode, siblings: list[_ElementNode]):
+        if parent.is_dim_template:
+            return
+
+        if isinstance(parent.processed, Device):
+            self._finalize_device(parent, siblings)
+        elif isinstance(parent.processed, Peripheral):
+            self._finalize_peripheral(parent, siblings)
+        elif isinstance(parent.processed, Cluster):
+            self._finalize_cluster(parent, siblings)
+        elif isinstance(parent.processed, Register):
+            self._finalize_register(parent, siblings)
+        elif isinstance(parent.processed, Field):
+            self._finalize_field(parent, siblings)
+        elif isinstance(parent.processed, EnumeratedValueContainer):  # pyright: ignore[reportUnnecessaryIsInstance]
+            self._finalize_enumerated_value_container(parent, siblings)
+        else:
+            raise ProcessException("Unknown processed type")
+
+    def _finalize_device(self, device_node: _ElementNode, children_nodes: list[_ElementNode]):
+        device = cast(Device, device_node.processed)
+        peripherals = [cast(Peripheral, node.processed) for node in children_nodes if not node.is_dim_template]
+
+        device.peripherals = sorted(peripherals, key=lambda p: (p.base_address, p.name))
+
+        self._inherit_register_properties(device)
+
+    def _finalize_peripheral(self, peripheral_node: _ElementNode, children_nodes: list[_ElementNode]):
+        peripheral = cast(Peripheral, peripheral_node.processed)
+        peripheral.size = self._calculate_size(
+            peripheral_node, [cast(Register | Cluster, node.processed) for node in children_nodes]
+        )
+
+        registers_clusters = [
+            cast(Register | Cluster, node.processed) for node in children_nodes if not node.is_dim_template
+        ]
+
+        peripheral.registers_clusters = sorted(registers_clusters, key=lambda rc: (rc.address_offset, rc.name))
+
+    def _finalize_cluster(self, cluster_node: _ElementNode, children_nodes: list[_ElementNode]):
+        cluster = cast(Cluster, cluster_node.processed)
+        cluster.size = self._calculate_size(
+            cluster_node, [cast(Register | Cluster, node.processed) for node in children_nodes]
+        )
+
+        registers_clusters = [
+            cast(Register | Cluster, node.processed) for node in children_nodes if not node.is_dim_template
+        ]
+
+        cluster.registers_clusters = sorted(registers_clusters, key=lambda rc: (rc.address_offset, rc.name))
+
+    def _finalize_register(self, register_node: _ElementNode, children_nodes: list[_ElementNode]):
+        register = cast(Register, register_node.processed)
+        fields = [cast(Field, node.processed) for node in children_nodes if not node.is_dim_template]
+
+        register.fields = sorted(fields, key=lambda f: (f.lsb, f.name))
+
+    def _finalize_field(self, field_node: _ElementNode, children_nodes: list[_ElementNode]):
+        field = cast(Field, field_node.processed)
+        enum_containers = [cast(EnumeratedValueContainer, node.processed) for node in children_nodes]
+
+        field.enumerated_value_containers = enum_containers
+
+    def _finalize_enumerated_value_container(self, enum_node: _ElementNode, children_nodes: list[_ElementNode]):
+        pass
+
+    def _calculate_size(self, node: _ElementNode, child_elements: list[Register | Cluster]) -> int:
+        element = cast(Register | Cluster, node.processed)
+
+        own_size = element.size if element.size is not None else -1
+
+        inherited_size = self._get_parent_size_recursively(node)
+
+        child_sizes = [child.size for child in child_elements if child.size is not None]
+        max_child_size = max(child_sizes) if child_sizes else -1
+
+        return max(own_size, inherited_size, max_child_size)
+
+    def _get_parent_size_recursively(self, node: _ElementNode) -> int:
+        parents = self._resolver_graph.get_element_parents(node)
+
+        if not parents:
+            return -1
+
+        parent = parents[0]  # only dim nodes have multiple parents, but all have same size
+        element = cast(Cluster | Peripheral | Device, parent.processed)
+
+        if element.size is not None:
+            return element.size
+
+        return self._get_parent_size_recursively(parent)
+
+    def _inherit_register_properties(self, device: Device):
+        for peripheral in device.peripherals:
+            peripheral.size = _or_if_none(peripheral.size, device.size)
+            peripheral.access = _or_if_none(peripheral.access, device.access)
+            peripheral.protection = _or_if_none(peripheral.protection, device.protection)
+            peripheral.reset_value = _or_if_none(peripheral.reset_value, device.reset_value)
+            peripheral.reset_mask = _or_if_none(peripheral.reset_mask, device.reset_mask)
+
+            self._inherit_register_properties_registers_clusters(
+                peripheral.registers_clusters,
+                peripheral.size,
+                peripheral.access,
+                peripheral.protection,
+                peripheral.reset_value,
+                peripheral.reset_mask,
+            )
+
+    def _inherit_register_properties_registers_clusters(
+        self,
+        registers_clusters: list[Cluster | Register],
+        size: None | int,
+        access: None | AccessType,
+        protection: None | ProtectionStringType,
+        reset_value: None | int,
+        reset_mask: None | int,
+    ):
+        for register_cluster in registers_clusters:
+            register_cluster.size = _or_if_none(register_cluster.size, size)
+            register_cluster.access = _or_if_none(register_cluster.access, access)
+            register_cluster.protection = _or_if_none(register_cluster.protection, protection)
+            register_cluster.reset_value = _or_if_none(register_cluster.reset_value, reset_value)
+            register_cluster.reset_mask = _or_if_none(register_cluster.reset_mask, reset_mask)
+
+            if isinstance(register_cluster, Cluster):
+                self._inherit_register_properties_registers_clusters(
+                    register_cluster.registers_clusters,
+                    register_cluster.size,
+                    register_cluster.access,
+                    register_cluster.protection,
+                    register_cluster.reset_value,
+                    register_cluster.reset_mask,
+                )
+            elif isinstance(register_cluster, Register):  # pyright: ignore[reportUnnecessaryIsInstance]
+                self._inherit_register_properties_fields(
+                    register_cluster.fields,
+                    register_cluster.access,
+                )
+            else:
+                raise ProcessException("Unknown register cluster type")
+
+    def _inherit_register_properties_fields(self, fields: list[Field], access: None | AccessType):
+        for field in fields:
+            field.access = _or_if_none(field.access, access)
+
     def _construct_directed_graph(self, device: Device):
         self._root_node_ = _ElementNode(
             name="Device",
@@ -1149,6 +1341,8 @@ class _ProcessPeripheralElements:
                 self._process_element(node_id, parsed_element)
 
             self._resolver.logger.log_round_end()
+
+        self._resolver.finalize_processing()
 
     def _process_element(self, node_id: int, parsed_element: ParsedPeripheralTypes):
         # get_base_element ensures that the base element has the same level as the derived element
