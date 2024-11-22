@@ -832,7 +832,7 @@ class _Resolver:
         is_dim_template: bool = False,
     ):
         # if derived, remove the derive edge and replicate the base node's descendants as descendants of current node
-        self._finalize_derive(node, base_node_id)
+        self._post_process_derive(node, base_node_id)
 
         # update node
         node.status = _NodeStatus.PROCESSED
@@ -844,7 +844,7 @@ class _Resolver:
         for child in self._resolver_graph.get_element_childrens(node):
             self._resolver_graph.update_edge(node, child, _EdgeType.CHILD_RESOLVED)
 
-    def _finalize_derive(self, node: _ElementNode, base_node_id: None | int):
+    def _post_process_derive(self, node: _ElementNode, base_node_id: None | int):
         if base_node_id is None:
             return
 
