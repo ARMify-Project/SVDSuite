@@ -71,12 +71,11 @@ class HTMLGenerator:
                 left: 0;
                 width: 100%;
                 height: 100%;
-                background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
-                color: white;
+                background-color: rgba(0, 0, 0, 0.0); /* Semi-transparent black */
+                color: red;
                 display: flex;
-                justify-content: center;
-                align-items: center;
                 font-size: 1.2em;
+                padding: 10px;
                 z-index: 10;
                 pointer-events: none; /* Allow clicks to pass through the overlay */
                 visibility: hidden; /* Initially hidden */
