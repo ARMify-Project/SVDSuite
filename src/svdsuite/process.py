@@ -300,6 +300,7 @@ class _ResolverGraph:
         self._node_id_to_rx_index: dict[int, int] = {}
         self._rx_index_to_node_id: dict[int, int] = {}
         self._placeholders: list[_PlaceholderNode] = []
+        self._unprocessed_rx_indicies: list[int] = []
 
     def add_root(self, root: _ElementNode):
         rx_index = self._graph.add_node(root)
@@ -588,6 +589,7 @@ class _ResolverGraph:
             return isinstance(node, _ElementNode) and node.status == _NodeStatus.UNPROCESSED
 
         rx_indices = self._graph.filter_nodes(filter_function)
+        self._unprocessed_rx_indicies = list(rx_indices)
 
         unprocessed_root_nodes: list[_ElementNode] = []
         for rx_index in rx_indices:
@@ -597,6 +599,9 @@ class _ResolverGraph:
                     break
 
         return unprocessed_root_nodes
+
+    def get_unprocessed_node_ids(self) -> set[int]:
+        return {self._rx_index_to_node_id[rx_index] for rx_index in self._unprocessed_rx_indicies}
 
     def bottom_up_sibling_traversal(self, finalize_siblings_cb: Callable[[_ElementNode, list[_ElementNode]], None]):
         # TODO can probably be optimized
@@ -804,6 +809,7 @@ class _Resolver:
         self._resolver_graph = _ResolverGraph()
         self._root_node_: None | _ElementNode = None
         self.logger = _ResolverLogger(resolver_logging_file_path, self._resolver_graph.get_svg)
+        self._repeating_steps_finisehd_after_current_round = False
 
     @property
     def _root_node(self) -> _ElementNode:
@@ -821,6 +827,9 @@ class _Resolver:
 
     def finalize_processing(self):
         self._resolver_graph.bottom_up_sibling_traversal(self._finalize_siblings)
+
+    def repeating_steps_finished_after_current_round(self) -> bool:
+        return self._repeating_steps_finisehd_after_current_round
 
     def resolve_placeholders(self):
         for placeholder in list(self._resolver_graph.get_placeholders()):  # copy to avoid modifying list while iter.
@@ -967,7 +976,15 @@ class _Resolver:
             for child in self._resolver_graph.get_element_childrens(node):
                 stack.append(child)
 
+        self._update_are_repeating_steps_finished_after_current_round({node.node_id for node in result})
         return result
+
+    def _update_are_repeating_steps_finished_after_current_round(self, getting_processed_node_ids: set[int]):
+        unprocessed_node_ids = self._resolver_graph.get_unprocessed_node_ids()
+        unprocessed_after_round_node_ids = unprocessed_node_ids - getting_processed_node_ids
+
+        if not unprocessed_after_round_node_ids:
+            self._repeating_steps_finisehd_after_current_round = True
 
     def _resolve_placeholder(self, placeholder: _PlaceholderNode):
         if not self._is_placeholder_parent_resolved(placeholder):
@@ -1321,15 +1338,11 @@ class _ProcessPeripheralElements:
 
         self._resolver.logger.log_repeating_steps_start()
         previous_elements: list[tuple[int, ParsedPeripheralTypes]] = []
-        while True:
+        while not self._resolver.repeating_steps_finished_after_current_round():
             self._resolver.logger.log_round_start()
 
             self._resolver.resolve_placeholders()
             processable_elements = self._resolver.get_topological_sorted_processable_elements()
-
-            if not processable_elements:
-                self._resolver.logger.log_repeating_steps_finished()
-                break
 
             if processable_elements == previous_elements:
                 self._resolver.logger.log_loop_detected()
@@ -1342,6 +1355,7 @@ class _ProcessPeripheralElements:
 
             self._resolver.logger.log_round_end()
 
+        self._resolver.logger.log_repeating_steps_finished()
         self._resolver.finalize_processing()
 
     def _process_element(self, node_id: int, parsed_element: ParsedPeripheralTypes):
