@@ -1,3 +1,4 @@
+import warnings
 from typing import Literal, Optional, overload
 
 import lxml.etree
@@ -31,6 +32,14 @@ from svdsuite.model.types import (
     ReadActionType,
     SauAccessType,
 )
+
+
+# Customize the warning format
+def custom_warning_format(message: str, category: type, _: str, __: int, ___: None | str) -> str:
+    return f"{category.__name__}: {message}\n"
+
+
+warnings.formatwarning = custom_warning_format
 
 
 @overload
@@ -88,6 +97,10 @@ def _to_int(value: None | str, base: int = 0) -> None | int:
         raise NotImplementedError(f"can't parse value '{value}' in function _to_int") from exc
 
 
+class ParserWarning(Warning):
+    pass
+
+
 class ParserException(Exception):
     pass
 
@@ -116,6 +129,7 @@ class Parser:
         self,
         element_name: str,
         parent: lxml.etree._Element,  # pyright: ignore[reportPrivateUsage]
+        strip: bool = True,
         optional: Literal[False] = False,
     ) -> str: ...
 
@@ -124,6 +138,7 @@ class Parser:
         self,
         element_name: str,
         parent: lxml.etree._Element,  # pyright: ignore[reportPrivateUsage]
+        strip: bool = True,
         optional: Literal[True] = True,
     ) -> None | str: ...
 
@@ -131,6 +146,7 @@ class Parser:
         self,
         element_name: str,
         parent: lxml.etree._Element,  # pyright: ignore[reportPrivateUsage]
+        strip: bool = True,
         optional: bool = False,
     ) -> None | str:
         element = parent.find(element_name)
@@ -144,13 +160,27 @@ class Parser:
                 raise ParserException(f"can't get element '{element_name}'")
             return None
 
-        return element.text
+        text_before_strip = element.text
+
+        if not strip:
+            return text_before_strip
+
+        text_after_strip = text_before_strip.strip()
+
+        if text_before_strip != text_after_strip:
+            warnings.warn(
+                f"Element '{element_name}' has been stripped from '{text_before_strip}' to '{text_after_strip}'",
+                ParserWarning,
+            )
+
+        return text_after_strip
 
     @overload
     def _parse_element_attribute(
         self,
         attribute_name: str,
         element: lxml.etree._Element,  # pyright: ignore[reportPrivateUsage]
+        strip: bool = True,
         optional: Literal[False] = False,
     ) -> str: ...
 
@@ -159,6 +189,7 @@ class Parser:
         self,
         attribute_name: str,
         element: lxml.etree._Element,  # pyright: ignore[reportPrivateUsage]
+        strip: bool = True,
         optional: Literal[True] = True,
     ) -> None | str: ...
 
@@ -166,16 +197,28 @@ class Parser:
         self,
         attribute_name: str,
         element: lxml.etree._Element,  # pyright: ignore[reportPrivateUsage]
+        strip: bool = True,
         optional: bool = False,
     ) -> None | str:
-        attribute = element.get(attribute_name)
+        attr_before_strip = element.get(attribute_name)
 
-        if attribute is None:
+        if attr_before_strip is None:
             if not optional:
                 raise ParserException(f"can't get attribute '{attribute_name}' for current element")
             return None
 
-        return attribute.strip()
+        if not strip:
+            return attr_before_strip
+
+        attr_after_strip = attr_before_strip.strip()
+
+        if attr_before_strip != attr_after_strip:
+            warnings.warn(
+                f"Attribute '{attribute_name}' has been stripped from '{attr_before_strip}' to '{attr_after_strip}'",
+                ParserWarning,
+            )
+
+        return attr_after_strip
 
     def _parse_device(self, device_element: lxml.etree._Element) -> SVDDevice:  # pyright: ignore[reportPrivateUsage]
         xs_no_namesp = self._parse_element_attribute(
@@ -188,7 +231,7 @@ class Parser:
         series = self._parse_element_text("series", device_element, optional=True)
         version = self._parse_element_text("version", device_element, optional=False)
         description = self._parse_element_text("description", device_element, optional=False)
-        license_text = self._parse_element_text("licenseText", device_element, optional=True)
+        license_text = self._parse_element_text("licenseText", device_element, strip=False, optional=True)
         cpu = self._parse_cpu(device_element)
         header_system_filename = self._parse_element_text("headerSystemFilename", device_element, optional=True)
         header_definitions_prefix = self._parse_element_text("headerDefinitionsPrefix", device_element, optional=True)
