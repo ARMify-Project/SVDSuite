@@ -230,7 +230,7 @@ class Parser:
         name = self._parse_element_text("name", device_element, optional=False)
         series = self._parse_element_text("series", device_element, optional=True)
         version = self._parse_element_text("version", device_element, optional=False)
-        description = self._parse_element_text("description", device_element, optional=False)
+        description = self._parse_element_text("description", device_element, strip=False, optional=False)
         license_text = self._parse_element_text("licenseText", device_element, strip=False, optional=True)
         cpu = self._parse_cpu(device_element)
         header_system_filename = self._parse_element_text("headerSystemFilename", device_element, optional=True)
@@ -395,13 +395,15 @@ class Parser:
             derived_from = self._parse_element_attribute("derivedFrom", peripheral_element, optional=True)
             name = self._parse_element_text("name", peripheral_element, optional=False)
             version = self._parse_element_text("version", peripheral_element, optional=True)
-            description = self._parse_element_text("description", peripheral_element, optional=True)
+            description = self._parse_element_text("description", peripheral_element, strip=False, optional=True)
             alternate_peripheral = self._parse_element_text("alternatePeripheral", peripheral_element, optional=True)
             group_name = self._parse_element_text("groupName", peripheral_element, optional=True)
             prepend_to_name = self._parse_element_text("prependToName", peripheral_element, optional=True)
             append_to_name = self._parse_element_text("appendToName", peripheral_element, optional=True)
             header_struct_name = self._parse_element_text("headerStructName", peripheral_element, optional=True)
-            disable_condition = self._parse_element_text("disableCondition", peripheral_element, optional=True)
+            disable_condition = self._parse_element_text(
+                "disableCondition", peripheral_element, strip=False, optional=True
+            )
             base_address = _to_int(self._parse_element_text("baseAddress", peripheral_element, optional=False))
             address_blocks = self._parse_address_blocks(peripheral_element)
             interrupts = self._parse_interrupts(peripheral_element)
@@ -458,7 +460,7 @@ class Parser:
         derived_from = self._parse_element_attribute("derivedFrom", register_element, optional=True)
         name = self._parse_element_text("name", register_element, optional=False)
         display_name = self._parse_element_text("displayName", register_element, optional=True)
-        description = self._parse_element_text("description", register_element, optional=True)
+        description = self._parse_element_text("description", register_element, strip=False, optional=True)
         alternate_group = self._parse_element_text("alternateGroup", register_element, optional=True)
         alternate_register = self._parse_element_text("alternateRegister", register_element, optional=True)
         address_offset = _to_int(self._parse_element_text("addressOffset", register_element, optional=False))
@@ -527,7 +529,7 @@ class Parser:
         for field_element in fields_element.findall("field"):
             derived_from = self._parse_element_attribute("derivedFrom", field_element, optional=True)
             name = self._parse_element_text("name", field_element, optional=False)
-            description = self._parse_element_text("description", field_element, optional=True)
+            description = self._parse_element_text("description", field_element, strip=False, optional=True)
             bit_offset = _to_int(self._parse_element_text("bitOffset", field_element, optional=True))
             bit_width = _to_int(self._parse_element_text("bitWidth", field_element, optional=True))
             lsb = _to_int(self._parse_element_text("lsb", field_element, optional=True))
@@ -645,7 +647,7 @@ class Parser:
     def _parse_cluster(self, cluster_element: lxml.etree._Element):  # pyright: ignore[reportPrivateUsage]
         derived_from = self._parse_element_attribute("derivedFrom", cluster_element, optional=True)
         name = self._parse_element_text("name", cluster_element, optional=False)
-        description = self._parse_element_text("description", cluster_element, optional=True)
+        description = self._parse_element_text("description", cluster_element, strip=False, optional=True)
         alternate_cluster = self._parse_element_text("alternateCluster", cluster_element, optional=True)
         header_struct_name = self._parse_element_text("headerStructName", cluster_element, optional=True)
         address_offset = _to_int(self._parse_element_text("addressOffset", cluster_element, optional=False))
@@ -707,7 +709,7 @@ class Parser:
         interrupts: list[SVDInterrupt] = []
         for interrupt_element in peripheral_element.findall("interrupt"):
             name = self._parse_element_text("name", interrupt_element, optional=False)
-            description = self._parse_element_text("description", interrupt_element, optional=True)
+            description = self._parse_element_text("description", interrupt_element, strip=False, optional=True)
             value = _to_int(self._parse_element_text("value", interrupt_element, optional=False))
 
             interrupts.append(SVDInterrupt(name=name, description=description, value=value))
@@ -771,7 +773,7 @@ class Parser:
         enumerated_values: list[SVDEnumeratedValue] = []
         for enumerated_value_element in parent_element.findall("enumeratedValue"):
             name = self._parse_element_text("name", enumerated_value_element, optional=False)
-            description = self._parse_element_text("description", enumerated_value_element, optional=True)
+            description = self._parse_element_text("description", enumerated_value_element, strip=False, optional=True)
             value = self._parse_element_text("value", enumerated_value_element, optional=True)
             is_default = _to_none_or_bool(
                 self._parse_element_text("isDefault", enumerated_value_element, optional=True)
