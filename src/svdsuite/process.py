@@ -79,7 +79,7 @@ class Process:
         return cls(Parser.from_xml_content(content).get_parsed_device(), resolver_logging_file_path)
 
     def __init__(self, parsed_device: SVDDevice, resolver_logging_file_path: None | str) -> None:
-        # resolver_logging_file_path = "/home/fedora/resolver_logging.html"  # TODO remove (debug)
+        resolver_logging_file_path = "/home/fedora/resolver_logging.html"  # TODO remove (debug)
         self._processed_device = self._process_device(parsed_device, resolver_logging_file_path)
 
     def get_processed_device(self) -> Device:
@@ -253,6 +253,13 @@ class _ElementNode(_ResolverNode):
     @property
     def parsed(self) -> SVDDevice | ParsedPeripheralTypes:
         return self._parsed
+
+    @parsed.setter
+    def parsed(self, parsed: SVDEnumeratedValueContainer):
+        if not isinstance(parsed, SVDEnumeratedValueContainer):  # pyright: ignore[reportUnnecessaryIsInstance]
+            raise ProcessException("parsed attribute can only be set to SVDEnumeratedValueContainer")
+
+        self._parsed = parsed
 
     @property
     def is_dim_template(self) -> bool:
@@ -851,7 +858,7 @@ class _Resolver:
 
         return processable_elements
 
-    def get_base_element(self, derive_node_id: int) -> tuple[ProcessedPeripheralTypes, int]:
+    def get_base_element(self, derive_node_id: int) -> tuple[None | ProcessedPeripheralTypes, int]:
         derived_node = self._resolver_graph.get_element_node_by_node_id(derive_node_id)
 
         if derived_node is None:
@@ -867,10 +874,10 @@ class _Resolver:
                 f"Node '{derived_node.name}' and its base node '{base_node.name}' have different levels"
             )
 
-        if isinstance(base_node.processed, Device):
+        if isinstance(base_node.processed_or_none, Device):
             raise ProcessException("Base node can't be a Device")
 
-        return base_node.processed, base_node.node_id
+        return base_node.processed_or_none, base_node.node_id
 
     def update_element(self, node_id: int, base_node_id: None | int, processed: ProcessedPeripheralTypes):
         node = self._resolver_graph.get_element_node_by_node_id(node_id)
@@ -878,6 +885,25 @@ class _Resolver:
             raise ProcessException(f"Element with node_id '{node_id}' not found")
 
         self._update_element(node, base_node_id, processed)
+
+    def update_enumerated_value_container(self, node_id: int, base_node_id: None | int):
+        node = self._resolver_graph.get_element_node_by_node_id(node_id)
+
+        if node is None:
+            raise ProcessException(f"Element with node_id '{node_id}' not found")
+
+        # if base_node_id is not None, update the node with the base node's parsed attribute (copy from base)
+        if base_node_id is not None:
+            base_node = self._resolver_graph.get_element_node_by_node_id(base_node_id)
+
+            if base_node is None:
+                raise ProcessException(f"Base element with node_id '{base_node_id}' not found")
+
+            node.parsed = cast(SVDEnumeratedValueContainer, base_node.parsed)
+            self._post_process_derive(node, base_node_id)
+
+        # update node
+        node.status = _NodeStatus.PROCESSED
 
     def _update_element(
         self,
@@ -1078,10 +1104,8 @@ class _Resolver:
             self._finalize_register(parent, siblings)
         elif isinstance(parent.processed, Field):
             self._finalize_field(parent, siblings)
-        elif isinstance(parent.processed, EnumeratedValueContainer):  # pyright: ignore[reportUnnecessaryIsInstance]
-            self._finalize_enumerated_value_container(parent, siblings)
         else:
-            raise ProcessException("Unknown processed type")
+            raise ProcessException("Unknown node type")
 
     def _finalize_device(self, device_node: _ElementNode, children_nodes: list[_ElementNode]):
         device = cast(Device, device_node.processed)
@@ -1123,12 +1147,14 @@ class _Resolver:
 
     def _finalize_field(self, field_node: _ElementNode, children_nodes: list[_ElementNode]):
         field = cast(Field, field_node.processed)
-        enum_containers = [cast(EnumeratedValueContainer, node.processed) for node in children_nodes]
+        enum_containers: list[EnumeratedValueContainer] = []
+        for child in children_nodes:
+            enum_container = _ProcessEnumeratedValueContainers().create_enumerated_value_container(
+                cast(SVDEnumeratedValueContainer, child.parsed), field.lsb, field.msb
+            )
+            enum_containers.append(enum_container)
 
         field.enumerated_value_containers = enum_containers
-
-    def _finalize_enumerated_value_container(self, enum_node: _ElementNode, children_nodes: list[_ElementNode]):
-        pass
 
     def _calculate_size(self, node: _ElementNode, child_elements: list[Register | Cluster]) -> int:
         element = cast(Register | Cluster, node.processed)
@@ -1364,12 +1390,13 @@ class _ProcessPeripheralElements:
         if parsed_element.derived_from is not None:
             base_element, base_element_id = self._resolver.get_base_element(node_id)
 
-        # SVDEnumeratedValueContainer is not dimable and might does not have a name
+            # Ensure that the base element is processed, except for enum containers
+            if base_element is None and not isinstance(parsed_element, SVDEnumeratedValueContainer):
+                raise ProcessException(f"Base element not found for node '{parsed_element.name}'")
+
+        # Processing of enum containers is postboned to finalization, since lsb and msb from parent fields are required
         if isinstance(parsed_element, SVDEnumeratedValueContainer):
-            processed_enum_container = self._create_enumerated_value_container(
-                parsed_element, cast(EnumeratedValueContainer, base_element)
-            )
-            self._resolver.update_element(node_id, base_element_id, processed_enum_container)
+            self._resolver.update_enumerated_value_container(node_id, base_element_id)
             return
 
         is_dim, resolved_dim = self._resolve_dim(parsed_element, cast(ProcessedDimablePeripheralTypes, base_element))
@@ -1592,26 +1619,6 @@ class _ProcessPeripheralElements:
             parsed=parsed,
         )
 
-    def _create_enumerated_value_container(
-        self, parsed_enum_container: SVDEnumeratedValueContainer, base_enum_container: None | EnumeratedValueContainer
-    ) -> EnumeratedValueContainer:
-        # deriveFrom at EnumeratedValueContainer level creates a copy of the base EnumeratedValueContainer
-        # TODO do we have to recreate enumearated_values since lsb und msb might be different in parent field?
-        if base_enum_container is not None:
-            # TODO get rid of deepcopy
-            copied_enum_container = copy.deepcopy(base_enum_container)
-            copied_enum_container.parsed = parsed_enum_container
-            return copied_enum_container
-
-        return EnumeratedValueContainer(
-            name=parsed_enum_container.name,
-            header_enum_name=parsed_enum_container.header_enum_name,
-            usage=parsed_enum_container.usage if parsed_enum_container.usage is not None else EnumUsageType.READ_WRITE,
-            # TODO add lsb and msb
-            enumerated_values=self._process_enumerated_values(parsed_enum_container.enumerated_values, 0, 0),
-            parsed=parsed_enum_container,
-        )
-
     def _resolve_dim(
         self, parsed_element: ParsedDimablePeripheralTypes, base_element: None | ProcessedDimablePeripheralTypes
     ) -> tuple[bool, list[str]]:
@@ -1691,6 +1698,19 @@ class _ProcessPeripheralElements:
             raise ProcessException("Field must have bit_offset and bit_width, lsb and msb, or bit_range")
 
         return (field_msb, field_lsb)
+
+
+class _ProcessEnumeratedValueContainers:
+    def create_enumerated_value_container(
+        self, parsed_enum_container: SVDEnumeratedValueContainer, lsb: int, msb: int
+    ) -> EnumeratedValueContainer:
+        return EnumeratedValueContainer(
+            name=parsed_enum_container.name,
+            header_enum_name=parsed_enum_container.header_enum_name,
+            usage=parsed_enum_container.usage if parsed_enum_container.usage is not None else EnumUsageType.READ_WRITE,
+            enumerated_values=self._process_enumerated_values(parsed_enum_container.enumerated_values, lsb, msb),
+            parsed=parsed_enum_container,
+        )
 
     def _process_enumerated_values(
         self, parsed_enumerated_values: list[SVDEnumeratedValue], lsb: int, msb: int
