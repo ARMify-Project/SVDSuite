@@ -1468,7 +1468,7 @@ class _ProcessPeripheralElements:
         header_struct_name = _or_if_none(parsed.header_struct_name, base.header_struct_name if base else None)
         disable_condition = _or_if_none(parsed.disable_condition, base.disable_condition if base else None)
         base_address = parsed.base_address if dim_increment is None else parsed.base_address + dim_increment * index
-        address_blocks = self._process_address_blocks(parsed.address_blocks)
+        address_blocks = self._process_address_blocks(parsed.address_blocks) or (base.address_blocks if base else [])
         interrupts = self._process_interrupts(parsed.interrupts)
 
         return Peripheral(
