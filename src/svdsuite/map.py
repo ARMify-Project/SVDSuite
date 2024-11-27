@@ -5,16 +5,16 @@ from svdsuite.model.process import Device, Peripheral, Cluster, Register, Addres
 
 class PeripheralRegisterMap:
     @classmethod
-    def from_svd_file(cls, path: str):
-        return cls(Process.from_svd_file(path).get_processed_device())
+    def from_svd_file(cls, path: str, resolver_logging_file_path: None | str = None):
+        return cls(Process.from_svd_file(path, resolver_logging_file_path).get_processed_device())
 
     @classmethod
-    def from_xml_str(cls, xml_str: str):
-        return cls(Process.from_xml_content(xml_str.encode()).get_processed_device())
+    def from_xml_str(cls, xml_str: str, resolver_logging_file_path: None | str = None):
+        return cls(Process.from_xml_content(xml_str.encode(), resolver_logging_file_path).get_processed_device())
 
     @classmethod
-    def from_xml_content(cls, content: bytes):
-        return cls(Process.from_xml_content(content).get_processed_device())
+    def from_xml_content(cls, content: bytes, resolver_logging_file_path: None | str = None):
+        return cls(Process.from_xml_content(content, resolver_logging_file_path).get_processed_device())
 
     def __init__(self, processed_device: Device) -> None:
         self.peripheral_map = self._build_map(processed_device)
