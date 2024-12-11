@@ -58,7 +58,7 @@ class Process:
         return cls(Parser.from_xml_content(content).get_parsed_device(), resolver_logging_file_path)
 
     def __init__(self, parsed_device: SVDDevice, resolver_logging_file_path: None | str) -> None:
-        # resolver_logging_file_path = "/home/fedora/resolver_logging.html"  # TODO remove (debug)
+        resolver_logging_file_path = "/home/fedora/resolver_logging.html"  # TODO remove (debug)
         self._resolver = Resolver(self, resolver_logging_file_path)
         self._processed_device = self._process_device(parsed_device)
 
@@ -93,11 +93,11 @@ class Process:
             header_definitions_prefix=parsed_device.header_definitions_prefix,
             address_unit_bits=parsed_device.address_unit_bits,
             width=parsed_device.width,
-            peripherals=[],  # will be added by Resolver
+            peripherals=self._resolver.resolve_peripherals(parsed_device),
             parsed=parsed_device,
         )
 
-        self._resolver.resolve_peripherals(device)
+        self._inherit_register_properties(device)
 
         return device
 
@@ -395,3 +395,57 @@ class Process:
             raise ProcessException("Field must have bit_offset and bit_width, lsb and msb, or bit_range")
 
         return (field_msb, field_lsb)
+
+    def _inherit_register_properties(self, device: Device):
+        for peripheral in device.peripherals:
+            peripheral.size = _or_if_none(peripheral.size, device.size)
+            peripheral.access = _or_if_none(peripheral.access, device.access)
+            peripheral.protection = _or_if_none(peripheral.protection, device.protection)
+            peripheral.reset_value = _or_if_none(peripheral.reset_value, device.reset_value)
+            peripheral.reset_mask = _or_if_none(peripheral.reset_mask, device.reset_mask)
+
+            self._inherit_register_properties_registers_clusters(
+                peripheral.registers_clusters,
+                peripheral.size,
+                peripheral.access,
+                peripheral.protection,
+                peripheral.reset_value,
+                peripheral.reset_mask,
+            )
+
+    def _inherit_register_properties_registers_clusters(
+        self,
+        registers_clusters: list[Cluster | Register],
+        size: None | int,
+        access: None | AccessType,
+        protection: None | ProtectionStringType,
+        reset_value: None | int,
+        reset_mask: None | int,
+    ):
+        for register_cluster in registers_clusters:
+            register_cluster.size = _or_if_none(register_cluster.size, size)
+            register_cluster.access = _or_if_none(register_cluster.access, access)
+            register_cluster.protection = _or_if_none(register_cluster.protection, protection)
+            register_cluster.reset_value = _or_if_none(register_cluster.reset_value, reset_value)
+            register_cluster.reset_mask = _or_if_none(register_cluster.reset_mask, reset_mask)
+
+            if isinstance(register_cluster, Cluster):
+                self._inherit_register_properties_registers_clusters(
+                    register_cluster.registers_clusters,
+                    register_cluster.size,
+                    register_cluster.access,
+                    register_cluster.protection,
+                    register_cluster.reset_value,
+                    register_cluster.reset_mask,
+                )
+            elif isinstance(register_cluster, Register):  # pyright: ignore[reportUnnecessaryIsInstance]
+                self._inherit_register_properties_fields(
+                    register_cluster.fields,
+                    register_cluster.access,
+                )
+            else:
+                raise ProcessException("Unknown register cluster type")
+
+    def _inherit_register_properties_fields(self, fields: list[Field], access: None | AccessType):
+        for field in fields:
+            field.access = _or_if_none(field.access, access)

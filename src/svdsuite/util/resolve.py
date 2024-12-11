@@ -27,7 +27,7 @@ from svdsuite.model.process import (
     EnumeratedValueContainer,
     EnumeratedValue,
 )
-from svdsuite.model.process import EnumUsageType, AccessType, ProtectionStringType
+from svdsuite.model.process import EnumUsageType
 from svdsuite.util.enumerated_value import process_binary_value_with_wildcard
 from svdsuite.util.dim import resolve_dim
 
@@ -97,7 +97,7 @@ class _ElementNode(_ResolverNode):
         level: _ElementLevel,
         status: _NodeStatus,
         parsed: SVDDevice | ParsedPeripheralTypes,
-        processed: None | Device | ProcessedPeripheralTypes = None,
+        processed: None | ProcessedPeripheralTypes = None,
         is_dim_template: bool = False,
     ):
         self._name = name
@@ -140,14 +140,14 @@ class _ElementNode(_ResolverNode):
         self._is_dim_template = is_dim_template
 
     @property
-    def processed(self) -> Device | ProcessedPeripheralTypes:
+    def processed(self) -> ProcessedPeripheralTypes:
         if self._processed is None:
             raise ResolveException(f"Processed attribute of node '{self.name}' is None")
 
         return self._processed
 
     @property
-    def processed_or_none(self) -> None | Device | ProcessedPeripheralTypes:
+    def processed_or_none(self) -> None | ProcessedPeripheralTypes:
         return self._processed
 
     @processed.setter
@@ -665,6 +665,7 @@ class Resolver:
         self._root_node_: None | _ElementNode = None
         self._logger = _ResolverLogger(resolver_logging_file_path, self._resolver_graph)
         self._repeating_steps_finisehd_after_current_round = False
+        self._peripherals_resolved: None | list[Peripheral] = None
 
     @property
     def _root_node(self) -> _ElementNode:
@@ -673,8 +674,8 @@ class Resolver:
 
         return self._root_node_
 
-    def resolve_peripherals(self, device: Device):
-        self._initialization(device)
+    def resolve_peripherals(self, parsed_device: SVDDevice) -> list[Peripheral]:
+        self._initialization(parsed_device)
 
         self._logger.log_repeating_steps_start()
         previous_nodes: list[_ElementNode] = []
@@ -698,8 +699,13 @@ class Resolver:
         self._logger.log_repeating_steps_finished()
         self._finalize_processing()
 
-    def _initialization(self, device: Device):
-        self._construct_directed_graph(device)
+        if self._peripherals_resolved is None:
+            raise ResolveException("Peripherals not resolved")
+
+        return self._peripherals_resolved
+
+    def _initialization(self, parsed_device: SVDDevice):
+        self._construct_directed_graph(parsed_device)
         self._logger.log_init_constructed_graph()
 
         self._ensure_accurate_parent_child_relationships_for_placeholders()
@@ -930,26 +936,22 @@ class Resolver:
         if parent.is_dim_template:
             return
 
-        if isinstance(parent.processed, Device):
+        if parent.level == _ElementLevel.DEVICE:
             self._finalize_device(parent, siblings)
-        elif isinstance(parent.processed, Peripheral):
+        elif parent.level == _ElementLevel.PERIPHERAL:
             self._finalize_peripheral(parent, siblings)
-        elif isinstance(parent.processed, Cluster):
+        elif parent.level == _ElementLevel.CLUSTER:
             self._finalize_cluster(parent, siblings)
-        elif isinstance(parent.processed, Register):
+        elif parent.level == _ElementLevel.REGISTER:
             self._finalize_register(parent, siblings)
-        elif isinstance(parent.processed, Field):
+        elif parent.level == _ElementLevel.FIELD:
             self._finalize_field(parent, siblings)
         else:
             raise ResolveException("Unknown node type")
 
-    def _finalize_device(self, device_node: _ElementNode, children_nodes: list[_ElementNode]):
-        device = cast(Device, device_node.processed)
+    def _finalize_device(self, _: _ElementNode, children_nodes: list[_ElementNode]):
         peripherals = [cast(Peripheral, node.processed) for node in children_nodes if not node.is_dim_template]
-
-        device.peripherals = sorted(peripherals, key=lambda p: (p.base_address, p.name))
-
-        self._inherit_register_properties(device)
+        self._peripherals_resolved = sorted(peripherals, key=lambda p: (p.base_address, p.name))
 
     def _finalize_peripheral(self, peripheral_node: _ElementNode, children_nodes: list[_ElementNode]):
         peripheral = cast(Peripheral, peripheral_node.processed)
@@ -1011,77 +1013,28 @@ class Resolver:
             return -1
 
         parent = parents[0]  # only dim nodes have multiple parents, but all have same size
-        element = cast(Cluster | Peripheral | Device, parent.processed)
+
+        if parent.level == _ElementLevel.DEVICE:
+            return 32  # default size for device
+
+        element = parent.processed
+        if not isinstance(element, Peripheral | Cluster):
+            raise ResolveException("Parent of node is not a Peripheral or Cluster")
 
         if element.size is not None:
             return element.size
 
         return self._get_parent_size_recursively(parent)
 
-    def _inherit_register_properties(self, device: Device):
-        for peripheral in device.peripherals:
-            peripheral.size = _or_if_none(peripheral.size, device.size)
-            peripheral.access = _or_if_none(peripheral.access, device.access)
-            peripheral.protection = _or_if_none(peripheral.protection, device.protection)
-            peripheral.reset_value = _or_if_none(peripheral.reset_value, device.reset_value)
-            peripheral.reset_mask = _or_if_none(peripheral.reset_mask, device.reset_mask)
-
-            self._inherit_register_properties_registers_clusters(
-                peripheral.registers_clusters,
-                peripheral.size,
-                peripheral.access,
-                peripheral.protection,
-                peripheral.reset_value,
-                peripheral.reset_mask,
-            )
-
-    def _inherit_register_properties_registers_clusters(
-        self,
-        registers_clusters: list[Cluster | Register],
-        size: None | int,
-        access: None | AccessType,
-        protection: None | ProtectionStringType,
-        reset_value: None | int,
-        reset_mask: None | int,
-    ):
-        for register_cluster in registers_clusters:
-            register_cluster.size = _or_if_none(register_cluster.size, size)
-            register_cluster.access = _or_if_none(register_cluster.access, access)
-            register_cluster.protection = _or_if_none(register_cluster.protection, protection)
-            register_cluster.reset_value = _or_if_none(register_cluster.reset_value, reset_value)
-            register_cluster.reset_mask = _or_if_none(register_cluster.reset_mask, reset_mask)
-
-            if isinstance(register_cluster, Cluster):
-                self._inherit_register_properties_registers_clusters(
-                    register_cluster.registers_clusters,
-                    register_cluster.size,
-                    register_cluster.access,
-                    register_cluster.protection,
-                    register_cluster.reset_value,
-                    register_cluster.reset_mask,
-                )
-            elif isinstance(register_cluster, Register):  # pyright: ignore[reportUnnecessaryIsInstance]
-                self._inherit_register_properties_fields(
-                    register_cluster.fields,
-                    register_cluster.access,
-                )
-            else:
-                raise ResolveException("Unknown register cluster type")
-
-    def _inherit_register_properties_fields(self, fields: list[Field], access: None | AccessType):
-        for field in fields:
-            field.access = _or_if_none(field.access, access)
-
-    def _construct_directed_graph(self, device: Device):
+    def _construct_directed_graph(self, parsed_device: SVDDevice):
         self._root_node_ = _ElementNode(
             name="Device",
             level=_ElementLevel.DEVICE,
             status=_NodeStatus.PROCESSED,
-            parsed=device.parsed,
-            processed=device,
+            parsed=parsed_device,
         )
         self._resolver_graph.add_root(self._root_node)
-        self._constr_graph_peripherals(device.parsed.peripherals, self._root_node)
+        self._constr_graph_peripherals(parsed_device.peripherals, self._root_node)
 
     def _ensure_accurate_parent_child_relationships_for_placeholders(self):
         for placeholder in self._resolver_graph.get_placeholders():
