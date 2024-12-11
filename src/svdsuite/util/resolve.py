@@ -72,14 +72,7 @@ class _EdgeType(Enum):
 
 
 class _ResolverNode(ABC):
-    _node_counter = itertools.count()
-
-    def __init__(self):
-        self._node_id = next(self._node_counter)
-
-    @property
-    def node_id(self) -> int:
-        return self._node_id
+    pass
 
 
 class _PlaceholderNode(_ResolverNode):
@@ -143,10 +136,6 @@ class _ElementNode(_ResolverNode):
         self._is_dim_template = is_dim_template
 
     @property
-    def node_id(self) -> int:
-        return self._node_id
-
-    @property
     def processed(self) -> Device | ProcessedPeripheralTypes:
         if self._processed is None:
             raise ResolveException(f"Processed attribute of node '{self.name}' is None")
@@ -174,37 +163,30 @@ class _ResolverGraph:
         self._graph: rx.PyDiGraph[_ResolverNode, _EdgeType] = rx.PyDiGraph(  # pylint: disable=no-member
             check_cycle=True
         )
-        self._node_id_to_rx_index: dict[int, int] = {}
-        self._rx_index_to_node_id: dict[int, int] = {}
+        self._node_to_rx_index: dict[_ResolverNode, int] = {}
         self._placeholders: list[_PlaceholderNode] = []
         self._unprocessed_rx_indicies: list[int] = []
 
     def add_root(self, root: _ElementNode):
         rx_index = self._graph.add_node(root)
-
-        self._node_id_to_rx_index[root.node_id] = rx_index
-        self._rx_index_to_node_id[rx_index] = root.node_id
+        self._node_to_rx_index[root] = rx_index
 
     def add_element_child(self, parent: _ElementNode, child: _ElementNode, edge_type: _EdgeType):
-        parent_rx_index = self._node_id_to_rx_index[parent.node_id]
+        parent_rx_index = self._node_to_rx_index[parent]
         child_rx_index = self._graph.add_node(child)
         self._graph.add_edge(parent_rx_index, child_rx_index, edge_type)
 
-        self._node_id_to_rx_index[child.node_id] = child_rx_index
-        self._rx_index_to_node_id[child_rx_index] = child.node_id
+        self._node_to_rx_index[child] = child_rx_index
 
     def add_edge(self, parent: _ElementNode, child: _ElementNode | _PlaceholderNode, edge_type: _EdgeType):
-        self._graph.add_edge(
-            self._node_id_to_rx_index[parent.node_id], self._node_id_to_rx_index[child.node_id], edge_type
-        )
+        self._graph.add_edge(self._node_to_rx_index[parent], self._node_to_rx_index[child], edge_type)
 
     def add_placeholder(self, placeholder: _PlaceholderNode, derivation_node: _ElementNode):
-        derivation_node_rx_index = self._node_id_to_rx_index[derivation_node.node_id]
+        derivation_node_rx_index = self._node_to_rx_index[derivation_node]
         placeholder_rx_index = self._graph.add_node(placeholder)
         self._graph.add_edge(placeholder_rx_index, derivation_node_rx_index, _EdgeType.PLACEHOLDER)
 
-        self._node_id_to_rx_index[placeholder.node_id] = placeholder_rx_index
-        self._rx_index_to_node_id[placeholder_rx_index] = placeholder.node_id
+        self._node_to_rx_index[placeholder] = placeholder_rx_index
 
         self._placeholders.append(placeholder)
 
@@ -212,7 +194,7 @@ class _ResolverGraph:
         return self._placeholders
 
     def get_placeholder_co_parent(self, placeholder: _PlaceholderNode) -> None | _ElementNode:
-        children = self._graph.successors(self._node_id_to_rx_index[placeholder.node_id])
+        children = self._graph.successors(self._node_to_rx_index[placeholder])
 
         if not children:
             raise _ResolverGraphException(f"Placeholder '{placeholder.derive_path}' has no child")
@@ -220,7 +202,7 @@ class _ResolverGraph:
         if len(children) != 1:
             raise _ResolverGraphException(f"Placeholder '{placeholder.derive_path}' has more than one child")
 
-        parents = self._graph.predecessors(self._node_id_to_rx_index[children[0].node_id])
+        parents = self._graph.predecessors(self._node_to_rx_index[children[0]])
 
         # only _ElementNode nodes
         parents = [parent for parent in parents if isinstance(parent, _ElementNode)]
@@ -234,7 +216,7 @@ class _ResolverGraph:
         return parents[0]
 
     def get_element_parents(self, node: _ElementNode) -> list[_ElementNode]:
-        incoming_edges = self._graph.in_edges(self._node_id_to_rx_index[node.node_id])
+        incoming_edges = self._graph.in_edges(self._node_to_rx_index[node])
 
         parents = [
             self._graph[parent_rx_index]
@@ -246,7 +228,7 @@ class _ResolverGraph:
         return cast(list[_ElementNode], parents)
 
     def get_element_childrens(self, node: _ElementNode) -> list[_ElementNode]:
-        outgoing_edges = self._graph.out_edges(self._node_id_to_rx_index[node.node_id])
+        outgoing_edges = self._graph.out_edges(self._node_to_rx_index[node])
 
         children = [
             self._graph[child_rx_index]
@@ -268,11 +250,11 @@ class _ResolverGraph:
         parent = parents[0]
 
         siblings: list[_ElementNode] = []
-        for child in self._graph.successors(self._node_id_to_rx_index[parent.node_id]):
+        for child in self._graph.successors(self._node_to_rx_index[parent]):
             if not isinstance(child, _ElementNode):
                 continue
 
-            if child.node_id == node.node_id:
+            if child == node:
                 continue
 
             siblings.append(child)
@@ -287,14 +269,13 @@ class _ResolverGraph:
         self._remove_node(node)
 
     def _remove_node(self, node: _ElementNode | _PlaceholderNode):
-        rx_index = self._node_id_to_rx_index[node.node_id]
+        rx_index = self._node_to_rx_index[node]
         self._graph.remove_node(rx_index)
 
-        del self._node_id_to_rx_index[node.node_id]
-        del self._rx_index_to_node_id[rx_index]
+        del self._node_to_rx_index[node]
 
     def has_incoming_edge_of_types(self, node: _ElementNode, edge_types_to_find: set[_EdgeType]) -> bool:
-        rx_index = self._node_id_to_rx_index[node.node_id]
+        rx_index = self._node_to_rx_index[node]
         for _, _, edge_type in self._graph.in_edges(rx_index):
             if edge_type in edge_types_to_find:
                 return True
@@ -312,7 +293,7 @@ class _ResolverGraph:
             return "A"
 
         subgraph = self._graph.subgraph(
-            [self._node_id_to_rx_index[node.node_id] for node in nodes if node.status == _NodeStatus.UNPROCESSED]
+            [self._node_to_rx_index[node] for node in nodes if node.status == _NodeStatus.UNPROCESSED]
         )
 
         topological_sorted_nodes = rx.lexicographical_topological_sort(  # pylint: disable=no-member
@@ -324,38 +305,27 @@ class _ResolverGraph:
         # correct type of topological_sorted_nodes for static type checking
         return cast(list[_ElementNode], topological_sorted_nodes)
 
-    def get_element_node_by_node_id(self, node_id: int) -> None | _ElementNode:
-        try:
-            node = self._graph[self._node_id_to_rx_index[node_id]]
-        except KeyError:
-            return None
-
-        if not isinstance(node, _ElementNode):
-            return None
-
-        return node
-
     def get_base_element_node(self, derive_node: _ElementNode) -> None | _ElementNode:
-        for parent_rx_index, _, edge_type in self._graph.in_edges(self._node_id_to_rx_index[derive_node.node_id]):
+        for parent_rx_index, _, edge_type in self._graph.in_edges(self._node_to_rx_index[derive_node]):
             if edge_type == _EdgeType.DERIVE:
                 return cast(_ElementNode, self._graph[parent_rx_index])
 
         return None
 
     def remove_edge(self, parent: _ElementNode, child: _ElementNode):
-        parent_rx_index = self._node_id_to_rx_index[parent.node_id]
-        child_rx_index = self._node_id_to_rx_index[child.node_id]
+        parent_rx_index = self._node_to_rx_index[parent]
+        child_rx_index = self._node_to_rx_index[child]
 
         self._graph.remove_edge(parent_rx_index, child_rx_index)
 
     def update_edge(self, parent: _ElementNode, child: _ElementNode, edge_type: _EdgeType):
-        parent_rx_index = self._node_id_to_rx_index[parent.node_id]
-        child_rx_index = self._node_id_to_rx_index[child.node_id]
+        parent_rx_index = self._node_to_rx_index[parent]
+        child_rx_index = self._node_to_rx_index[child]
 
         self._graph.update_edge(parent_rx_index, child_rx_index, edge_type)
 
     def get_placeholder_child(self, placeholder: _PlaceholderNode) -> _ElementNode:
-        outgoing_edges = self._graph.out_edges(self._node_id_to_rx_index[placeholder.node_id])
+        outgoing_edges = self._graph.out_edges(self._node_to_rx_index[placeholder])
 
         children = [
             self._graph[child_rx_index]
@@ -372,7 +342,7 @@ class _ResolverGraph:
         return cast(_ElementNode, children[0])
 
     def get_placeholder_parent(self, placeholder: _PlaceholderNode) -> _ElementNode:
-        incoming_edges = self._graph.in_edges(self._node_id_to_rx_index[placeholder.node_id])
+        incoming_edges = self._graph.in_edges(self._node_to_rx_index[placeholder])
 
         parents = [
             self._graph[parent_rx_index]
@@ -389,7 +359,7 @@ class _ResolverGraph:
         return cast(_ElementNode, parents[0])
 
     def replicate_descendants(self, source_node: _ElementNode, target_node: _ElementNode):
-        source_rx_index = self._node_id_to_rx_index[source_node.node_id]
+        source_rx_index = self._node_to_rx_index[source_node]
 
         # get rx_index for all descendants of source_node, excluding edges of type _EdgeType.DERIVE
         rx_indices_to_replicate: set[int] = set()
@@ -417,8 +387,7 @@ class _ResolverGraph:
             new_node_rx_index = self._graph.add_node(new_node)
             replica_mapping[rx_index] = new_node_rx_index
 
-            self._node_id_to_rx_index[new_node.node_id] = new_node_rx_index
-            self._rx_index_to_node_id[new_node_rx_index] = new_node.node_id
+            self._node_to_rx_index[new_node] = new_node_rx_index
 
             if isinstance(new_node, _PlaceholderNode):
                 self._placeholders.append(new_node)
@@ -445,7 +414,7 @@ class _ResolverGraph:
         ]
 
         # attach the replicated subgraph to target_node
-        target_rx_index = self._node_id_to_rx_index[target_node.node_id]
+        target_rx_index = self._node_to_rx_index[target_node]
         for child_rx_index in immediate_children:
             replicated_child_rx_index = replica_mapping[child_rx_index]
             if isinstance(self._graph[replicated_child_rx_index], _PlaceholderNode):
@@ -477,8 +446,8 @@ class _ResolverGraph:
 
         return unprocessed_root_nodes
 
-    def get_unprocessed_node_ids(self) -> set[int]:
-        return {self._rx_index_to_node_id[rx_index] for rx_index in self._unprocessed_rx_indicies}
+    def get_unprocessed_nodes(self) -> set[_ElementNode]:
+        return {cast(_ElementNode, self._graph[rx_index]) for rx_index in self._unprocessed_rx_indicies}
 
     def bottom_up_sibling_traversal(self, finalize_siblings_cb: Callable[[_ElementNode, list[_ElementNode]], None]):
         # TODO can probably be optimized
@@ -530,16 +499,16 @@ class _ResolverGraph:
 
                 return {
                     "label": (
-                        f"{node.name}\n({node.level.value})\nId:{node.node_id}"
+                        f"{node.name}\n({node.level.value})\nrx_index: {self._node_to_rx_index[node]}"
                         if node.name
-                        else f"no name\n({node.level.value})\nId:{node.node_id}"
+                        else f"no name\n({node.level.value})\nrx_index: {self._node_to_rx_index[node]}"
                     ),
                     "color": "black" if node.status == _NodeStatus.UNPROCESSED else "blue",
                     "fontcolor": "black" if node.status == _NodeStatus.UNPROCESSED else "blue",
                 }
             elif isinstance(node, _PlaceholderNode):
                 return {
-                    "label": f"{node.derive_path}\n(Placeholder)\nId: {node.node_id}",
+                    "label": f"{node.derive_path}\n(Placeholder)\nrx_index: {self._node_to_rx_index[node]}",
                     "color": "red",
                     "fontcolor": "red",
                 }
@@ -589,9 +558,9 @@ class _ResolverGraph:
 
 
 class _ResolverLogger:
-    def __init__(self, resolver_logging_file_path: None | str, get_svg_callback: Callable[[], str]):
+    def __init__(self, resolver_logging_file_path: None | str, resolver_graph: _ResolverGraph):
         self._resolver_logging_file_path = resolver_logging_file_path
-        self._get_svg_callback = get_svg_callback
+        self._resolver_graph = resolver_graph
         self._current_round_counter = itertools.count(1)
         self._current_round_resolved_placeholders: list[str] = []
 
@@ -612,13 +581,13 @@ class _ResolverLogger:
         self._html_generator.add_h1("Initialization")
         self._html_generator.add_h2("Construct Directed Graph")
         self._html_generator.add_paragraph("Graph after construction:")
-        self._html_generator.add_svg(self._get_svg_callback())
+        self._html_generator.add_svg(self._resolver_graph.get_svg())
 
     @_only_execute_if_logging_is_active
     def log_parent_child_relationships_for_placeholders(self):
         self._html_generator.add_h2("Ensure Accurate Parent-Child Relationships for Placeholders")
         self._html_generator.add_paragraph("Graph after adding parent-child relationships for placeholders:")
-        self._html_generator.add_svg(self._get_svg_callback())
+        self._html_generator.add_svg(self._resolver_graph.get_svg())
 
     @_only_execute_if_logging_is_active
     def log_repeating_steps_start(self):
@@ -631,7 +600,7 @@ class _ResolverLogger:
     @_only_execute_if_logging_is_active
     def log_round_end(self):
         self._html_generator.add_paragraph("Graph at end of round:")
-        self._html_generator.add_svg(self._get_svg_callback())
+        self._html_generator.add_svg(self._resolver_graph.get_svg())
 
     @_only_execute_if_logging_is_active
     def log_loop_detected(self):
@@ -655,7 +624,7 @@ class _ResolverLogger:
                 "Resolved placeholders", "<br />".join(self._current_round_resolved_placeholders)
             )
             self._html_generator.add_paragraph("Graph after resolving placeholders:")
-            self._html_generator.add_svg(self._get_svg_callback())
+            self._html_generator.add_svg(self._resolver_graph.get_svg())
         else:
             self._html_generator.add_paragraph("No placeholders resolved in this round")
 
@@ -672,7 +641,11 @@ class _ResolverLogger:
         self._html_generator.add_scrollable_div_with_description(
             "Elements to process (sorted by process order ascending)",
             "<br />".join(
-                [f"{node.node_id}: {node.name or 'no name'} ({node.level.value})" for node in topological_sorted_nodes]
+                [
+                    f"{self._resolver_graph._node_to_rx_index[node]}: "  # pylint: disable=protected-access #pyright: ignore[reportPrivateUsage]
+                    f"{node.name or 'no name'} ({node.level.value})"
+                    for node in topological_sorted_nodes
+                ]
             ),
         )
 
@@ -685,7 +658,7 @@ class Resolver:
     def __init__(self, resolver_logging_file_path: None | str):
         self._resolver_graph = _ResolverGraph()
         self._root_node_: None | _ElementNode = None
-        self.logger = _ResolverLogger(resolver_logging_file_path, self._resolver_graph.get_svg)
+        self.logger = _ResolverLogger(resolver_logging_file_path, self._resolver_graph)
         self._repeating_steps_finisehd_after_current_round = False
 
     @property
@@ -714,26 +687,14 @@ class Resolver:
 
         self.logger.log_resolve_placeholder_finished()
 
-    def get_topological_sorted_processable_elements(self) -> list[tuple[int, ParsedPeripheralTypes]]:
+    def get_topological_sorted_processable_nodes(self) -> list[_ElementNode]:
         processable_nodes = self._find_processable_nodes()
         topological_sorted_nodes = self._resolver_graph.get_topological_sorted_nodes(processable_nodes)
-
-        processable_elements: list[tuple[int, ParsedPeripheralTypes]] = []
-        for node in topological_sorted_nodes:
-            if isinstance(node.parsed, SVDDevice):
-                raise ResolveException("Device node should not be in processable nodes")
-            processable_elements.append((node.node_id, node.parsed))
-
         self.logger.log_processable_elements(topological_sorted_nodes)
 
-        return processable_elements
+        return topological_sorted_nodes
 
-    def get_base_element(self, derive_node_id: int) -> tuple[None | ProcessedPeripheralTypes, int]:
-        derived_node = self._resolver_graph.get_element_node_by_node_id(derive_node_id)
-
-        if derived_node is None:
-            raise ResolveException(f"_ElementNode with node_id '{derive_node_id}' not found")
-
+    def get_base_node(self, derived_node: _ElementNode) -> _ElementNode:
         base_node = self._resolver_graph.get_base_element_node(derived_node)
 
         if base_node is None:
@@ -747,43 +708,36 @@ class Resolver:
         if isinstance(base_node.processed_or_none, Device):
             raise ResolveException("Base node can't be a Device")
 
-        return base_node.processed_or_none, base_node.node_id
+        return base_node
 
-    def update_element(self, node_id: int, base_node_id: None | int, processed: ProcessedPeripheralTypes):
-        node = self._resolver_graph.get_element_node_by_node_id(node_id)
-        if node is None:
-            raise ResolveException(f"Element with node_id '{node_id}' not found")
-
-        self._update_element(node, base_node_id, processed)
-
-    def update_enumerated_value_container(self, node_id: int, base_node_id: None | int):
-        node = self._resolver_graph.get_element_node_by_node_id(node_id)
-
-        if node is None:
-            raise ResolveException(f"Element with node_id '{node_id}' not found")
-
+    def update_enumerated_value_container(self, node: _ElementNode, base_node: None | _ElementNode):
         # if base_node_id is not None, update the node with the base node's parsed attribute (copy from base)
-        if base_node_id is not None:
-            base_node = self._resolver_graph.get_element_node_by_node_id(base_node_id)
-
-            if base_node is None:
-                raise ResolveException(f"Base element with node_id '{base_node_id}' not found")
-
+        if base_node is not None:
             node.parsed = cast(SVDEnumeratedValueContainer, base_node.parsed)
-            self._post_process_derive(node, base_node_id)
+
+            # remove the derive edge
+            self._resolver_graph.remove_edge(base_node, node)
+
+            # replicate the base node's descendants as descendants of current node
+            self._resolver_graph.replicate_descendants(base_node, node)
 
         # update node
         node.status = _NodeStatus.PROCESSED
 
-    def _update_element(
+    def update_element(
         self,
         node: _ElementNode,
-        base_node_id: None | int,
+        base_node: None | _ElementNode,
         processed: ProcessedPeripheralTypes,
         is_dim_template: bool = False,
     ):
         # if derived, remove the derive edge and replicate the base node's descendants as descendants of current node
-        self._post_process_derive(node, base_node_id)
+        if base_node is not None:
+            # remove the derive edge
+            self._resolver_graph.remove_edge(base_node, node)
+
+            # replicate the base node's descendants as descendants of current node
+            self._resolver_graph.replicate_descendants(base_node, node)
 
         # update node
         node.status = _NodeStatus.PROCESSED
@@ -795,33 +749,15 @@ class Resolver:
         for child in self._resolver_graph.get_element_childrens(node):
             self._resolver_graph.update_edge(node, child, _EdgeType.CHILD_RESOLVED)
 
-    def _post_process_derive(self, node: _ElementNode, base_node_id: None | int):
-        if base_node_id is None:
-            return
-
-        base_node = self._resolver_graph.get_element_node_by_node_id(base_node_id)
-        if base_node is None:
-            raise ResolveException(f"Base element with node_id '{base_node_id}' not found")
-
-        # remove the derive edge
-        self._resolver_graph.remove_edge(base_node, node)
-
-        # replicate the base node's descendants as descendants of current node
-        self._resolver_graph.replicate_descendants(base_node, node)
-
     def update_dim_element(
         self,
-        node_id: int,
-        base_node_id: None | int,
+        node: _ElementNode,
+        base_node: None | _ElementNode,
         processed_elements: list[ProcessedDimablePeripheralTypes],
         processed_dim_element: ProcessedDimablePeripheralTypes,
     ):
-        node = self._resolver_graph.get_element_node_by_node_id(node_id)
-        if node is None:
-            raise ResolveException(f"Element with node_id '{node_id}' not found")
-
         # update dim element itself (must be called before the new nodes are created in the next step)
-        self._update_element(node, base_node_id, processed_dim_element, is_dim_template=True)
+        self.update_element(node, base_node, processed_dim_element, is_dim_template=True)
 
         # _ElementNode has one parent, except parents are also dim nodes
         parents = self._resolver_graph.get_element_parents(node)
@@ -872,14 +808,14 @@ class Resolver:
             for child in self._resolver_graph.get_element_childrens(node):
                 stack.append(child)
 
-        self._update_are_repeating_steps_finished_after_current_round({node.node_id for node in result})
+        self._update_are_repeating_steps_finished_after_current_round(result)
         return result
 
-    def _update_are_repeating_steps_finished_after_current_round(self, getting_processed_node_ids: set[int]):
-        unprocessed_node_ids = self._resolver_graph.get_unprocessed_node_ids()
-        unprocessed_after_round_node_ids = unprocessed_node_ids - getting_processed_node_ids
+    def _update_are_repeating_steps_finished_after_current_round(self, getting_processed_nodes: list[_ElementNode]):
+        unprocessed_nodes = self._resolver_graph.get_unprocessed_nodes()
+        unprocessed_after_round_nodes = unprocessed_nodes - set(getting_processed_nodes)
 
-        if not unprocessed_after_round_node_ids:
+        if not unprocessed_after_round_nodes:
             self._repeating_steps_finisehd_after_current_round = True
 
     def _resolve_placeholder(self, placeholder: _PlaceholderNode):
@@ -909,7 +845,7 @@ class Resolver:
         level = derived_node.level
 
         def find_base_node_recursive(node: _ElementNode, path_parts: list[str]) -> None | _ElementNode:
-            if node.node_id == derived_node.node_id:
+            if node == derived_node:
                 return None
             if node.name != path_parts[0]:
                 return None

@@ -34,7 +34,7 @@ from svdsuite.model.process import (
 from svdsuite.util.process_parse_model_convert import process_parse_convert_device
 from svdsuite.model.types import AccessType, ProtectionStringType, CPUNameType, ModifiedWriteValuesType
 from svdsuite.util.dim import resolve_dim
-from svdsuite.util.resolve import Resolver
+from svdsuite.util.resolve import Resolver, _ElementNode
 
 
 ParsedPeripheralTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField | SVDEnumeratedValueContainer
@@ -178,57 +178,69 @@ class _ProcessPeripheralElements:
         self._resolver.initialization(self._device)
 
         self._resolver.logger.log_repeating_steps_start()
-        previous_elements: list[tuple[int, ParsedPeripheralTypes]] = []
+        previous_nodes: list[_ElementNode] = []
         while not self._resolver.repeating_steps_finished_after_current_round():
             self._resolver.logger.log_round_start()
 
             self._resolver.resolve_placeholders()
-            processable_elements = self._resolver.get_topological_sorted_processable_elements()
+            processable_nodes = self._resolver.get_topological_sorted_processable_nodes()
 
-            if processable_elements == previous_elements:
+            if processable_nodes == previous_nodes:
                 self._resolver.logger.log_loop_detected()
                 raise ProcessException("Stuck in a loop, the same elements are being processed repeatedly")
 
-            previous_elements = processable_elements
+            previous_nodes = processable_nodes
 
-            for node_id, parsed_element in processable_elements:
-                self._process_element(node_id, parsed_element)
+            for node in processable_nodes:
+                self._process_element(node)
 
             self._resolver.logger.log_round_end()
 
         self._resolver.logger.log_repeating_steps_finished()
         self._resolver.finalize_processing()
 
-    def _process_element(self, node_id: int, parsed_element: ParsedPeripheralTypes):
-        # get_base_element ensures that the base element has the same level as the derived element
-        base_element, base_element_id = None, None
+    # TODO split for dimabmle and enum containers
+    def _process_element(self, node: _ElementNode):
+        parsed_element = node.parsed
+
+        if isinstance(parsed_element, SVDDevice):
+            raise ProcessException("Device should not be processed as an element")
+
+        base_node = None
+        base_processed_element = None
         if parsed_element.derived_from is not None:
-            base_element, base_element_id = self._resolver.get_base_element(node_id)
+            base_node = self._resolver.get_base_node(node)
+            base_processed_element = base_node.processed_or_none
 
             # Ensure that the base element is processed, except for enum containers
-            if base_element is None and not isinstance(parsed_element, SVDEnumeratedValueContainer):
+            if base_processed_element is None and not isinstance(parsed_element, SVDEnumeratedValueContainer):
                 raise ProcessException(f"Base element not found for node '{parsed_element.name}'")
 
         # Processing of enum containers is postboned to finalization, since lsb and msb from parent fields are required
         if isinstance(parsed_element, SVDEnumeratedValueContainer):
-            self._resolver.update_enumerated_value_container(node_id, base_element_id)
+            self._resolver.update_enumerated_value_container(node, base_node)
             return
 
-        is_dim, resolved_dim = self._resolve_dim(parsed_element, cast(ProcessedDimablePeripheralTypes, base_element))
+        if base_processed_element is not None and not isinstance(
+            base_processed_element, ProcessedDimablePeripheralTypes
+        ):
+            raise ProcessException(f"Base element is not dimable for node '{parsed_element.name}'")
+
+        is_dim, resolved_dim = self._resolve_dim(parsed_element, base_processed_element)
         processed_dimable_elements: list[ProcessedDimablePeripheralTypes] = []
         for index, name in enumerate(resolved_dim):
-            processed_dimable_elements.append(self._create_dimable_element(index, name, parsed_element, base_element))
+            processed_dimable_elements.append(
+                self._create_dimable_element(index, name, parsed_element, base_processed_element)
+            )
 
         if not processed_dimable_elements:
             raise ProcessException(f"No elements created for {parsed_element}")
 
         if is_dim:
             processed_dim_element = self._post_process_dim_elements(parsed_element.name, processed_dimable_elements)
-            self._resolver.update_dim_element(
-                node_id, base_element_id, processed_dimable_elements, processed_dim_element
-            )
+            self._resolver.update_dim_element(node, base_node, processed_dimable_elements, processed_dim_element)
         else:
-            self._resolver.update_element(node_id, base_element_id, processed_dimable_elements[0])
+            self._resolver.update_element(node, base_node, processed_dimable_elements[0])
 
     def _post_process_dim_elements(
         self, dim_name: str, processed_dimable_elements: list[ProcessedDimablePeripheralTypes]
