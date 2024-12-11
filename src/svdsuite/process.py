@@ -1,6 +1,4 @@
-from typing import TypeAlias, cast
 import re
-import copy
 
 from svdsuite.parse import Parser
 from svdsuite.model.parse import (
@@ -12,7 +10,6 @@ from svdsuite.model.parse import (
     SVDCluster,
     SVDRegister,
     SVDField,
-    SVDEnumeratedValueContainer,
     SVDAddressBlock,
     SVDInterrupt,
     SVDWriteConstraint,
@@ -26,21 +23,13 @@ from svdsuite.model.process import (
     Cluster,
     Register,
     Field,
-    EnumeratedValueContainer,
     AddressBlock,
     Interrupt,
     WriteConstraint,
 )
 from svdsuite.util.process_parse_model_convert import process_parse_convert_device
 from svdsuite.model.types import AccessType, ProtectionStringType, CPUNameType, ModifiedWriteValuesType
-from svdsuite.util.dim import resolve_dim
-from svdsuite.util.resolve import Resolver, _ElementNode
-
-
-ParsedPeripheralTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField | SVDEnumeratedValueContainer
-ParsedDimablePeripheralTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField
-ProcessedPeripheralTypes: TypeAlias = Peripheral | Cluster | Register | Field | EnumeratedValueContainer
-ProcessedDimablePeripheralTypes: TypeAlias = Peripheral | Cluster | Register | Field
+from svdsuite.util.resolve import Resolver
 
 
 def _or_if_none[T](a: None | T, b: None | T) -> None | T:
@@ -70,7 +59,8 @@ class Process:
 
     def __init__(self, parsed_device: SVDDevice, resolver_logging_file_path: None | str) -> None:
         # resolver_logging_file_path = "/home/fedora/resolver_logging.html"  # TODO remove (debug)
-        self._processed_device = self._process_device(parsed_device, resolver_logging_file_path)
+        self._resolver = Resolver(self, resolver_logging_file_path)
+        self._processed_device = self._process_device(parsed_device)
 
     def get_processed_device(self) -> Device:
         return self._processed_device
@@ -78,7 +68,7 @@ class Process:
     def convert_processed_device_to_svd_device(self) -> SVDDevice:
         return process_parse_convert_device(self._processed_device)
 
-    def _process_device(self, parsed_device: SVDDevice, resolver_logging_file_path: None | str) -> Device:
+    def _process_device(self, parsed_device: SVDDevice) -> Device:
         size = _or_if_none(parsed_device.size, 32)
         access = _or_if_none(parsed_device.access, AccessType.READ_WRITE)
         protection = _or_if_none(parsed_device.protection, ProtectionStringType.ANY)
@@ -103,11 +93,11 @@ class Process:
             header_definitions_prefix=parsed_device.header_definitions_prefix,
             address_unit_bits=parsed_device.address_unit_bits,
             width=parsed_device.width,
-            peripherals=[],  # will be added in _ProcessPeripheralElements
+            peripherals=[],  # will be added by Resolver
             parsed=parsed_device,
         )
 
-        _ProcessPeripheralElements(device, resolver_logging_file_path)
+        self._resolver.resolve_peripherals(device)
 
         return device
 
@@ -169,113 +159,7 @@ class Process:
 
         return regions
 
-
-class _ProcessPeripheralElements:
-    def __init__(self, device: Device, resolver_logging_file_path: None | str):
-        self._device = device
-        self._resolver = Resolver(resolver_logging_file_path)
-
-        self._resolver.initialization(self._device)
-
-        self._resolver.logger.log_repeating_steps_start()
-        previous_nodes: list[_ElementNode] = []
-        while not self._resolver.repeating_steps_finished_after_current_round():
-            self._resolver.logger.log_round_start()
-
-            self._resolver.resolve_placeholders()
-            processable_nodes = self._resolver.get_topological_sorted_processable_nodes()
-
-            if processable_nodes == previous_nodes:
-                self._resolver.logger.log_loop_detected()
-                raise ProcessException("Stuck in a loop, the same elements are being processed repeatedly")
-
-            previous_nodes = processable_nodes
-
-            for node in processable_nodes:
-                self._process_element(node)
-
-            self._resolver.logger.log_round_end()
-
-        self._resolver.logger.log_repeating_steps_finished()
-        self._resolver.finalize_processing()
-
-    # TODO split for dimabmle and enum containers
-    def _process_element(self, node: _ElementNode):
-        parsed_element = node.parsed
-
-        if isinstance(parsed_element, SVDDevice):
-            raise ProcessException("Device should not be processed as an element")
-
-        base_node = None
-        base_processed_element = None
-        if parsed_element.derived_from is not None:
-            base_node = self._resolver.get_base_node(node)
-            base_processed_element = base_node.processed_or_none
-
-            # Ensure that the base element is processed, except for enum containers
-            if base_processed_element is None and not isinstance(parsed_element, SVDEnumeratedValueContainer):
-                raise ProcessException(f"Base element not found for node '{parsed_element.name}'")
-
-        # Processing of enum containers is postboned to finalization, since lsb and msb from parent fields are required
-        if isinstance(parsed_element, SVDEnumeratedValueContainer):
-            self._resolver.update_enumerated_value_container(node, base_node)
-            return
-
-        if base_processed_element is not None and not isinstance(
-            base_processed_element, ProcessedDimablePeripheralTypes
-        ):
-            raise ProcessException(f"Base element is not dimable for node '{parsed_element.name}'")
-
-        is_dim, resolved_dim = self._resolve_dim(parsed_element, base_processed_element)
-        processed_dimable_elements: list[ProcessedDimablePeripheralTypes] = []
-        for index, name in enumerate(resolved_dim):
-            processed_dimable_elements.append(
-                self._create_dimable_element(index, name, parsed_element, base_processed_element)
-            )
-
-        if not processed_dimable_elements:
-            raise ProcessException(f"No elements created for {parsed_element}")
-
-        if is_dim:
-            processed_dim_element = self._post_process_dim_elements(parsed_element.name, processed_dimable_elements)
-            self._resolver.update_dim_element(node, base_node, processed_dimable_elements, processed_dim_element)
-        else:
-            self._resolver.update_element(node, base_node, processed_dimable_elements[0])
-
-    def _post_process_dim_elements(
-        self, dim_name: str, processed_dimable_elements: list[ProcessedDimablePeripheralTypes]
-    ) -> ProcessedDimablePeripheralTypes:
-        assert len(processed_dimable_elements) >= 1
-
-        processed_dim_template = copy.copy(processed_dimable_elements[0])
-        processed_dim_template.name = dim_name
-
-        for processed_dimable_element in processed_dimable_elements:
-            processed_dimable_element.dim = None
-            processed_dimable_element.dim_increment = None
-            processed_dimable_element.dim_index = None
-
-        return processed_dim_template
-
-    def _create_dimable_element(
-        self,
-        index: int,
-        name: str,
-        parsed_element: ParsedPeripheralTypes,
-        base_element: None | ProcessedPeripheralTypes,
-    ) -> ProcessedDimablePeripheralTypes:
-        if isinstance(parsed_element, SVDPeripheral):
-            return self._create_peripheral(index, name, parsed_element, cast(None | Peripheral, base_element))
-        elif isinstance(parsed_element, SVDCluster):
-            return self._create_cluster(index, name, parsed_element, cast(None | Cluster, base_element))
-        elif isinstance(parsed_element, SVDRegister):
-            return self._create_register(index, name, parsed_element, cast(None | Register, base_element))
-        elif isinstance(parsed_element, SVDField):
-            return self._create_field(index, name, parsed_element, cast(None | Field, base_element))
-        else:
-            raise ProcessException(f"Unknown type {type(parsed_element)} in _create_dimable_element")
-
-    def _create_peripheral(self, index: int, name: str, parsed: SVDPeripheral, base: None | Peripheral) -> Peripheral:
+    def _process_peripheral(self, index: int, name: str, parsed: SVDPeripheral, base: None | Peripheral) -> Peripheral:
         dim = _or_if_none(parsed.dim, base.dim if base else None)
         dim_index = _or_if_none(parsed.dim_index, base.dim_index if base else None)
         dim_increment = _or_if_none(parsed.dim_increment, base.dim_increment if base else None)
@@ -323,7 +207,7 @@ class _ProcessPeripheralElements:
             parsed=parsed,
         )
 
-    def _create_cluster(self, index: int, name: str, parsed: SVDCluster, base: None | Cluster) -> Cluster:
+    def _process_cluster(self, index: int, name: str, parsed: SVDCluster, base: None | Cluster) -> Cluster:
         dim = _or_if_none(parsed.dim, base.dim if base else None)
         dim_index = _or_if_none(parsed.dim_index, base.dim_index if base else None)
         dim_increment = _or_if_none(parsed.dim_increment, base.dim_increment if base else None)
@@ -359,7 +243,7 @@ class _ProcessPeripheralElements:
             parsed=parsed,
         )
 
-    def _create_register(self, index: int, name: str, parsed: SVDRegister, base: None | Register) -> Register:
+    def _process_register(self, index: int, name: str, parsed: SVDRegister, base: None | Register) -> Register:
         dim = _or_if_none(parsed.dim, base.dim if base else None)
         dim_index = _or_if_none(parsed.dim_index, base.dim_index if base else None)
         dim_increment = _or_if_none(parsed.dim_increment, base.dim_increment if base else None)
@@ -411,7 +295,7 @@ class _ProcessPeripheralElements:
             parsed=parsed,
         )
 
-    def _create_field(self, index: int, name: str, parsed: SVDField, base: None | Field) -> Field:
+    def _process_field(self, index: int, name: str, parsed: SVDField, base: None | Field) -> Field:
         dim = _or_if_none(parsed.dim, base.dim if base else None)
         dim_index = _or_if_none(parsed.dim_index, base.dim_index if base else None)
         dim_increment = _or_if_none(parsed.dim_increment, base.dim_increment if base else None)
@@ -445,20 +329,6 @@ class _ProcessPeripheralElements:
             enumerated_value_containers=[],
             parsed=parsed,
         )
-
-    def _resolve_dim(
-        self, parsed_element: ParsedDimablePeripheralTypes, base_element: None | ProcessedDimablePeripheralTypes
-    ) -> tuple[bool, list[str]]:
-        dim = _or_if_none(parsed_element.dim, base_element.dim if base_element else None)
-        dim_index = _or_if_none(parsed_element.dim_index, base_element.dim_index if base_element else None)
-
-        if dim is None and "%s" in parsed_element.name:
-            raise ProcessException("Dim is None, but name contains '%s'")
-
-        if dim is not None and "%s" not in parsed_element.name:
-            raise ProcessException("Dim is not None, but name does not contain '%s'")
-
-        return dim is not None, resolve_dim(parsed_element.name, dim, dim_index)
 
     def _process_address_blocks(self, parsed_address_blocks: list[SVDAddressBlock]) -> list[AddressBlock]:
         address_blocks: list[AddressBlock] = []

@@ -2,7 +2,7 @@ import itertools
 from collections import defaultdict, deque
 from abc import ABC
 from enum import Enum, auto
-from typing import TypeAlias, cast, Any, Callable, DefaultDict, Deque
+from typing import TypeAlias, cast, Any, Callable, DefaultDict, Deque, TYPE_CHECKING
 import tempfile
 import copy
 import rustworkx as rx
@@ -29,6 +29,10 @@ from svdsuite.model.process import (
 )
 from svdsuite.model.process import EnumUsageType, AccessType, ProtectionStringType
 from svdsuite.util.enumerated_value import process_binary_value_with_wildcard
+from svdsuite.util.dim import resolve_dim
+
+if TYPE_CHECKING:
+    from svdsuite.process import Process
 
 ParsedPeripheralTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField | SVDEnumeratedValueContainer
 ParsedDimablePeripheralTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField
@@ -642,7 +646,7 @@ class _ResolverLogger:
             "Elements to process (sorted by process order ascending)",
             "<br />".join(
                 [
-                    f"{self._resolver_graph._node_to_rx_index[node]}: "  # pylint: disable=protected-access #pyright: ignore[reportPrivateUsage]
+                    f"{self._resolver_graph._node_to_rx_index[node]}: "  # pylint: disable=W0212  #pyright: ignore[reportPrivateUsage]
                     f"{node.name or 'no name'} ({node.level.value})"
                     for node in topological_sorted_nodes
                 ]
@@ -655,10 +659,11 @@ class _ResolverLogger:
 
 
 class Resolver:
-    def __init__(self, resolver_logging_file_path: None | str):
+    def __init__(self, process: "Process", resolver_logging_file_path: None | str):
+        self._process = process
         self._resolver_graph = _ResolverGraph()
         self._root_node_: None | _ElementNode = None
-        self.logger = _ResolverLogger(resolver_logging_file_path, self._resolver_graph)
+        self._logger = _ResolverLogger(resolver_logging_file_path, self._resolver_graph)
         self._repeating_steps_finisehd_after_current_round = False
 
     @property
@@ -668,33 +673,58 @@ class Resolver:
 
         return self._root_node_
 
-    def initialization(self, device: Device):
+    def resolve_peripherals(self, device: Device):
+        self._initialization(device)
+
+        self._logger.log_repeating_steps_start()
+        previous_nodes: list[_ElementNode] = []
+        while not self._repeating_steps_finished_after_current_round():
+            self._logger.log_round_start()
+
+            self._resolve_placeholders()
+            processable_nodes = self._get_topological_sorted_processable_nodes()
+
+            if processable_nodes == previous_nodes:
+                self._logger.log_loop_detected()
+                raise ProcessException("Stuck in a loop, the same elements are being processed repeatedly")
+
+            previous_nodes = processable_nodes
+
+            for node in processable_nodes:
+                self._process_element(node)
+
+            self._logger.log_round_end()
+
+        self._logger.log_repeating_steps_finished()
+        self._finalize_processing()
+
+    def _initialization(self, device: Device):
         self._construct_directed_graph(device)
-        self.logger.log_init_constructed_graph()
+        self._logger.log_init_constructed_graph()
 
         self._ensure_accurate_parent_child_relationships_for_placeholders()
-        self.logger.log_parent_child_relationships_for_placeholders()
+        self._logger.log_parent_child_relationships_for_placeholders()
 
-    def finalize_processing(self):
+    def _finalize_processing(self):
         self._resolver_graph.bottom_up_sibling_traversal(self._finalize_siblings)
 
-    def repeating_steps_finished_after_current_round(self) -> bool:
+    def _repeating_steps_finished_after_current_round(self) -> bool:
         return self._repeating_steps_finisehd_after_current_round
 
-    def resolve_placeholders(self):
+    def _resolve_placeholders(self):
         for placeholder in list(self._resolver_graph.get_placeholders()):  # copy to avoid modifying list while iter.
             self._resolve_placeholder(placeholder)
 
-        self.logger.log_resolve_placeholder_finished()
+        self._logger.log_resolve_placeholder_finished()
 
-    def get_topological_sorted_processable_nodes(self) -> list[_ElementNode]:
+    def _get_topological_sorted_processable_nodes(self) -> list[_ElementNode]:
         processable_nodes = self._find_processable_nodes()
         topological_sorted_nodes = self._resolver_graph.get_topological_sorted_nodes(processable_nodes)
-        self.logger.log_processable_elements(topological_sorted_nodes)
+        self._logger.log_processable_elements(topological_sorted_nodes)
 
         return topological_sorted_nodes
 
-    def get_base_node(self, derived_node: _ElementNode) -> _ElementNode:
+    def _get_base_node(self, derived_node: _ElementNode) -> _ElementNode:
         base_node = self._resolver_graph.get_base_element_node(derived_node)
 
         if base_node is None:
@@ -710,7 +740,7 @@ class Resolver:
 
         return base_node
 
-    def update_enumerated_value_container(self, node: _ElementNode, base_node: None | _ElementNode):
+    def _update_enumerated_value_container(self, node: _ElementNode, base_node: None | _ElementNode):
         # if base_node_id is not None, update the node with the base node's parsed attribute (copy from base)
         if base_node is not None:
             node.parsed = cast(SVDEnumeratedValueContainer, base_node.parsed)
@@ -724,7 +754,7 @@ class Resolver:
         # update node
         node.status = _NodeStatus.PROCESSED
 
-    def update_element(
+    def _update_element(
         self,
         node: _ElementNode,
         base_node: None | _ElementNode,
@@ -749,7 +779,7 @@ class Resolver:
         for child in self._resolver_graph.get_element_childrens(node):
             self._resolver_graph.update_edge(node, child, _EdgeType.CHILD_RESOLVED)
 
-    def update_dim_element(
+    def _update_dim_element(
         self,
         node: _ElementNode,
         base_node: None | _ElementNode,
@@ -757,7 +787,7 @@ class Resolver:
         processed_dim_element: ProcessedDimablePeripheralTypes,
     ):
         # update dim element itself (must be called before the new nodes are created in the next step)
-        self.update_element(node, base_node, processed_dim_element, is_dim_template=True)
+        self._update_element(node, base_node, processed_dim_element, is_dim_template=True)
 
         # _ElementNode has one parent, except parents are also dim nodes
         parents = self._resolver_graph.get_element_parents(node)
@@ -838,7 +868,7 @@ class Resolver:
             )
             raise ResolveException(message) from exc
 
-        self.logger.log_resolved_placeholder(placeholder.derive_path)
+        self._logger.log_resolved_placeholder(placeholder.derive_path)
 
     def _find_base_node(self, derived_node: _ElementNode, derive_path: str) -> None | _ElementNode:
         derive_path_parts = derive_path.split(".")
@@ -1131,6 +1161,104 @@ class Resolver:
                 parsed=parsed_enum_container,
             )
             self._add_child_to_graph_and_handle_derive_from(enum_container_node, parent_node)
+
+    def _resolve_dim(
+        self, parsed_element: ParsedDimablePeripheralTypes, base_element: None | ProcessedDimablePeripheralTypes
+    ) -> tuple[bool, list[str]]:
+        dim = _or_if_none(parsed_element.dim, base_element.dim if base_element else None)
+        dim_index = _or_if_none(parsed_element.dim_index, base_element.dim_index if base_element else None)
+
+        if dim is None and "%s" in parsed_element.name:
+            raise ProcessException("Dim is None, but name contains '%s'")
+
+        if dim is not None and "%s" not in parsed_element.name:
+            raise ProcessException("Dim is not None, but name does not contain '%s'")
+
+        return dim is not None, resolve_dim(parsed_element.name, dim, dim_index)
+
+    # TODO split for dimabmle and enum containers
+    def _process_element(self, node: _ElementNode):
+        parsed_element = node.parsed
+
+        if isinstance(parsed_element, SVDDevice):
+            raise ProcessException("Device should not be processed as an element")
+
+        base_node = None
+        base_processed_element = None
+        if parsed_element.derived_from is not None:
+            base_node = self._get_base_node(node)
+            base_processed_element = base_node.processed_or_none
+
+            # Ensure that the base element is processed, except for enum containers
+            if base_processed_element is None and not isinstance(parsed_element, SVDEnumeratedValueContainer):
+                raise ProcessException(f"Base element not found for node '{parsed_element.name}'")
+
+        # Processing of enum containers is postboned to finalization, since lsb and msb from parent fields are required
+        if isinstance(parsed_element, SVDEnumeratedValueContainer):
+            self._update_enumerated_value_container(node, base_node)
+            return
+
+        if base_processed_element is not None and not isinstance(
+            base_processed_element, ProcessedDimablePeripheralTypes
+        ):
+            raise ProcessException(f"Base element is not dimable for node '{parsed_element.name}'")
+
+        is_dim, resolved_dim = self._resolve_dim(parsed_element, base_processed_element)
+        processed_dimable_elements: list[ProcessedDimablePeripheralTypes] = []
+        for index, name in enumerate(resolved_dim):
+            processed_dimable_elements.append(
+                self._create_dimable_element(index, name, parsed_element, base_processed_element)
+            )
+
+        if not processed_dimable_elements:
+            raise ProcessException(f"No elements created for {parsed_element}")
+
+        if is_dim:
+            processed_dim_element = self._post_process_dim_elements(parsed_element.name, processed_dimable_elements)
+            self._update_dim_element(node, base_node, processed_dimable_elements, processed_dim_element)
+        else:
+            self._update_element(node, base_node, processed_dimable_elements[0])
+
+    def _post_process_dim_elements(
+        self, dim_name: str, processed_dimable_elements: list[ProcessedDimablePeripheralTypes]
+    ) -> ProcessedDimablePeripheralTypes:
+        assert len(processed_dimable_elements) >= 1
+
+        processed_dim_template = copy.copy(processed_dimable_elements[0])
+        processed_dim_template.name = dim_name
+
+        for processed_dimable_element in processed_dimable_elements:
+            processed_dimable_element.dim = None
+            processed_dimable_element.dim_increment = None
+            processed_dimable_element.dim_index = None
+
+        return processed_dim_template
+
+    def _create_dimable_element(
+        self,
+        index: int,
+        name: str,
+        parsed_element: ParsedPeripheralTypes,
+        base_element: None | ProcessedPeripheralTypes,
+    ) -> ProcessedDimablePeripheralTypes:
+        if isinstance(parsed_element, SVDPeripheral):
+            return self._process._process_peripheral(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
+                index, name, parsed_element, cast(None | Peripheral, base_element)
+            )
+        elif isinstance(parsed_element, SVDCluster):
+            return self._process._process_cluster(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
+                index, name, parsed_element, cast(None | Cluster, base_element)
+            )
+        elif isinstance(parsed_element, SVDRegister):
+            return self._process._process_register(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
+                index, name, parsed_element, cast(None | Register, base_element)
+            )
+        elif isinstance(parsed_element, SVDField):
+            return self._process._process_field(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
+                index, name, parsed_element, cast(None | Field, base_element)
+            )
+        else:
+            raise ProcessException(f"Unknown type {type(parsed_element)} in _create_dimable_element")
 
 
 # TODO shouldn't be in this file
