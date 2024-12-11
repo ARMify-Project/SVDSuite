@@ -30,10 +30,7 @@ from svdsuite.model.process import (
 from svdsuite.util.process_parse_model_convert import process_parse_convert_device
 from svdsuite.model.types import AccessType, ProtectionStringType, CPUNameType, ModifiedWriteValuesType
 from svdsuite.util.resolve import Resolver
-
-
-def _or_if_none[T](a: None | T, b: None | T) -> None | T:
-    return a if a is not None else b
+from svdsuite.util.helper import or_if_none
 
 
 class ProcessException(Exception):
@@ -69,11 +66,11 @@ class Process:
         return process_parse_convert_device(self._processed_device)
 
     def _process_device(self, parsed_device: SVDDevice) -> Device:
-        size = _or_if_none(parsed_device.size, 32)
-        access = _or_if_none(parsed_device.access, AccessType.READ_WRITE)
-        protection = _or_if_none(parsed_device.protection, ProtectionStringType.ANY)
-        reset_value = _or_if_none(parsed_device.reset_value, 0)
-        reset_mask = _or_if_none(parsed_device.reset_mask, 0xFFFFFFFF)
+        size = or_if_none(parsed_device.size, 32)
+        access = or_if_none(parsed_device.access, AccessType.READ_WRITE)
+        protection = or_if_none(parsed_device.protection, ProtectionStringType.ANY)
+        reset_value = or_if_none(parsed_device.reset_value, 0)
+        reset_mask = or_if_none(parsed_device.reset_mask, 0xFFFFFFFF)
 
         device = Device(
             size=size,
@@ -160,24 +157,24 @@ class Process:
         return regions
 
     def _process_peripheral(self, index: int, name: str, parsed: SVDPeripheral, base: None | Peripheral) -> Peripheral:
-        dim = _or_if_none(parsed.dim, base.dim if base else None)
-        dim_index = _or_if_none(parsed.dim_index, base.dim_index if base else None)
-        dim_increment = _or_if_none(parsed.dim_increment, base.dim_increment if base else None)
+        dim = or_if_none(parsed.dim, base.dim if base else None)
+        dim_index = or_if_none(parsed.dim_index, base.dim_index if base else None)
+        dim_increment = or_if_none(parsed.dim_increment, base.dim_increment if base else None)
 
-        size = _or_if_none(parsed.size, base.size if base else None)
-        access = _or_if_none(parsed.access, base.access if base else None)
-        protection = _or_if_none(parsed.protection, base.protection if base else None)
-        reset_value = _or_if_none(parsed.reset_value, base.reset_value if base else None)
-        reset_mask = _or_if_none(parsed.reset_mask, base.reset_mask if base else None)
+        size = or_if_none(parsed.size, base.size if base else None)
+        access = or_if_none(parsed.access, base.access if base else None)
+        protection = or_if_none(parsed.protection, base.protection if base else None)
+        reset_value = or_if_none(parsed.reset_value, base.reset_value if base else None)
+        reset_mask = or_if_none(parsed.reset_mask, base.reset_mask if base else None)
 
-        version = _or_if_none(parsed.version, base.version if base else None)
-        description = _or_if_none(parsed.description, base.description if base else None)
-        alternate_peripheral = _or_if_none(parsed.alternate_peripheral, base.alternate_peripheral if base else None)
-        group_name = _or_if_none(parsed.group_name, base.group_name if base else None)
-        prepend_to_name = _or_if_none(parsed.prepend_to_name, base.prepend_to_name if base else None)
-        append_to_name = _or_if_none(parsed.append_to_name, base.append_to_name if base else None)
-        header_struct_name = _or_if_none(parsed.header_struct_name, base.header_struct_name if base else None)
-        disable_condition = _or_if_none(parsed.disable_condition, base.disable_condition if base else None)
+        version = or_if_none(parsed.version, base.version if base else None)
+        description = or_if_none(parsed.description, base.description if base else None)
+        alternate_peripheral = or_if_none(parsed.alternate_peripheral, base.alternate_peripheral if base else None)
+        group_name = or_if_none(parsed.group_name, base.group_name if base else None)
+        prepend_to_name = or_if_none(parsed.prepend_to_name, base.prepend_to_name if base else None)
+        append_to_name = or_if_none(parsed.append_to_name, base.append_to_name if base else None)
+        header_struct_name = or_if_none(parsed.header_struct_name, base.header_struct_name if base else None)
+        disable_condition = or_if_none(parsed.disable_condition, base.disable_condition if base else None)
         base_address = parsed.base_address if dim_increment is None else parsed.base_address + dim_increment * index
         address_blocks = self._process_address_blocks(parsed.address_blocks) or (base.address_blocks if base else [])
         interrupts = self._process_interrupts(parsed.interrupts)
@@ -208,19 +205,19 @@ class Process:
         )
 
     def _process_cluster(self, index: int, name: str, parsed: SVDCluster, base: None | Cluster) -> Cluster:
-        dim = _or_if_none(parsed.dim, base.dim if base else None)
-        dim_index = _or_if_none(parsed.dim_index, base.dim_index if base else None)
-        dim_increment = _or_if_none(parsed.dim_increment, base.dim_increment if base else None)
+        dim = or_if_none(parsed.dim, base.dim if base else None)
+        dim_index = or_if_none(parsed.dim_index, base.dim_index if base else None)
+        dim_increment = or_if_none(parsed.dim_increment, base.dim_increment if base else None)
 
-        size = _or_if_none(parsed.size, base.size if base else None)
-        access = _or_if_none(parsed.access, base.access if base else None)
-        protection = _or_if_none(parsed.protection, base.protection if base else None)
-        reset_value = _or_if_none(parsed.reset_value, base.reset_value if base else None)
-        reset_mask = _or_if_none(parsed.reset_mask, base.reset_mask if base else None)
+        size = or_if_none(parsed.size, base.size if base else None)
+        access = or_if_none(parsed.access, base.access if base else None)
+        protection = or_if_none(parsed.protection, base.protection if base else None)
+        reset_value = or_if_none(parsed.reset_value, base.reset_value if base else None)
+        reset_mask = or_if_none(parsed.reset_mask, base.reset_mask if base else None)
 
-        description = _or_if_none(parsed.description, base.description if base else None)
-        alternate_cluster = _or_if_none(parsed.alternate_cluster, base.alternate_cluster if base else None)
-        header_struct_name = _or_if_none(parsed.header_struct_name, base.header_struct_name if base else None)
+        description = or_if_none(parsed.description, base.description if base else None)
+        alternate_cluster = or_if_none(parsed.alternate_cluster, base.alternate_cluster if base else None)
+        header_struct_name = or_if_none(parsed.header_struct_name, base.header_struct_name if base else None)
         address_offset = (
             parsed.address_offset if dim_increment is None else parsed.address_offset + dim_increment * index
         )
@@ -244,33 +241,33 @@ class Process:
         )
 
     def _process_register(self, index: int, name: str, parsed: SVDRegister, base: None | Register) -> Register:
-        dim = _or_if_none(parsed.dim, base.dim if base else None)
-        dim_index = _or_if_none(parsed.dim_index, base.dim_index if base else None)
-        dim_increment = _or_if_none(parsed.dim_increment, base.dim_increment if base else None)
+        dim = or_if_none(parsed.dim, base.dim if base else None)
+        dim_index = or_if_none(parsed.dim_index, base.dim_index if base else None)
+        dim_increment = or_if_none(parsed.dim_increment, base.dim_increment if base else None)
 
-        size = _or_if_none(parsed.size, base.size if base else None)
-        access = _or_if_none(parsed.access, base.access if base else None)
-        protection = _or_if_none(parsed.protection, base.protection if base else None)
-        reset_value = _or_if_none(parsed.reset_value, base.reset_value if base else None)
-        reset_mask = _or_if_none(parsed.reset_mask, base.reset_mask if base else None)
+        size = or_if_none(parsed.size, base.size if base else None)
+        access = or_if_none(parsed.access, base.access if base else None)
+        protection = or_if_none(parsed.protection, base.protection if base else None)
+        reset_value = or_if_none(parsed.reset_value, base.reset_value if base else None)
+        reset_mask = or_if_none(parsed.reset_mask, base.reset_mask if base else None)
 
-        display_name = _or_if_none(parsed.display_name, base.display_name if base else None)
-        description = _or_if_none(parsed.description, base.description if base else None)
-        alternate_group = _or_if_none(parsed.alternate_group, base.alternate_group if base else None)
-        alternate_register = _or_if_none(parsed.alternate_register, base.alternate_register if base else None)
+        display_name = or_if_none(parsed.display_name, base.display_name if base else None)
+        description = or_if_none(parsed.description, base.description if base else None)
+        alternate_group = or_if_none(parsed.alternate_group, base.alternate_group if base else None)
+        alternate_register = or_if_none(parsed.alternate_register, base.alternate_register if base else None)
         address_offset = (
             parsed.address_offset if dim_increment is None else parsed.address_offset + dim_increment * index
         )
-        data_type = _or_if_none(parsed.data_type, base.data_type if base else None)
+        data_type = or_if_none(parsed.data_type, base.data_type if base else None)
         modified_write_values = (
             parsed.modified_write_values
             if parsed.modified_write_values is not None
             else (base.modified_write_values if base is not None else ModifiedWriteValuesType.MODIFY)
         )
-        write_constraint = _or_if_none(
+        write_constraint = or_if_none(
             self._process_write_constraint(parsed.write_constraint), base.write_constraint if base else None
         )
-        read_action = _or_if_none(parsed.read_action, base.read_action if base else None)
+        read_action = or_if_none(parsed.read_action, base.read_action if base else None)
 
         return Register(
             dim=dim,
@@ -296,23 +293,23 @@ class Process:
         )
 
     def _process_field(self, index: int, name: str, parsed: SVDField, base: None | Field) -> Field:
-        dim = _or_if_none(parsed.dim, base.dim if base else None)
-        dim_index = _or_if_none(parsed.dim_index, base.dim_index if base else None)
-        dim_increment = _or_if_none(parsed.dim_increment, base.dim_increment if base else None)
+        dim = or_if_none(parsed.dim, base.dim if base else None)
+        dim_index = or_if_none(parsed.dim_index, base.dim_index if base else None)
+        dim_increment = or_if_none(parsed.dim_increment, base.dim_increment if base else None)
 
-        access = _or_if_none(parsed.access, base.access if base else None)
+        access = or_if_none(parsed.access, base.access if base else None)
 
-        description = _or_if_none(parsed.description, base.description if base else None)
+        description = or_if_none(parsed.description, base.description if base else None)
         lsb, msb = self._process_field_msb_lsb_with_increment(parsed, dim_increment, index)
         modified_write_values = (
             parsed.modified_write_values
             if parsed.modified_write_values is not None
             else (base.modified_write_values if base is not None else ModifiedWriteValuesType.MODIFY)
         )
-        write_constraint = _or_if_none(
+        write_constraint = or_if_none(
             self._process_write_constraint(parsed.write_constraint), base.write_constraint if base else None
         )
-        read_action = _or_if_none(parsed.read_action, base.read_action if base else None)
+        read_action = or_if_none(parsed.read_action, base.read_action if base else None)
 
         return Field(
             dim=dim,
@@ -398,11 +395,11 @@ class Process:
 
     def _inherit_register_properties(self, device: Device):
         for peripheral in device.peripherals:
-            peripheral.size = _or_if_none(peripheral.size, device.size)
-            peripheral.access = _or_if_none(peripheral.access, device.access)
-            peripheral.protection = _or_if_none(peripheral.protection, device.protection)
-            peripheral.reset_value = _or_if_none(peripheral.reset_value, device.reset_value)
-            peripheral.reset_mask = _or_if_none(peripheral.reset_mask, device.reset_mask)
+            peripheral.size = or_if_none(peripheral.size, device.size)
+            peripheral.access = or_if_none(peripheral.access, device.access)
+            peripheral.protection = or_if_none(peripheral.protection, device.protection)
+            peripheral.reset_value = or_if_none(peripheral.reset_value, device.reset_value)
+            peripheral.reset_mask = or_if_none(peripheral.reset_mask, device.reset_mask)
 
             self._inherit_register_properties_registers_clusters(
                 peripheral.registers_clusters,
@@ -423,11 +420,11 @@ class Process:
         reset_mask: None | int,
     ):
         for register_cluster in registers_clusters:
-            register_cluster.size = _or_if_none(register_cluster.size, size)
-            register_cluster.access = _or_if_none(register_cluster.access, access)
-            register_cluster.protection = _or_if_none(register_cluster.protection, protection)
-            register_cluster.reset_value = _or_if_none(register_cluster.reset_value, reset_value)
-            register_cluster.reset_mask = _or_if_none(register_cluster.reset_mask, reset_mask)
+            register_cluster.size = or_if_none(register_cluster.size, size)
+            register_cluster.access = or_if_none(register_cluster.access, access)
+            register_cluster.protection = or_if_none(register_cluster.protection, protection)
+            register_cluster.reset_value = or_if_none(register_cluster.reset_value, reset_value)
+            register_cluster.reset_mask = or_if_none(register_cluster.reset_mask, reset_mask)
 
             if isinstance(register_cluster, Cluster):
                 self._inherit_register_properties_registers_clusters(
@@ -448,4 +445,4 @@ class Process:
 
     def _inherit_register_properties_fields(self, fields: list[Field], access: None | AccessType):
         for field in fields:
-            field.access = _or_if_none(field.access, access)
+            field.access = or_if_none(field.access, access)

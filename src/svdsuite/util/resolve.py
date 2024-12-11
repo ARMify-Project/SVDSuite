@@ -30,6 +30,7 @@ from svdsuite.model.process import (
 from svdsuite.model.process import EnumUsageType
 from svdsuite.util.enumerated_value import process_binary_value_with_wildcard
 from svdsuite.util.dim import resolve_dim
+from svdsuite.util.helper import or_if_none
 
 if TYPE_CHECKING:
     from svdsuite.process import Process
@@ -38,11 +39,6 @@ ParsedPeripheralTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SV
 ParsedDimablePeripheralTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField
 ProcessedPeripheralTypes: TypeAlias = Peripheral | Cluster | Register | Field | EnumeratedValueContainer
 ProcessedDimablePeripheralTypes: TypeAlias = Peripheral | Cluster | Register | Field
-
-
-# TODO remove here
-def _or_if_none[T](a: None | T, b: None | T) -> None | T:
-    return a if a is not None else b
 
 
 class ResolveException(Exception):
@@ -1118,8 +1114,8 @@ class Resolver:
     def _resolve_dim(
         self, parsed_element: ParsedDimablePeripheralTypes, base_element: None | ProcessedDimablePeripheralTypes
     ) -> tuple[bool, list[str]]:
-        dim = _or_if_none(parsed_element.dim, base_element.dim if base_element else None)
-        dim_index = _or_if_none(parsed_element.dim_index, base_element.dim_index if base_element else None)
+        dim = or_if_none(parsed_element.dim, base_element.dim if base_element else None)
+        dim_index = or_if_none(parsed_element.dim_index, base_element.dim_index if base_element else None)
 
         if dim is None and "%s" in parsed_element.name:
             raise ProcessException("Dim is None, but name contains '%s'")
