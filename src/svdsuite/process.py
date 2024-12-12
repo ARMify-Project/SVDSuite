@@ -29,7 +29,7 @@ from svdsuite.model.process import (
 )
 from svdsuite.util.process_parse_model_convert import process_parse_convert_device
 from svdsuite.model.types import AccessType, ProtectionStringType, CPUNameType, ModifiedWriteValuesType
-from svdsuite.util.resolve import Resolver
+from svdsuite.resolve.resolver import Resolver
 from svdsuite.util.helper import or_if_none
 
 
