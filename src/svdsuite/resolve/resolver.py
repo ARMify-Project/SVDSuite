@@ -264,46 +264,47 @@ class Resolver:
         derive_path_parts = derive_path.split(".")
         level = derived_node.level
 
-        def find_base_node_recursive(node: ElementNode, path_parts: list[str]) -> None | ElementNode:
-            if node == derived_node:
-                return None
-            if node.name != path_parts[0]:
-                return None
-            if len(path_parts) == 1:
-                return node if node.level == level else None
-            children = self._resolver_graph.get_element_childrens(node)
-            for child in children:
-                result = find_base_node_recursive(child, path_parts[1:])
-                if result is not None:
-                    return result
-            return None
-
-        def find_base_node_in_nodes(nodes: list[ElementNode]) -> None | ElementNode:
-            base_nodes: list[ElementNode] = []
+        def search_nodes(
+            nodes: list[ElementNode], path_parts: list[str], exclude_node: ElementNode, target_level: ElementLevel
+        ) -> list[ElementNode]:
+            matches: list[ElementNode] = []
             for node in nodes:
-                result = find_base_node_recursive(node, derive_path_parts)
-                if result:
-                    base_nodes.append(result)
+                if node == exclude_node:
+                    continue
+                if node.name != path_parts[0]:
+                    continue
 
-            if len(base_nodes) == 1:
-                return base_nodes[0]
-            elif len(base_nodes) > 1:
-                raise ResolveException(f"Multiple base nodes found for derive path '{derive_path}'")
+                if len(path_parts) == 1:
+                    # If we've matched the final part, check the level
+                    if node.level == target_level:
+                        matches.append(node)
+                else:
+                    # Recurse into children
+                    child_matches = search_nodes(
+                        self._resolver_graph.get_element_childrens(node), path_parts[1:], exclude_node, target_level
+                    )
+                    matches.extend(child_matches)
 
-            return None
+                if len(matches) > 1:
+                    # More than one match found – raise exception immediately
+                    raise ResolveException(f"Multiple base nodes found for derive path '{'.'.join(path_parts)}'")
 
-        # search in same scope
+            return matches
+
+        # Search in same scope
         siblings = self._resolver_graph.get_element_siblings(derived_node)
-        base_node = find_base_node_in_nodes(siblings)
+        matches = search_nodes(siblings, derive_path_parts, derived_node, level)
+        if len(matches) == 1:
+            return matches[0]
 
-        if base_node is not None:
-            return base_node
-
-        # search over all peripherals
+        # If not found, search over all peripherals
         peripherals = self._resolver_graph.get_element_childrens(self._root_node)
-        base_node = find_base_node_in_nodes(peripherals)
+        matches = search_nodes(peripherals, derive_path_parts, derived_node, level)
+        if len(matches) == 1:
+            return matches[0]
 
-        return base_node
+        # No matches found
+        return None
 
     def _is_placeholder_parent_resolved(self, placeholder: PlaceholderNode) -> bool:
         parent = self._resolver_graph.get_placeholder_parent(placeholder)
