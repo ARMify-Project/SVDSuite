@@ -51,7 +51,7 @@ class Resolver:
         self._resolver_graph = ResolverGraph()
         self._root_node_: None | ElementNode = None
         self._logger = ResolverLogger(resolver_logging_file_path, self._resolver_graph)
-        self._repeating_steps_finisehd_after_current_round = False
+        self._are_repeating_steps_finished_after_current_round = False
         self._peripherals_resolved: None | list[Peripheral] = None
 
     @property
@@ -66,7 +66,7 @@ class Resolver:
 
         self._logger.log_repeating_steps_start()
         previous_nodes: list[ElementNode] = []
-        while not self._repeating_steps_finished_after_current_round():
+        while not self._are_repeating_steps_finished_after_current_round:
             self._logger.log_round_start()
 
             self._resolve_placeholders()
@@ -99,12 +99,6 @@ class Resolver:
         self._ensure_accurate_parent_child_relationships_for_placeholders()
         self._logger.log_parent_child_relationships_for_placeholders()
 
-    def _finalize_processing(self):
-        self._resolver_graph.bottom_up_sibling_traversal(self._finalize_siblings)
-
-    def _repeating_steps_finished_after_current_round(self) -> bool:
-        return self._repeating_steps_finisehd_after_current_round
-
     def _resolve_placeholders(self):
         for placeholder in list(self._resolver_graph.get_placeholders()):  # copy to avoid modifying list while iter.
             self._resolve_placeholder(placeholder)
@@ -117,6 +111,9 @@ class Resolver:
         self._logger.log_processable_elements(topological_sorted_nodes)
 
         return topological_sorted_nodes
+
+    def _finalize_processing(self):
+        self._resolver_graph.bottom_up_sibling_traversal(self._finalize_siblings)
 
     def _get_base_node(self, derived_node: ElementNode) -> ElementNode:
         base_node = self._resolver_graph.get_base_element_node(derived_node)
@@ -240,7 +237,7 @@ class Resolver:
         unprocessed_after_round_nodes = unprocessed_nodes - set(getting_processed_nodes)
 
         if not unprocessed_after_round_nodes:
-            self._repeating_steps_finisehd_after_current_round = True
+            self._are_repeating_steps_finished_after_current_round = True
 
     def _resolve_placeholder(self, placeholder: PlaceholderNode):
         if not self._is_placeholder_parent_resolved(placeholder):
