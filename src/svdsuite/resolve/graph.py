@@ -35,7 +35,11 @@ class ResolverGraph:
         self._node_to_rx_index[child] = child_rx_index
 
     def add_edge(self, parent: ElementNode, child: ElementNode | PlaceholderNode, edge_type: EdgeType):
-        self._graph.add_edge(self._node_to_rx_index[parent], self._node_to_rx_index[child], edge_type)
+        try:
+            self._graph.add_edge(self._node_to_rx_index[parent], self._node_to_rx_index[child], edge_type)
+        except rx.DAGWouldCycle as exc:  # pylint: disable=no-member
+            message = f"Inheritance cycle detected for parent node '{parent}' and child node {child}"
+            raise ResolverGraphException(message) from exc
 
     def add_placeholder(self, placeholder: PlaceholderNode, derivation_node: ElementNode):
         derivation_node_rx_index = self._node_to_rx_index[derivation_node]

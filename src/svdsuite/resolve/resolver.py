@@ -1,11 +1,10 @@
 from typing import cast, TYPE_CHECKING
 import copy
-import rustworkx as rx
 
 from svdsuite.resolve.graph import ResolverGraph
 from svdsuite.resolve.graph_builder import GraphBuilder
 from svdsuite.resolve.graph_elements import ElementNode, PlaceholderNode, NodeStatus, EdgeType, ElementLevel
-from svdsuite.resolve.exception import ResolveException
+from svdsuite.resolve.exception import ResolveException, ResolverGraphException
 from svdsuite.resolve.type_alias import (
     ProcessedPeripheralTypes,
     ProcessedDimablePeripheralTypes,
@@ -251,10 +250,9 @@ class Resolver:
 
         self._resolver_graph.remove_placeholder(placeholder)
 
-        # TODO rx shouldn't be here. raise a own error and catch it here
         try:
             self._resolver_graph.add_edge(base_node, derive_node, EdgeType.DERIVE)
-        except rx.DAGWouldCycle as exc:  # pylint: disable=no-member
+        except ResolverGraphException as exc:  # pylint: disable=no-member
             message = (
                 f"Inheritance cycle detected for node '{derive_node.name}' with derive path {placeholder.derive_path}"
             )
