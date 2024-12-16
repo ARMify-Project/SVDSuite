@@ -242,7 +242,7 @@ class Resolver:
         if not self._is_placeholder_parent_resolved(placeholder):
             return
 
-        derive_node = self._get_placeholder_derive_node(placeholder)
+        derive_node = self._resolver_graph.get_placeholder_child(placeholder)
         base_node = self._find_base_node(derive_node, placeholder.derive_path)
 
         if base_node is None:
@@ -304,9 +304,6 @@ class Resolver:
         base_node = find_base_node_in_nodes(peripherals)
 
         return base_node
-
-    def _get_placeholder_derive_node(self, placeholder: PlaceholderNode) -> ElementNode:
-        return self._resolver_graph.get_placeholder_child(placeholder)
 
     def _is_placeholder_parent_resolved(self, placeholder: PlaceholderNode) -> bool:
         parent = self._resolver_graph.get_placeholder_parent(placeholder)
