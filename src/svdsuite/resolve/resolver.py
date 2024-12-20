@@ -243,7 +243,7 @@ class Resolver:
             return
 
         derive_node = self._resolver_graph.get_placeholder_child(placeholder)
-        base_node = self._find_base_node(derive_node, placeholder.derive_path)
+        base_node = self._derived_from_path_resolving(derive_node, placeholder.derive_path)
 
         if base_node is None:
             return
@@ -260,7 +260,7 @@ class Resolver:
 
         self._logger.log_resolved_placeholder(placeholder.derive_path)
 
-    def _find_base_node(self, derived_node: ElementNode, derive_path: str) -> None | ElementNode:
+    def _derived_from_path_resolving(self, derived_node: ElementNode, derive_path: str) -> None | ElementNode:
         derive_path_parts = derive_path.split(".")
         level = derived_node.level
 
@@ -431,7 +431,6 @@ class Resolver:
 
         return dim is not None, resolve_dim(parsed_element.name, dim, dim_index)
 
-    # TODO split for dimabmle and enum containers
     def _process_element(self, node: ElementNode):
         parsed_element = node.parsed
 
@@ -448,16 +447,22 @@ class Resolver:
             if base_processed_element is None and not isinstance(parsed_element, SVDEnumeratedValueContainer):
                 raise ProcessException(f"Base element not found for node '{parsed_element.name}'")
 
-        # Processing of enum containers is postboned to finalization, since lsb and msb from parent fields are required
         if isinstance(parsed_element, SVDEnumeratedValueContainer):
             self._update_enumerated_value_container(node, base_node)
             return
 
-        if base_processed_element is not None and not isinstance(
-            base_processed_element, ProcessedDimablePeripheralTypes
-        ):
-            raise ProcessException(f"Base element is not dimable for node '{parsed_element.name}'")
+        if not isinstance(base_processed_element, None | ProcessedDimablePeripheralTypes):
+            raise ProcessException(f"Unknown type {type(base_processed_element)} in _process_element")
 
+        self._process_dimable_element(node, parsed_element, base_node, base_processed_element)
+
+    def _process_dimable_element(
+        self,
+        node: ElementNode,
+        parsed_element: ParsedDimablePeripheralTypes,
+        base_node: None | ElementNode,
+        base_processed_element: None | ProcessedDimablePeripheralTypes,
+    ):
         is_dim, resolved_dim = self._resolve_dim(parsed_element, base_processed_element)
         processed_dimable_elements: list[ProcessedDimablePeripheralTypes] = []
         for index, name in enumerate(resolved_dim):
