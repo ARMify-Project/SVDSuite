@@ -144,7 +144,7 @@ class Resolver:
         # update node
         node.status = NodeStatus.PROCESSED
 
-    def _update_element(
+    def _update_node(
         self,
         node: ElementNode,
         base_node: None | ElementNode,
@@ -169,7 +169,7 @@ class Resolver:
         for child in self._resolver_graph.get_element_childrens(node):
             self._resolver_graph.update_edge(node, child, EdgeType.CHILD_RESOLVED)
 
-    def _update_dim_element(
+    def _update_dim_node(
         self,
         node: ElementNode,
         base_node: None | ElementNode,
@@ -177,7 +177,7 @@ class Resolver:
         processed_dim_element: ProcessedDimablePeripheralTypes,
     ):
         # update dim element itself (must be called before the new nodes are created in the next step)
-        self._update_element(node, base_node, processed_dim_element, is_dim_template=True)
+        self._update_node(node, base_node, processed_dim_element, is_dim_template=True)
 
         # _ElementNode has one parent, except parents are also dim nodes
         parents = self._resolver_graph.get_element_parents(node)
@@ -475,9 +475,9 @@ class Resolver:
 
         if is_dim:
             processed_dim_element = self._post_process_dim_elements(parsed_element.name, processed_dimable_elements)
-            self._update_dim_element(node, base_node, processed_dimable_elements, processed_dim_element)
+            self._update_dim_node(node, base_node, processed_dimable_elements, processed_dim_element)
         else:
-            self._update_element(node, base_node, processed_dimable_elements[0])
+            self._update_node(node, base_node, processed_dimable_elements[0])
 
     def _post_process_dim_elements(
         self, dim_name: str, processed_dimable_elements: list[ProcessedDimablePeripheralTypes]
