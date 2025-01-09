@@ -35,11 +35,6 @@ if TYPE_CHECKING:
     from svdsuite.process import Process
 
 
-# TODO remove here
-class ProcessException(Exception):
-    pass
-
-
 class Resolver:
     def __init__(self, process: "Process", resolver_logging_file_path: None | str):
         self._process = process
@@ -69,7 +64,7 @@ class Resolver:
 
             if processable_nodes == previous_nodes:
                 self._logger.log_loop_detected()
-                raise ProcessException("Stuck in a loop, the same elements are being processed repeatedly")
+                raise ResolveException("Stuck in a loop, the same elements are being processed repeatedly")
 
             previous_nodes = processable_nodes
 
@@ -420,10 +415,10 @@ class Resolver:
         dim_index = or_if_none(parsed_element.dim_index, base_element.dim_index if base_element else None)
 
         if dim is None and "%s" in parsed_element.name:
-            raise ProcessException("Dim is None, but name contains '%s'")
+            raise ResolveException("Dim is None, but name contains '%s'")
 
         if dim is not None and "%s" not in parsed_element.name:
-            raise ProcessException("Dim is not None, but name does not contain '%s'")
+            raise ResolveException("Dim is not None, but name does not contain '%s'")
 
         return dim is not None, resolve_dim(parsed_element.name, dim, dim_index)
 
@@ -431,7 +426,7 @@ class Resolver:
         parsed_element = node.parsed
 
         if isinstance(parsed_element, SVDDevice):
-            raise ProcessException("Device should not be processed as an element")
+            raise ResolveException("Device should not be processed as an element")
 
         base_node = None
         base_processed_element = None
@@ -441,14 +436,14 @@ class Resolver:
 
             # Ensure that the base element is processed, except for enum containers
             if base_processed_element is None and not isinstance(parsed_element, SVDEnumeratedValueContainer):
-                raise ProcessException(f"Base element not found for node '{parsed_element.name}'")
+                raise ResolveException(f"Base element not found for node '{parsed_element.name}'")
 
         if isinstance(parsed_element, SVDEnumeratedValueContainer):
             self._update_enumerated_value_container_node(node, base_node)
             return
 
         if not isinstance(base_processed_element, None | ProcessedDimablePeripheralTypes):
-            raise ProcessException(f"Unknown type {type(base_processed_element)} in _process_element")
+            raise ResolveException(f"Unknown type {type(base_processed_element)} in _process_element")
 
         self._process_dimable_node(node, parsed_element, base_node, base_processed_element)
 
@@ -467,7 +462,7 @@ class Resolver:
             )
 
         if not processed_dimable_elements:
-            raise ProcessException(f"No elements created for {parsed_element}")
+            raise ResolveException(f"No elements created for {parsed_element}")
 
         if is_dim:
             processed_dim_element = self._post_process_dim_elements(parsed_element.name, processed_dimable_elements)
@@ -514,4 +509,4 @@ class Resolver:
                 index, name, parsed_element, cast(None | Field, base_element)
             )
         else:
-            raise ProcessException(f"Unknown type {type(parsed_element)} in _create_dimable_element")
+            raise ResolveException(f"Unknown type {type(parsed_element)} in _create_dimable_element")
