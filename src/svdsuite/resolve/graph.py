@@ -309,9 +309,7 @@ class ResolverGraph:
     def get_unprocessed_nodes(self) -> set[ElementNode]:
         return {cast(ElementNode, self._graph[rx_index]) for rx_index in self._unprocessed_rx_indicies}
 
-    def bottom_up_sibling_traversal(self, finalize_siblings_cb: Callable[[ElementNode, list[ElementNode]], None]):
-        # TODO can probably be optimized
-
+    def bottom_up_node_traversal(self, finalize_node_cb: Callable[[ElementNode, list[ElementNode]], None]):
         # Step 1: Build data structures
         pending_children: dict[ElementNode, int] = {}
         children_of_node: DefaultDict[ElementNode, list[ElementNode]] = defaultdict(list)
@@ -336,13 +334,13 @@ class ResolverGraph:
             if count == 0:
                 queue.append(node)
 
-        # Step 3: Process nodes (call finalize_siblings callback) in a bottom-up manner
+        # Step 3: Process nodes (call finalize_node callback) in a bottom-up manner
         while queue:
             node = queue.popleft()
-            # Call finalize_siblings for the node and its children, but only node is not a leaf (empty children)
+            # Call finalize_node for the node and its children, but only node is not a leaf (empty children)
             children = children_of_node[node]
             if children:
-                finalize_siblings_cb(node, children)
+                finalize_node_cb(node, children)
             # For each parent of the node
             for parent in parents_of_node[node]:
                 # Decrement pending_children[parent]

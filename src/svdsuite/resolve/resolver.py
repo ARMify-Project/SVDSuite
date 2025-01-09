@@ -103,7 +103,7 @@ class Resolver:
         return topological_sorted_nodes
 
     def _finalize_processing(self):
-        self._resolver_graph.bottom_up_sibling_traversal(self._finalize_siblings)
+        self._resolver_graph.bottom_up_node_traversal(self._finalize_node)
 
     def _get_base_node(self, derived_node: ElementNode) -> ElementNode:
         base_node = self._resolver_graph.get_base_element_node(derived_node)
@@ -305,28 +305,28 @@ class Resolver:
 
         return False
 
-    def _finalize_siblings(self, parent: ElementNode, siblings: list[ElementNode]):
-        if parent.is_dim_template:
+    def _finalize_node(self, node: ElementNode, child_nodes: list[ElementNode]):
+        if node.is_dim_template:
             return
 
-        if parent.level == ElementLevel.DEVICE:
-            self._finalize_device(parent, siblings)
-        elif parent.level == ElementLevel.PERIPHERAL:
-            self._finalize_peripheral(parent, siblings)
-        elif parent.level == ElementLevel.CLUSTER:
-            self._finalize_cluster(parent, siblings)
-        elif parent.level == ElementLevel.REGISTER:
-            self._finalize_register(parent, siblings)
-        elif parent.level == ElementLevel.FIELD:
-            self._finalize_field(parent, siblings)
+        if node.level == ElementLevel.DEVICE:
+            self._finalize_device_node(node, child_nodes)
+        elif node.level == ElementLevel.PERIPHERAL:
+            self._finalize_peripheral_node(node, child_nodes)
+        elif node.level == ElementLevel.CLUSTER:
+            self._finalize_cluster_node(node, child_nodes)
+        elif node.level == ElementLevel.REGISTER:
+            self._finalize_register_node(node, child_nodes)
+        elif node.level == ElementLevel.FIELD:
+            self._finalize_field_node(node, child_nodes)
         else:
             raise ResolveException("Unknown node type")
 
-    def _finalize_device(self, _: ElementNode, children_nodes: list[ElementNode]):
+    def _finalize_device_node(self, _: ElementNode, children_nodes: list[ElementNode]):
         peripherals = [cast(Peripheral, node.processed) for node in children_nodes if not node.is_dim_template]
         self._peripherals_resolved = sorted(peripherals, key=lambda p: (p.base_address, p.name))
 
-    def _finalize_peripheral(self, peripheral_node: ElementNode, children_nodes: list[ElementNode]):
+    def _finalize_peripheral_node(self, peripheral_node: ElementNode, children_nodes: list[ElementNode]):
         peripheral = cast(Peripheral, peripheral_node.processed)
         peripheral.size = self._calculate_size(
             peripheral_node, [cast(Register | Cluster, node.processed) for node in children_nodes]
@@ -338,7 +338,7 @@ class Resolver:
 
         peripheral.registers_clusters = sorted(registers_clusters, key=lambda rc: (rc.address_offset, rc.name))
 
-    def _finalize_cluster(self, cluster_node: ElementNode, children_nodes: list[ElementNode]):
+    def _finalize_cluster_node(self, cluster_node: ElementNode, children_nodes: list[ElementNode]):
         cluster = cast(Cluster, cluster_node.processed)
         cluster.size = self._calculate_size(
             cluster_node, [cast(Register | Cluster, node.processed) for node in children_nodes]
@@ -350,13 +350,13 @@ class Resolver:
 
         cluster.registers_clusters = sorted(registers_clusters, key=lambda rc: (rc.address_offset, rc.name))
 
-    def _finalize_register(self, register_node: ElementNode, children_nodes: list[ElementNode]):
+    def _finalize_register_node(self, register_node: ElementNode, children_nodes: list[ElementNode]):
         register = cast(Register, register_node.processed)
         fields = [cast(Field, node.processed) for node in children_nodes if not node.is_dim_template]
 
         register.fields = sorted(fields, key=lambda f: (f.lsb, f.name))
 
-    def _finalize_field(self, field_node: ElementNode, children_nodes: list[ElementNode]):
+    def _finalize_field_node(self, field_node: ElementNode, children_nodes: list[ElementNode]):
         field = cast(Field, field_node.processed)
         enum_containers: list[EnumeratedValueContainer] = []
         for child in children_nodes:
