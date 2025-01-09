@@ -19,7 +19,6 @@ from svdsuite.model.parse import (
     SVDRegister,
     SVDField,
     SVDEnumeratedValueContainer,
-    SVDEnumeratedValue,
 )
 from svdsuite.model.process import (
     Device,
@@ -28,10 +27,7 @@ from svdsuite.model.process import (
     Register,
     Field,
     EnumeratedValueContainer,
-    EnumeratedValue,
 )
-from svdsuite.model.process import EnumUsageType
-from svdsuite.util.enumerated_value import process_binary_value_with_wildcard
 from svdsuite.util.dim import resolve_dim
 from svdsuite.util.helper import or_if_none
 
@@ -78,7 +74,7 @@ class Resolver:
             previous_nodes = processable_nodes
 
             for node in processable_nodes:
-                self._process_element(node)
+                self._process_node(node)
 
             self._logger.log_round_end()
 
@@ -130,7 +126,7 @@ class Resolver:
 
         return base_node
 
-    def _update_enumerated_value_container(self, node: ElementNode, base_node: None | ElementNode):
+    def _update_enumerated_value_container_node(self, node: ElementNode, base_node: None | ElementNode):
         # if base_node_id is not None, update the node with the base node's parsed attribute (copy from base)
         if base_node is not None:
             node.parsed = cast(SVDEnumeratedValueContainer, base_node.parsed)
@@ -369,7 +365,7 @@ class Resolver:
         field = cast(Field, field_node.processed)
         enum_containers: list[EnumeratedValueContainer] = []
         for child in children_nodes:
-            enum_container = _ProcessEnumeratedValueContainers().create_enumerated_value_container(
+            enum_container = self._process._process_enumerated_value_container(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
                 cast(SVDEnumeratedValueContainer, child.parsed), field.lsb, field.msb
             )
             enum_containers.append(enum_container)
@@ -417,7 +413,7 @@ class Resolver:
 
             self._resolver_graph.add_edge(co_parent, placeholder, EdgeType.PLACEHOLDER)
 
-    def _resolve_dim(
+    def _extract_and_resolve_dimension(
         self, parsed_element: ParsedDimablePeripheralTypes, base_element: None | ProcessedDimablePeripheralTypes
     ) -> tuple[bool, list[str]]:
         dim = or_if_none(parsed_element.dim, base_element.dim if base_element else None)
@@ -431,7 +427,7 @@ class Resolver:
 
         return dim is not None, resolve_dim(parsed_element.name, dim, dim_index)
 
-    def _process_element(self, node: ElementNode):
+    def _process_node(self, node: ElementNode):
         parsed_element = node.parsed
 
         if isinstance(parsed_element, SVDDevice):
@@ -448,22 +444,22 @@ class Resolver:
                 raise ProcessException(f"Base element not found for node '{parsed_element.name}'")
 
         if isinstance(parsed_element, SVDEnumeratedValueContainer):
-            self._update_enumerated_value_container(node, base_node)
+            self._update_enumerated_value_container_node(node, base_node)
             return
 
         if not isinstance(base_processed_element, None | ProcessedDimablePeripheralTypes):
             raise ProcessException(f"Unknown type {type(base_processed_element)} in _process_element")
 
-        self._process_dimable_element(node, parsed_element, base_node, base_processed_element)
+        self._process_dimable_node(node, parsed_element, base_node, base_processed_element)
 
-    def _process_dimable_element(
+    def _process_dimable_node(
         self,
         node: ElementNode,
         parsed_element: ParsedDimablePeripheralTypes,
         base_node: None | ElementNode,
         base_processed_element: None | ProcessedDimablePeripheralTypes,
     ):
-        is_dim, resolved_dim = self._resolve_dim(parsed_element, base_processed_element)
+        is_dim, resolved_dim = self._extract_and_resolve_dimension(parsed_element, base_processed_element)
         processed_dimable_elements: list[ProcessedDimablePeripheralTypes] = []
         for index, name in enumerate(resolved_dim):
             processed_dimable_elements.append(
@@ -519,122 +515,3 @@ class Resolver:
             )
         else:
             raise ProcessException(f"Unknown type {type(parsed_element)} in _create_dimable_element")
-
-
-# TODO shouldn't be in this file
-class _ProcessEnumeratedValueContainers:
-    def create_enumerated_value_container(
-        self, parsed_enum_container: SVDEnumeratedValueContainer, lsb: int, msb: int
-    ) -> EnumeratedValueContainer:
-        return EnumeratedValueContainer(
-            name=parsed_enum_container.name,
-            header_enum_name=parsed_enum_container.header_enum_name,
-            usage=parsed_enum_container.usage if parsed_enum_container.usage is not None else EnumUsageType.READ_WRITE,
-            enumerated_values=self._process_enumerated_values(parsed_enum_container.enumerated_values, lsb, msb),
-            parsed=parsed_enum_container,
-        )
-
-    def _process_enumerated_values(
-        self, parsed_enumerated_values: list[SVDEnumeratedValue], lsb: int, msb: int
-    ) -> list[EnumeratedValue]:
-        enum_value_validator = _EnumeratedValueValidator()
-        enumerated_values: list[EnumeratedValue] = []
-
-        for parsed_enumerated_value in parsed_enumerated_values:
-            processed_enumerated_values = self._process_enumerated_value_resolve_wildcard(parsed_enumerated_value)
-
-            for value in processed_enumerated_values:
-                enum_value_validator.add_value(value)
-
-            enumerated_values.extend(processed_enumerated_values)
-
-        if default_enumerated_value := enum_value_validator.get_default():
-            enumerated_values = self._extend_enumerated_values_with_default(
-                enumerated_values, default_enumerated_value, lsb, msb
-            )
-
-        return sorted(enumerated_values, key=lambda ev: ev.value if ev.value is not None else 0)
-
-    def _process_enumerated_value_resolve_wildcard(self, parsed_value: SVDEnumeratedValue) -> list[EnumeratedValue]:
-        value_list = self._convert_enumerated_value(parsed_value.value) if parsed_value.value else [None]
-
-        enumerated_values: list[EnumeratedValue] = []
-        for value in value_list:
-            name = parsed_value.name
-            if value is not None and parsed_value.value and "x" in parsed_value.value:
-                name = f"{name}_{value}"
-
-            enumerated_values.append(
-                EnumeratedValue(
-                    name=name,
-                    description=parsed_value.description,
-                    value=value,
-                    is_default=parsed_value.is_default or False,
-                    parsed=parsed_value,
-                )
-            )
-
-        return enumerated_values
-
-    def _extend_enumerated_values_with_default(
-        self, enumerated_values: list[EnumeratedValue], default: EnumeratedValue, lsb: int, msb: int
-    ) -> list[EnumeratedValue]:
-        covered_values = {value.value for value in enumerated_values if value.value is not None}
-        all_possible_values = set(range(pow(2, msb - lsb + 1)))
-
-        uncovered_values = all_possible_values - covered_values
-
-        for value in uncovered_values:
-            enumerated_values.append(
-                EnumeratedValue(
-                    name=f"{default.name}_{value}",
-                    description=default.description,
-                    value=value,
-                    is_default=False,
-                    parsed=default.parsed,
-                )
-            )
-
-        return [value for value in enumerated_values if not value.is_default]
-
-    def _convert_enumerated_value(self, input_str: str) -> list[int]:
-        try:
-            if input_str.startswith("0b"):
-                return process_binary_value_with_wildcard(input_str[2:])
-            elif input_str.startswith("0x"):
-                return [int(input_str, 16)]
-            elif input_str.isdigit():
-                return [int(input_str)]
-            else:
-                raise ProcessException(f"Unrecognized format for input: '{input_str}'")
-        except ValueError as exc:
-            raise ProcessException(f"Error processing input '{input_str}': {exc}") from exc
-
-
-# TODO shouldn't be in this file
-class _EnumeratedValueValidator:
-    def __init__(self):
-        self._seen_names: set[str] = set()
-        self._seen_values: set[int] = set()
-        self._seen_default = None
-
-    def add_value(self, value: EnumeratedValue):
-        # Ensure enumerated value names and values are unique
-        if value.name in self._seen_names:
-            raise ProcessException(f"Duplicate enumerated value name found: {value.name}")
-        if value.value in self._seen_values:
-            raise ProcessException(f"Duplicate enumerated value value found: {value.value}")
-        if value.is_default:
-            if value.value is not None:
-                raise ProcessException("Default value must not have a value")
-            if self._seen_default:
-                raise ProcessException("Multiple default values found")
-            self._seen_default = value
-
-        # Add to seen names and values
-        self._seen_names.add(value.name)
-        if value.value is not None:
-            self._seen_values.add(value.value)
-
-    def get_default(self) -> None | EnumeratedValue:
-        return self._seen_default

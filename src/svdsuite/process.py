@@ -1,4 +1,5 @@
 import re
+import itertools
 
 from svdsuite.parse import Parser
 from svdsuite.model.parse import (
@@ -13,6 +14,8 @@ from svdsuite.model.parse import (
     SVDAddressBlock,
     SVDInterrupt,
     SVDWriteConstraint,
+    SVDEnumeratedValueContainer,
+    SVDEnumeratedValue,
 )
 from svdsuite.model.process import (
     Device,
@@ -26,9 +29,11 @@ from svdsuite.model.process import (
     AddressBlock,
     Interrupt,
     WriteConstraint,
+    EnumeratedValueContainer,
+    EnumeratedValue,
 )
 from svdsuite.util.process_parse_model_convert import process_parse_convert_device
-from svdsuite.model.types import AccessType, ProtectionStringType, CPUNameType, ModifiedWriteValuesType
+from svdsuite.model.types import AccessType, ProtectionStringType, CPUNameType, ModifiedWriteValuesType, EnumUsageType
 from svdsuite.resolve.resolver import Resolver
 from svdsuite.util.helper import or_if_none
 
@@ -393,6 +398,11 @@ class Process:
 
         return (field_msb, field_lsb)
 
+    def _process_enumerated_value_container(
+        self, parsed_enum_container: SVDEnumeratedValueContainer, lsb: int, msb: int
+    ) -> EnumeratedValueContainer:
+        return _ProcessEnumeratedValueContainer().create_enumerated_value_container(parsed_enum_container, lsb, msb)
+
     def _inherit_register_properties(self, device: Device):
         for peripheral in device.peripherals:
             peripheral.size = or_if_none(peripheral.size, device.size)
@@ -446,3 +456,136 @@ class Process:
     def _inherit_register_properties_fields(self, fields: list[Field], access: None | AccessType):
         for field in fields:
             field.access = or_if_none(field.access, access)
+
+
+class _ProcessEnumeratedValueContainer:
+    def create_enumerated_value_container(
+        self, parsed_enum_container: SVDEnumeratedValueContainer, lsb: int, msb: int
+    ) -> EnumeratedValueContainer:
+        return EnumeratedValueContainer(
+            name=parsed_enum_container.name,
+            header_enum_name=parsed_enum_container.header_enum_name,
+            usage=parsed_enum_container.usage if parsed_enum_container.usage is not None else EnumUsageType.READ_WRITE,
+            enumerated_values=self._process_enumerated_values(parsed_enum_container.enumerated_values, lsb, msb),
+            parsed=parsed_enum_container,
+        )
+
+    def _process_enumerated_values(
+        self, parsed_enumerated_values: list[SVDEnumeratedValue], lsb: int, msb: int
+    ) -> list[EnumeratedValue]:
+        enum_value_validator = _EnumeratedValueValidator()
+        enumerated_values: list[EnumeratedValue] = []
+
+        for parsed_enumerated_value in parsed_enumerated_values:
+            processed_enumerated_values = self._process_enumerated_value_resolve_wildcard(parsed_enumerated_value)
+
+            for value in processed_enumerated_values:
+                enum_value_validator.add_value(value)
+
+            enumerated_values.extend(processed_enumerated_values)
+
+        if default_enumerated_value := enum_value_validator.get_default():
+            enumerated_values = self._extend_enumerated_values_with_default(
+                enumerated_values, default_enumerated_value, lsb, msb
+            )
+
+        return sorted(enumerated_values, key=lambda ev: ev.value if ev.value is not None else 0)
+
+    def _process_enumerated_value_resolve_wildcard(self, parsed_value: SVDEnumeratedValue) -> list[EnumeratedValue]:
+        value_list = self._convert_enumerated_value(parsed_value.value) if parsed_value.value else [None]
+
+        enumerated_values: list[EnumeratedValue] = []
+        for value in value_list:
+            name = parsed_value.name
+            if value is not None and parsed_value.value and "x" in parsed_value.value:
+                name = f"{name}_{value}"
+
+            enumerated_values.append(
+                EnumeratedValue(
+                    name=name,
+                    description=parsed_value.description,
+                    value=value,
+                    is_default=parsed_value.is_default or False,
+                    parsed=parsed_value,
+                )
+            )
+
+        return enumerated_values
+
+    def _extend_enumerated_values_with_default(
+        self, enumerated_values: list[EnumeratedValue], default: EnumeratedValue, lsb: int, msb: int
+    ) -> list[EnumeratedValue]:
+        covered_values = {value.value for value in enumerated_values if value.value is not None}
+        all_possible_values = set(range(pow(2, msb - lsb + 1)))
+
+        uncovered_values = all_possible_values - covered_values
+
+        for value in uncovered_values:
+            enumerated_values.append(
+                EnumeratedValue(
+                    name=f"{default.name}_{value}",
+                    description=default.description,
+                    value=value,
+                    is_default=False,
+                    parsed=default.parsed,
+                )
+            )
+
+        return [value for value in enumerated_values if not value.is_default]
+
+    def _convert_enumerated_value(self, input_str: str) -> list[int]:
+        try:
+            if input_str.startswith("0b"):
+                return self._process_binary_value_with_wildcard(input_str[2:])
+            elif input_str.startswith("0x"):
+                return [int(input_str, 16)]
+            elif input_str.isdigit():
+                return [int(input_str)]
+            else:
+                raise ProcessException(f"Unrecognized format for input: '{input_str}'")
+        except ValueError as exc:
+            raise ProcessException(f"Error processing input '{input_str}': {exc}") from exc
+
+    def _process_binary_value_with_wildcard(self, binary_str: str) -> list[int]:
+        if "x" in binary_str:
+            return [int(b, 2) for b in self._replace_x_combinations(binary_str)]
+        return [int(binary_str, 2)]
+
+    def _replace_x_combinations(self, binary_str: str) -> list[str]:
+        x_count = binary_str.count("x")
+        combinations = itertools.product("01", repeat=x_count)
+        return [self._replace_x_with_combination(binary_str, combination) for combination in combinations]
+
+    def _replace_x_with_combination(self, binary_str: str, combination: tuple[str, ...]) -> str:
+        temp_str = binary_str
+        for bit in combination:
+            temp_str = temp_str.replace("x", bit, 1)
+        return temp_str
+
+
+class _EnumeratedValueValidator:
+    def __init__(self):
+        self._seen_names: set[str] = set()
+        self._seen_values: set[int] = set()
+        self._seen_default = None
+
+    def add_value(self, value: EnumeratedValue):
+        # Ensure enumerated value names and values are unique
+        if value.name in self._seen_names:
+            raise ProcessException(f"Duplicate enumerated value name found: {value.name}")
+        if value.value in self._seen_values:
+            raise ProcessException(f"Duplicate enumerated value value found: {value.value}")
+        if value.is_default:
+            if value.value is not None:
+                raise ProcessException("Default value must not have a value")
+            if self._seen_default:
+                raise ProcessException("Multiple default values found")
+            self._seen_default = value
+
+        # Add to seen names and values
+        self._seen_names.add(value.name)
+        if value.value is not None:
+            self._seen_values.add(value.value)
+
+    def get_default(self) -> None | EnumeratedValue:
+        return self._seen_default
