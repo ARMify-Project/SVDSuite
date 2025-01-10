@@ -105,7 +105,7 @@ class Resolver:
     def _finalize_processing(self):
         self._resolver_graph.bottom_up_node_traversal(self._finalize_node)
 
-    def _get_base_node(self, derived_node: ElementNode) -> ElementNode:
+    def _get_derived_from_base_node(self, derived_node: ElementNode) -> ElementNode:
         base_node = self._resolver_graph.get_base_element_node(derived_node)
 
         if base_node is None:
@@ -121,7 +121,7 @@ class Resolver:
 
         return base_node
 
-    def _update_enumerated_value_container_node(self, node: ElementNode, base_node: None | ElementNode):
+    def _process_enumerated_value_container_node(self, node: ElementNode, base_node: None | ElementNode):
         # if base_node_id is not None, update the node with the base node's parsed attribute (copy from base)
         if base_node is not None:
             node.parsed = cast(SVDEnumeratedValueContainer, base_node.parsed)
@@ -431,7 +431,7 @@ class Resolver:
         base_node = None
         base_processed_element = None
         if parsed_element.derived_from is not None:
-            base_node = self._get_base_node(node)
+            base_node = self._get_derived_from_base_node(node)
             base_processed_element = base_node.processed_or_none
 
             # Ensure that the base element is processed, except for enum containers
@@ -439,7 +439,7 @@ class Resolver:
                 raise ResolveException(f"Base element not found for node '{parsed_element.name}'")
 
         if isinstance(parsed_element, SVDEnumeratedValueContainer):
-            self._update_enumerated_value_container_node(node, base_node)
+            self._process_enumerated_value_container_node(node, base_node)
             return
 
         if not isinstance(base_processed_element, None | ProcessedDimablePeripheralTypes):
