@@ -36,7 +36,10 @@ from svdsuite.util.process_parse_model_convert import process_parse_convert_devi
 from svdsuite.model.types import AccessType, ProtectionStringType, CPUNameType, ModifiedWriteValuesType, EnumUsageType
 from svdsuite.resolve.resolver import Resolver
 from svdsuite.model.type_alias import ParsedDimablePeripheralTypes, ProcessedDimablePeripheralTypes
-from svdsuite.util.helper import or_if_none
+
+
+def or_if_none[T](a: None | T, b: None | T) -> None | T:
+    return a if a is not None else b
 
 
 class ProcessException(Exception):
