@@ -35,6 +35,7 @@ from svdsuite.model.process import (
 from svdsuite.util.process_parse_model_convert import process_parse_convert_device
 from svdsuite.model.types import AccessType, ProtectionStringType, CPUNameType, ModifiedWriteValuesType, EnumUsageType
 from svdsuite.resolve.resolver import Resolver
+from svdsuite.resolve.type_alias import ParsedDimablePeripheralTypes, ProcessedDimablePeripheralTypes
 from svdsuite.util.helper import or_if_none
 
 
@@ -456,6 +457,81 @@ class Process:
     def _inherit_register_properties_fields(self, fields: list[Field], access: None | AccessType):
         for field in fields:
             field.access = or_if_none(field.access, access)
+
+    def _extract_and_process_dimension(
+        self, parsed_element: ParsedDimablePeripheralTypes, base_element: None | ProcessedDimablePeripheralTypes
+    ) -> tuple[bool, list[str]]:
+        dim = or_if_none(parsed_element.dim, base_element.dim if base_element else None)
+        dim_index = or_if_none(parsed_element.dim_index, base_element.dim_index if base_element else None)
+
+        if dim is None and "%s" in parsed_element.name:
+            raise ProcessException("Dim is None, but name contains '%s'")
+
+        if dim is not None and "%s" not in parsed_element.name:
+            raise ProcessException("Dim is not None, but name does not contain '%s'")
+
+        return dim is not None, _ProcessDimension().process_dim(parsed_element.name, dim, dim_index)
+
+
+class _ProcessDimension:
+    def process_dim(self, name: str, dim: None | int, dim_index: None | str) -> list[str]:
+        if dim is None:
+            return [name]
+        if dim < 1:
+            raise ProcessException("dim value must be greater than 0")
+
+        if "[%s]" in name:
+            return self._process_dim_array(name, dim)
+        elif "%s" in name:
+            return self._process_dim_list(name, dim, dim_index)
+
+        raise ProcessException(f"can't resolve dim for '{name}' without a '%s' or '[%s]' in the name")
+
+    def _process_dim_index(self, dim: None | int, dim_index: None | str) -> list[str]:
+        if dim is None:
+            raise ProcessException("can't resolve dim index without a dim value")
+        if dim < 1:
+            raise ProcessException("dim value must be greater than 0")
+
+        if dim_index is None:
+            dim_index_list = [str(i) for i in range(dim)]
+        elif re.match(r"[0-9]+\-[0-9]+", dim_index):
+            start, end = dim_index.split("-")
+
+            if int(start) >= int(end):
+                raise ProcessException(f"dim index '{dim_index}' start value must be less than end value")
+
+            dim_index_list = [str(i) for i in range(int(start), int(end) + 1)]
+        elif re.match(r"[A-Z]-[A-Z]", dim_index):
+            start, end = dim_index.split("-")
+
+            if ord(start) >= ord(end):
+                raise ProcessException(f"dim index '{dim_index}' start value must be less than end value")
+
+            dim_index_list = [chr(i) for i in range(ord(start), ord(end) + 1)]
+        elif re.match(r"[_0-9a-zA-Z]+(,\s*[_0-9a-zA-Z]+)+", dim_index):
+            dim_index_no_whitespace = re.sub(r"\s+", "", dim_index)
+            dim_index_list = dim_index_no_whitespace.split(",")
+        else:
+            raise ProcessException(f"can't resolve dim index for '{dim_index}'")
+
+        if len(dim_index_list) != dim:
+            raise ProcessException(f"dim index '{dim_index}' does not match the dim value '{dim}'")
+
+        return dim_index_list
+
+    def _process_dim_array(self, name: str, dim: int) -> list[str]:
+        resolved_names: list[str] = []
+        for i in range(dim):
+            resolved_names.append(name.replace("[%s]", str(i)))
+        return resolved_names
+
+    def _process_dim_list(self, name: str, dim: int, dim_index: None | str) -> list[str]:
+        resolved_names: list[str] = []
+        for index in self._process_dim_index(dim, dim_index):
+            resolved_names.append(name.replace("%s", index))
+
+        return resolved_names
 
 
 class _ProcessEnumeratedValueContainer:

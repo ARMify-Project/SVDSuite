@@ -28,8 +28,6 @@ from svdsuite.model.process import (
     Field,
     EnumeratedValueContainer,
 )
-from svdsuite.util.dim import resolve_dim
-from svdsuite.util.helper import or_if_none
 
 if TYPE_CHECKING:
     from svdsuite.process import Process
@@ -408,20 +406,6 @@ class Resolver:
 
             self._resolver_graph.add_edge(co_parent, placeholder, EdgeType.PLACEHOLDER)
 
-    def _extract_and_resolve_dimension(
-        self, parsed_element: ParsedDimablePeripheralTypes, base_element: None | ProcessedDimablePeripheralTypes
-    ) -> tuple[bool, list[str]]:
-        dim = or_if_none(parsed_element.dim, base_element.dim if base_element else None)
-        dim_index = or_if_none(parsed_element.dim_index, base_element.dim_index if base_element else None)
-
-        if dim is None and "%s" in parsed_element.name:
-            raise ResolveException("Dim is None, but name contains '%s'")
-
-        if dim is not None and "%s" not in parsed_element.name:
-            raise ResolveException("Dim is not None, but name does not contain '%s'")
-
-        return dim is not None, resolve_dim(parsed_element.name, dim, dim_index)
-
     def _process_node(self, node: ElementNode):
         parsed_element = node.parsed
 
@@ -454,7 +438,11 @@ class Resolver:
         base_node: None | ElementNode,
         base_processed_element: None | ProcessedDimablePeripheralTypes,
     ):
-        is_dim, resolved_dim = self._extract_and_resolve_dimension(parsed_element, base_processed_element)
+        is_dim, resolved_dim = (
+            self._process._extract_and_process_dimension(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
+                parsed_element, base_processed_element
+            )
+        )
         processed_dimable_elements: list[ProcessedDimablePeripheralTypes] = []
         for index, name in enumerate(resolved_dim):
             processed_dimable_elements.append(
