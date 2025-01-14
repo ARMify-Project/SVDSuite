@@ -473,19 +473,27 @@ class Process:
         if dim is not None and "%s" not in parsed_element.name:
             raise ProcessException("Dim is not None, but name does not contain '%s'")
 
-        return dim is not None, _ProcessDimension().process_dim(parsed_element.name, dim, dim_index)
+        return dim is not None, _ProcessDimension().process_dim(
+            parsed_element.name, dim, dim_index, type(parsed_element)
+        )
 
 
 class _ProcessDimension:
-    def process_dim(self, name: str, dim: None | int, dim_index: None | str) -> list[str]:
+    def process_dim(self, name: str, dim: None | int, dim_index: None | str, element_type: type) -> list[str]:
         if dim is None:
             return [name]
         if dim < 1:
             raise ProcessException("dim value must be greater than 0")
 
         if "[%s]" in name:
+            if element_type is SVDField:
+                raise ProcessException("Fields cannot use dim arrays")
+
             return self._process_dim_array(name, dim)
         elif "%s" in name:
+            if element_type is SVDPeripheral:
+                raise ProcessException("Peripherals cannot use dim lists")
+
             return self._process_dim_list(name, dim, dim_index)
 
         raise ProcessException(f"can't resolve dim for '{name}' without a '%s' or '[%s]' in the name")
