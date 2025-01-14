@@ -35,7 +35,7 @@ from svdsuite.model.process import (
 from svdsuite.util.process_parse_model_convert import process_parse_convert_device
 from svdsuite.model.types import AccessType, ProtectionStringType, CPUNameType, ModifiedWriteValuesType, EnumUsageType
 from svdsuite.resolve.resolver import Resolver
-from svdsuite.resolve.type_alias import ParsedDimablePeripheralTypes, ProcessedDimablePeripheralTypes
+from svdsuite.model.type_alias import ParsedDimablePeripheralTypes, ProcessedDimablePeripheralTypes
 from svdsuite.util.helper import or_if_none
 
 

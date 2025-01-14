@@ -5,7 +5,7 @@ from svdsuite.resolve.graph import ResolverGraph
 from svdsuite.resolve.graph_builder import GraphBuilder
 from svdsuite.resolve.graph_elements import ElementNode, PlaceholderNode, NodeStatus, EdgeType, ElementLevel
 from svdsuite.resolve.exception import ResolveException, ResolverGraphException
-from svdsuite.resolve.type_alias import (
+from svdsuite.model.type_alias import (
     ProcessedPeripheralTypes,
     ProcessedDimablePeripheralTypes,
     ParsedDimablePeripheralTypes,

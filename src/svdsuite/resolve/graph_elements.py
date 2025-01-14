@@ -2,7 +2,7 @@ from enum import Enum, auto
 from abc import ABC
 
 from svdsuite.model.parse import SVDDevice, SVDEnumeratedValueContainer
-from svdsuite.resolve.type_alias import ParsedPeripheralTypes, ProcessedPeripheralTypes
+from svdsuite.model.type_alias import ParsedPeripheralTypes, ProcessedPeripheralTypes
 from svdsuite.resolve.exception import ResolveException
 
 
