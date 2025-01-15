@@ -103,7 +103,7 @@ class Process:
             parsed=parsed_device,
         )
 
-        self._inherit_register_properties(device)
+        _InheritProperties().inherit_properties(device)
 
         return device
 
@@ -407,7 +407,25 @@ class Process:
     ) -> EnumeratedValueContainer:
         return _ProcessEnumeratedValueContainer().create_enumerated_value_container(parsed_enum_container, lsb, msb)
 
-    def _inherit_register_properties(self, device: Device):
+    def _extract_and_process_dimension(
+        self, parsed_element: ParsedDimablePeripheralTypes, base_element: None | ProcessedDimablePeripheralTypes
+    ) -> tuple[bool, list[str]]:
+        dim = or_if_none(parsed_element.dim, base_element.dim if base_element else None)
+        dim_index = or_if_none(parsed_element.dim_index, base_element.dim_index if base_element else None)
+
+        if dim is None and "%s" in parsed_element.name:
+            raise ProcessException("Dim is None, but name contains '%s'")
+
+        if dim is not None and "%s" not in parsed_element.name:
+            raise ProcessException("Dim is not None, but name does not contain '%s'")
+
+        return dim is not None, _ProcessDimension().process_dim(
+            parsed_element.name, dim, dim_index, type(parsed_element)
+        )
+
+
+class _InheritProperties:
+    def inherit_properties(self, device: Device):
         for peripheral in device.peripherals:
             peripheral.size = or_if_none(peripheral.size, device.size)
             peripheral.access = or_if_none(peripheral.access, device.access)
@@ -415,7 +433,7 @@ class Process:
             peripheral.reset_value = or_if_none(peripheral.reset_value, device.reset_value)
             peripheral.reset_mask = or_if_none(peripheral.reset_mask, device.reset_mask)
 
-            self._inherit_register_properties_registers_clusters(
+            self._inherit_properties_registers_clusters(
                 peripheral.registers_clusters,
                 peripheral.size,
                 peripheral.access,
@@ -424,7 +442,7 @@ class Process:
                 peripheral.reset_mask,
             )
 
-    def _inherit_register_properties_registers_clusters(
+    def _inherit_properties_registers_clusters(
         self,
         registers_clusters: list[Cluster | Register],
         size: None | int,
@@ -441,7 +459,7 @@ class Process:
             register_cluster.reset_mask = or_if_none(register_cluster.reset_mask, reset_mask)
 
             if isinstance(register_cluster, Cluster):
-                self._inherit_register_properties_registers_clusters(
+                self._inherit_properties_registers_clusters(
                     register_cluster.registers_clusters,
                     register_cluster.size,
                     register_cluster.access,
@@ -450,32 +468,16 @@ class Process:
                     register_cluster.reset_mask,
                 )
             elif isinstance(register_cluster, Register):  # pyright: ignore[reportUnnecessaryIsInstance]
-                self._inherit_register_properties_fields(
+                self._inherit_properties_fields(
                     register_cluster.fields,
                     register_cluster.access,
                 )
             else:
                 raise ProcessException("Unknown register cluster type")
 
-    def _inherit_register_properties_fields(self, fields: list[Field], access: None | AccessType):
+    def _inherit_properties_fields(self, fields: list[Field], access: None | AccessType):
         for field in fields:
             field.access = or_if_none(field.access, access)
-
-    def _extract_and_process_dimension(
-        self, parsed_element: ParsedDimablePeripheralTypes, base_element: None | ProcessedDimablePeripheralTypes
-    ) -> tuple[bool, list[str]]:
-        dim = or_if_none(parsed_element.dim, base_element.dim if base_element else None)
-        dim_index = or_if_none(parsed_element.dim_index, base_element.dim_index if base_element else None)
-
-        if dim is None and "%s" in parsed_element.name:
-            raise ProcessException("Dim is None, but name contains '%s'")
-
-        if dim is not None and "%s" not in parsed_element.name:
-            raise ProcessException("Dim is not None, but name does not contain '%s'")
-
-        return dim is not None, _ProcessDimension().process_dim(
-            parsed_element.name, dim, dim_index, type(parsed_element)
-        )
 
 
 class _ProcessDimension:
