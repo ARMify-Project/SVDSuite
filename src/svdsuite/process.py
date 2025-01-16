@@ -35,7 +35,7 @@ from svdsuite.model.process import (
 from svdsuite.util.process_parse_model_convert import process_parse_convert_device
 from svdsuite.model.types import AccessType, ProtectionStringType, CPUNameType, ModifiedWriteValuesType, EnumUsageType
 from svdsuite.resolve.resolver import Resolver
-from svdsuite.resolve.exception import TooManyEnumeratedValueContainersException
+from svdsuite.resolve.exception import EnumeratedValueContainerException
 from svdsuite.model.type_alias import ParsedDimablePeripheralTypes, ProcessedDimablePeripheralTypes
 
 
@@ -84,8 +84,8 @@ class Process:
 
         try:
             peripherals = self._resolver.resolve_peripherals(parsed_device)
-        except TooManyEnumeratedValueContainersException as e:
-            raise ProcessException("Too many enumerated value containers") from e
+        except EnumeratedValueContainerException as e:
+            raise ProcessException("Exception within enumerated value container processing") from e
 
         device = Device(
             size=size,

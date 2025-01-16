@@ -7,7 +7,7 @@ from svdsuite.resolve.graph_elements import ElementNode, PlaceholderNode, NodeSt
 from svdsuite.resolve.exception import (
     ResolveException,
     ResolverGraphException,
-    TooManyEnumeratedValueContainersException,
+    EnumeratedValueContainerException,
 )
 from svdsuite.model.type_alias import (
     ProcessedPeripheralTypes,
@@ -30,8 +30,8 @@ from svdsuite.model.process import (
     Cluster,
     Register,
     Field,
-    EnumeratedValueContainer,
 )
+from svdsuite.model.types import EnumUsageType
 
 if TYPE_CHECKING:
     from svdsuite.process import Process
@@ -360,17 +360,28 @@ class Resolver:
 
     def _finalize_field_node(self, field_node: ElementNode, children_nodes: list[ElementNode]):
         field = cast(Field, field_node.processed)
-        enum_containers: list[EnumeratedValueContainer] = []
-        for child in children_nodes:
-            enum_container = self._process._process_enumerated_value_container(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
+
+        containers = [
+            self._process._process_enumerated_value_container(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
                 cast(SVDEnumeratedValueContainer, child.parsed), field.lsb, field.msb
             )
-            enum_containers.append(enum_container)
+            for child in children_nodes
+        ]
 
-        if len(enum_containers) > 2:
-            raise TooManyEnumeratedValueContainersException("Field has more than two EnumeratedValueContainers")
+        # Check for duplicate usage
+        usages = [container.usage for container in containers]
+        if len(usages) != len(set(usages)):
+            raise EnumeratedValueContainerException("Field has multiple EnumeratedValueContainers with the same usage")
 
-        field.enumerated_value_containers = enum_containers
+        # Check total container count
+        if len(containers) > 2:
+            raise EnumeratedValueContainerException("Field has more than two EnumeratedValueContainers")
+
+        # If exactly two containers, their usage must be READ/WRITE (subset check)
+        if len(containers) == 2 and not set(usages).issubset({EnumUsageType.READ, EnumUsageType.WRITE}):
+            raise EnumeratedValueContainerException("Invalid EnumeratedValueContainer usage combination")
+
+        field.enumerated_value_containers = containers
 
     def _calculate_size(self, node: ElementNode, child_elements: list[Register | Cluster]) -> int:
         element = cast(Register | Cluster, node.processed)

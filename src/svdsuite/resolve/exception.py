@@ -2,7 +2,7 @@ class ResolveException(Exception):
     pass
 
 
-class TooManyEnumeratedValueContainersException(ResolveException):
+class EnumeratedValueContainerException(ResolveException):
     pass
 
 

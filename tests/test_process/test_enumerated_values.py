@@ -75,6 +75,9 @@ def test_default_usage(get_processed_device_from_testfile: Callable[[str], Devic
         pytest.param("write", "read-write", None, None, marks=pytest.mark.xfail(strict=True, raises=ProcessException)),
         pytest.param("read-write", "read", None, None, marks=pytest.mark.xfail(strict=True, raises=ProcessException)),
         pytest.param("read-write", "write", None, None, marks=pytest.mark.xfail(strict=True, raises=ProcessException)),
+        pytest.param(
+            "read-write", "read-write", None, None, marks=pytest.mark.xfail(strict=True, raises=ProcessException)
+        ),
     ],
 )
 def test_usage_combinations(
@@ -100,10 +103,16 @@ def test_usage_combinations(
     assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 2
 
     container1 = device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers[0]
-    assert container1.usage == expected1
-
     container2 = device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers[1]
-    assert container2.usage == expected2
+
+    if container1.enumerated_values[0].name == "0b00":
+        assert container1.usage == expected1
+        assert container2.usage == expected2
+    elif container1.enumerated_values[0].name == "0b01":
+        assert container1.usage == expected2
+        assert container2.usage == expected1
+    else:
+        assert False
 
 
 @pytest.mark.xfail(
