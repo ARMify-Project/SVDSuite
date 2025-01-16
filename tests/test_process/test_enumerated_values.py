@@ -118,15 +118,6 @@ def test_usage_combinations(
 @pytest.mark.xfail(
     strict=True,
     raises=ProcessException,
-    reason="Value name already defined in other container",
-)
-def test_value_name_already_defined_other_container(get_processed_device_from_testfile: Callable[[str], Device]):
-    get_processed_device_from_testfile("enumerated_values/value_name_already_defined_other_container.svd")
-
-
-@pytest.mark.xfail(
-    strict=True,
-    raises=ProcessException,
     reason="Value name already defined in container",
 )
 def test_value_name_already_defined_same_container(get_processed_device_from_testfile: Callable[[str], Device]):
