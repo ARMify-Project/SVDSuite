@@ -4,7 +4,11 @@ import copy
 from svdsuite.resolve.graph import ResolverGraph
 from svdsuite.resolve.graph_builder import GraphBuilder
 from svdsuite.resolve.graph_elements import ElementNode, PlaceholderNode, NodeStatus, EdgeType, ElementLevel
-from svdsuite.resolve.exception import ResolveException, ResolverGraphException
+from svdsuite.resolve.exception import (
+    ResolveException,
+    ResolverGraphException,
+    TooManyEnumeratedValueContainersException,
+)
 from svdsuite.model.type_alias import (
     ProcessedPeripheralTypes,
     ProcessedDimablePeripheralTypes,
@@ -362,6 +366,9 @@ class Resolver:
                 cast(SVDEnumeratedValueContainer, child.parsed), field.lsb, field.msb
             )
             enum_containers.append(enum_container)
+
+        if len(enum_containers) > 2:
+            raise TooManyEnumeratedValueContainersException("Field has more than two EnumeratedValueContainers")
 
         field.enumerated_value_containers = enum_containers
 
