@@ -499,13 +499,17 @@ class _InheritProperties:
                 self._inherit_properties_fields(
                     register_cluster.fields,
                     register_cluster.access,
+                    register_cluster.write_constraint,
                 )
             else:
                 raise ProcessException("Unknown register cluster type")
 
-    def _inherit_properties_fields(self, fields: list[Field], access: None | AccessType):
+    def _inherit_properties_fields(
+        self, fields: list[Field], access: None | AccessType, write_constraint: None | WriteConstraint
+    ):
         for field in fields:
             field.access = or_if_none(field.access, access)
+            field.write_constraint = or_if_none(field.write_constraint, write_constraint)
 
 
 class _ProcessDimension:
