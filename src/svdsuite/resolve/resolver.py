@@ -458,15 +458,17 @@ class Resolver:
         base_node: None | ElementNode,
         base_processed_element: None | ProcessedDimablePeripheralTypes,
     ):
-        is_dim, resolved_dim = (
+        is_dim, resolved_dim_names, resolved_dim_display_names = (
             self._process._extract_and_process_dimension(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
                 parsed_element, base_processed_element
             )
         )
         processed_dimable_elements: list[ProcessedDimablePeripheralTypes] = []
-        for index, name in enumerate(resolved_dim):
+        for index, name in enumerate(resolved_dim_names):
             processed_dimable_elements.append(
-                self._create_dimable_element(index, name, parsed_element, base_processed_element)
+                self._create_dimable_element(
+                    index, name, resolved_dim_display_names[index], parsed_element, base_processed_element
+                )
             )
 
         if not processed_dimable_elements:
@@ -497,6 +499,7 @@ class Resolver:
         self,
         index: int,
         name: str,
+        display_name: None | str,
         parsed_element: ParsedPeripheralTypes,
         base_element: None | ProcessedPeripheralTypes,
     ) -> ProcessedDimablePeripheralTypes:
@@ -510,7 +513,7 @@ class Resolver:
             )
         elif isinstance(parsed_element, SVDRegister):
             return self._process._process_register(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
-                index, name, parsed_element, cast(None | Register, base_element)
+                index, name, display_name, parsed_element, cast(None | Register, base_element)
             )
         elif isinstance(parsed_element, SVDField):
             return self._process._process_field(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]

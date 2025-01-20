@@ -259,7 +259,9 @@ class Process:
             parsed=parsed,
         )
 
-    def _process_register(self, index: int, name: str, parsed: SVDRegister, base: None | Register) -> Register:
+    def _process_register(
+        self, index: int, name: str, display_name: None | str, parsed: SVDRegister, base: None | Register
+    ) -> Register:
         dim = or_if_none(parsed.dim, base.dim if base else None)
         dim_index = or_if_none(parsed.dim_index, base.dim_index if base else None)
         dim_increment = or_if_none(parsed.dim_increment, base.dim_increment if base else None)
@@ -270,7 +272,6 @@ class Process:
         reset_value = or_if_none(parsed.reset_value, base.reset_value if base else None)
         reset_mask = or_if_none(parsed.reset_mask, base.reset_mask if base else None)
 
-        display_name = or_if_none(parsed.display_name, base.display_name if base else None)
         description = or_if_none(parsed.description, base.description if base else None)
         alternate_group = or_if_none(parsed.alternate_group, base.alternate_group if base else None)
         alternate_register = or_if_none(parsed.alternate_register, base.alternate_register if base else None)
@@ -287,6 +288,9 @@ class Process:
             self._process_write_constraint(parsed.write_constraint), base.write_constraint if base else None
         )
         read_action = or_if_none(parsed.read_action, base.read_action if base else None)
+
+        if display_name is not None and "[%s]" in display_name:
+            display_name = display_name.replace("[%s]", str(index))
 
         return Register(
             dim=dim,
@@ -419,9 +423,20 @@ class Process:
 
     def _extract_and_process_dimension(
         self, parsed_element: ParsedDimablePeripheralTypes, base_element: None | ProcessedDimablePeripheralTypes
-    ) -> tuple[bool, list[str]]:
+    ) -> tuple[bool, list[str], list[None | str]]:
         dim = or_if_none(parsed_element.dim, base_element.dim if base_element else None)
         dim_index = or_if_none(parsed_element.dim_index, base_element.dim_index if base_element else None)
+
+        display_name = None
+        if isinstance(parsed_element, SVDRegister):
+            if isinstance(base_element, Register):
+                display_name = or_if_none(
+                    parsed_element.display_name, base_element.display_name if base_element else None
+                )
+            else:
+                display_name = parsed_element.display_name
+        else:
+            display_name = None
 
         if dim is None and "%s" in parsed_element.name:
             raise ProcessException("Dim is None, but name contains '%s'")
@@ -429,8 +444,11 @@ class Process:
         if dim is not None and "%s" not in parsed_element.name:
             raise ProcessException("Dim is not None, but name does not contain '%s'")
 
-        return dim is not None, _ProcessDimension().process_dim(
-            parsed_element.name, dim, dim_index, type(parsed_element)
+        if display_name is not None and dim is None and "%s" in display_name:
+            raise ProcessException("Dim is None, but display_name contains '%s'")
+
+        return dim is not None, *_ProcessDimension().process_dim(
+            parsed_element.name, display_name, dim, dim_index, type(parsed_element)
         )
 
 
@@ -491,9 +509,11 @@ class _InheritProperties:
 
 
 class _ProcessDimension:
-    def process_dim(self, name: str, dim: None | int, dim_index: None | str, element_type: type) -> list[str]:
+    def process_dim(
+        self, name: str, display_name: None | str, dim: None | int, dim_index: None | str, element_type: type
+    ) -> tuple[list[str], list[None | str]]:
         if dim is None:
-            return [name]
+            return ([name], [display_name])
         if dim < 1:
             raise ProcessException("dim value must be greater than 0")
 
@@ -501,12 +521,12 @@ class _ProcessDimension:
             if element_type is SVDField:
                 raise ProcessException("Fields cannot use dim arrays")
 
-            return self._process_dim_array(name, dim)
+            return self._process_dim_array(name, display_name, dim)
         elif "%s" in name:
             if element_type is SVDPeripheral:
                 raise ProcessException("Peripherals cannot use dim lists")
 
-            return self._process_dim_list(name, dim, dim_index)
+            return self._process_dim_list(name, display_name, dim, dim_index)
 
         raise ProcessException(f"can't resolve dim for '{name}' without a '%s' or '[%s]' in the name")
 
@@ -543,18 +563,39 @@ class _ProcessDimension:
 
         return dim_index_list
 
-    def _process_dim_array(self, name: str, dim: int) -> list[str]:
+    def _process_dim_array(self, name: str, display_name: None | str, dim: int) -> tuple[list[str], list[None | str]]:
+        if display_name is not None and "[%s]" not in display_name and "%s" in display_name:
+            raise ProcessException(f"display_name '{display_name}' can't be a list if name is an array")
+
         resolved_names: list[str] = []
+        resolved_display_names: list[None | str] = []
         for i in range(dim):
             resolved_names.append(name.replace("[%s]", str(i)))
-        return resolved_names
 
-    def _process_dim_list(self, name: str, dim: int, dim_index: None | str) -> list[str]:
+            if display_name is not None:
+                resolved_display_names.append(display_name.replace("[%s]", str(i)))
+            else:
+                resolved_display_names.append(None)
+
+        return resolved_names, resolved_display_names
+
+    def _process_dim_list(
+        self, name: str, display_name: None | str, dim: int, dim_index: None | str
+    ) -> tuple[list[str], list[None | str]]:
+        if display_name is not None and "[%s]" in display_name:
+            raise ProcessException(f"display_name '{display_name}' can't be an array if name is a list")
+
         resolved_names: list[str] = []
+        resolved_display_names: list[None | str] = []
         for index in self._process_dim_index(dim, dim_index):
             resolved_names.append(name.replace("%s", index))
 
-        return resolved_names
+            if display_name is not None:
+                resolved_display_names.append(display_name.replace("%s", index))
+            else:
+                resolved_display_names.append(None)
+
+        return resolved_names, resolved_display_names
 
 
 class _ProcessEnumeratedValueContainer:
