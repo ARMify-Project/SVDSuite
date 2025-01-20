@@ -10,5 +10,9 @@ class LoopException(ResolveException):
     pass
 
 
+class CycleException(ResolveException):
+    pass
+
+
 class ResolverGraphException(Exception):
     pass

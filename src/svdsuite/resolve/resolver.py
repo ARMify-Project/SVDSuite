@@ -9,6 +9,7 @@ from svdsuite.resolve.exception import (
     ResolverGraphException,
     EnumeratedValueContainerException,
     LoopException,
+    CycleException,
 )
 from svdsuite.model.type_alias import (
     ProcessedPeripheralTypes,
@@ -250,7 +251,7 @@ class Resolver:
             message = (
                 f"Inheritance cycle detected for node '{derive_node.name}' with derive path {placeholder.derive_path}"
             )
-            raise ResolveException(message) from exc
+            raise CycleException(message) from exc
 
         self._logger.log_resolved_placeholder(placeholder.derive_path)
 

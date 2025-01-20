@@ -35,7 +35,7 @@ from svdsuite.model.process import (
 from svdsuite.util.process_parse_model_convert import process_parse_convert_device
 from svdsuite.model.types import AccessType, ProtectionStringType, CPUNameType, ModifiedWriteValuesType, EnumUsageType
 from svdsuite.resolve.resolver import Resolver
-from svdsuite.resolve.exception import EnumeratedValueContainerException, LoopException
+from svdsuite.resolve.exception import EnumeratedValueContainerException, LoopException, CycleException
 from svdsuite.model.type_alias import ParsedDimablePeripheralTypes, ProcessedDimablePeripheralTypes
 
 
@@ -88,6 +88,8 @@ class Process:
             raise ProcessException("Exception within enumerated value container processing") from e
         except LoopException as e:
             raise ProcessException("Resolving stucks in a loop") from e
+        except CycleException as e:
+            raise ProcessException("A circular inheritance was detected during resolving") from e
 
         device = Device(
             size=size,
