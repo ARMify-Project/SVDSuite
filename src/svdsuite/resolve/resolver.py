@@ -8,6 +8,7 @@ from svdsuite.resolve.exception import (
     ResolveException,
     ResolverGraphException,
     EnumeratedValueContainerException,
+    LoopException,
 )
 from svdsuite.model.type_alias import (
     ProcessedPeripheralTypes,
@@ -66,7 +67,7 @@ class Resolver:
 
             if processable_nodes == previous_nodes:
                 self._logger.log_loop_detected()
-                raise ResolveException("Stuck in a loop, the same elements are being processed repeatedly")
+                raise LoopException("Stuck in a loop, the same elements are being processed repeatedly")
 
             previous_nodes = processable_nodes
 

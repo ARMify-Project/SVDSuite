@@ -35,7 +35,7 @@ from svdsuite.model.process import (
 from svdsuite.util.process_parse_model_convert import process_parse_convert_device
 from svdsuite.model.types import AccessType, ProtectionStringType, CPUNameType, ModifiedWriteValuesType, EnumUsageType
 from svdsuite.resolve.resolver import Resolver
-from svdsuite.resolve.exception import EnumeratedValueContainerException
+from svdsuite.resolve.exception import EnumeratedValueContainerException, LoopException
 from svdsuite.model.type_alias import ParsedDimablePeripheralTypes, ProcessedDimablePeripheralTypes
 
 
@@ -86,6 +86,8 @@ class Process:
             peripherals = self._resolver.resolve_peripherals(parsed_device)
         except EnumeratedValueContainerException as e:
             raise ProcessException("Exception within enumerated value container processing") from e
+        except LoopException as e:
+            raise ProcessException("Resolving stucks in a loop") from e
 
         device = Device(
             size=size,

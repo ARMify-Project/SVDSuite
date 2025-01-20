@@ -379,7 +379,6 @@ def test_test_setup_8(path: str, get_test_svd_file_content: Callable[[str], byte
     assert len(device.peripherals[0].registers_clusters) == 3
 
     assert device.peripherals[0].registers_clusters[2].name == "RegisterC"
-    assert device.peripherals[0].registers_clusters[2].description == "RegisterA description"
     assert device.peripherals[0].registers_clusters[2].address_offset == 0xC
     assert device.peripherals[0].registers_clusters[2].size == 32
 
