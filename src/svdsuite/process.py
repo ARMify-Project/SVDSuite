@@ -22,10 +22,10 @@ from svdsuite.model.process import (
     CPU,
     SauRegionsConfig,
     SauRegion,
-    Peripheral,
-    Cluster,
-    Register,
-    Field,
+    IPeripheral,
+    ICluster,
+    IRegister,
+    IField,
     AddressBlock,
     Interrupt,
     WriteConstraint,
@@ -175,7 +175,9 @@ class Process:
 
         return regions
 
-    def _process_peripheral(self, index: int, name: str, parsed: SVDPeripheral, base: None | Peripheral) -> Peripheral:
+    def _process_peripheral(
+        self, index: int, name: str, parsed: SVDPeripheral, base: None | IPeripheral
+    ) -> IPeripheral:
         dim = or_if_none(parsed.dim, base.dim if base else None)
         dim_index = or_if_none(parsed.dim_index, base.dim_index if base else None)
         dim_increment = or_if_none(parsed.dim_increment, base.dim_increment if base else None)
@@ -198,7 +200,7 @@ class Process:
         address_blocks = self._process_address_blocks(parsed.address_blocks) or (base.address_blocks if base else [])
         interrupts = self._process_interrupts(parsed.interrupts)
 
-        return Peripheral(
+        return IPeripheral(
             dim=dim,
             dim_index=dim_index,
             dim_increment=dim_increment,
@@ -223,7 +225,7 @@ class Process:
             parsed=parsed,
         )
 
-    def _process_cluster(self, index: int, name: str, parsed: SVDCluster, base: None | Cluster) -> Cluster:
+    def _process_cluster(self, index: int, name: str, parsed: SVDCluster, base: None | ICluster) -> ICluster:
         dim = or_if_none(parsed.dim, base.dim if base else None)
         dim_index = or_if_none(parsed.dim_index, base.dim_index if base else None)
         dim_increment = or_if_none(parsed.dim_increment, base.dim_increment if base else None)
@@ -241,7 +243,7 @@ class Process:
             parsed.address_offset if dim_increment is None else parsed.address_offset + dim_increment * index
         )
 
-        return Cluster(
+        return ICluster(
             dim=dim,
             dim_index=dim_index,
             dim_increment=dim_increment,
@@ -260,8 +262,8 @@ class Process:
         )
 
     def _process_register(
-        self, index: int, name: str, display_name: None | str, parsed: SVDRegister, base: None | Register
-    ) -> Register:
+        self, index: int, name: str, display_name: None | str, parsed: SVDRegister, base: None | IRegister
+    ) -> IRegister:
         dim = or_if_none(parsed.dim, base.dim if base else None)
         dim_index = or_if_none(parsed.dim_index, base.dim_index if base else None)
         dim_increment = or_if_none(parsed.dim_increment, base.dim_increment if base else None)
@@ -292,7 +294,7 @@ class Process:
         if display_name is not None and "[%s]" in display_name:
             display_name = display_name.replace("[%s]", str(index))
 
-        return Register(
+        return IRegister(
             dim=dim,
             dim_index=dim_index,
             dim_increment=dim_increment,
@@ -315,7 +317,7 @@ class Process:
             parsed=parsed,
         )
 
-    def _process_field(self, index: int, name: str, parsed: SVDField, base: None | Field) -> Field:
+    def _process_field(self, index: int, name: str, parsed: SVDField, base: None | IField) -> IField:
         dim = or_if_none(parsed.dim, base.dim if base else None)
         dim_index = or_if_none(parsed.dim_index, base.dim_index if base else None)
         dim_increment = or_if_none(parsed.dim_increment, base.dim_increment if base else None)
@@ -334,7 +336,7 @@ class Process:
         )
         read_action = or_if_none(parsed.read_action, base.read_action if base else None)
 
-        return Field(
+        return IField(
             dim=dim,
             dim_index=dim_index,
             dim_increment=dim_increment,
@@ -429,7 +431,7 @@ class Process:
 
         display_name = None
         if isinstance(parsed_element, SVDRegister):
-            if isinstance(base_element, Register):
+            if isinstance(base_element, IRegister):
                 display_name = or_if_none(
                     parsed_element.display_name, base_element.display_name if base_element else None
                 )
@@ -472,7 +474,7 @@ class _InheritProperties:
 
     def _inherit_properties_registers_clusters(
         self,
-        registers_clusters: list[Cluster | Register],
+        registers_clusters: list[ICluster | IRegister],
         size: None | int,
         access: None | AccessType,
         protection: None | ProtectionStringType,
@@ -486,7 +488,7 @@ class _InheritProperties:
             register_cluster.reset_value = or_if_none(register_cluster.reset_value, reset_value)
             register_cluster.reset_mask = or_if_none(register_cluster.reset_mask, reset_mask)
 
-            if isinstance(register_cluster, Cluster):
+            if isinstance(register_cluster, ICluster):
                 self._inherit_properties_registers_clusters(
                     register_cluster.registers_clusters,
                     register_cluster.size,
@@ -495,7 +497,7 @@ class _InheritProperties:
                     register_cluster.reset_value,
                     register_cluster.reset_mask,
                 )
-            elif isinstance(register_cluster, Register):  # pyright: ignore[reportUnnecessaryIsInstance]
+            elif isinstance(register_cluster, IRegister):  # pyright: ignore[reportUnnecessaryIsInstance]
                 self._inherit_properties_fields(
                     register_cluster.fields,
                     register_cluster.access,
@@ -505,7 +507,7 @@ class _InheritProperties:
                 raise ProcessException("Unknown register cluster type")
 
     def _inherit_properties_fields(
-        self, fields: list[Field], access: None | AccessType, write_constraint: None | WriteConstraint
+        self, fields: list[IField], access: None | AccessType, write_constraint: None | WriteConstraint
     ):
         for field in fields:
             field.access = or_if_none(field.access, access)

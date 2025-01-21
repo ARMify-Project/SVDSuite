@@ -1,6 +1,6 @@
 from svdsuite.process import Process
 from svdsuite.model.map import MapPeripheral, MapRegister
-from svdsuite.model.process import Device, Peripheral, Cluster, Register, AddressBlock
+from svdsuite.model.process import Device, IPeripheral, ICluster, IRegister, AddressBlock
 
 
 class PeripheralRegisterMap:
@@ -28,12 +28,12 @@ class PeripheralRegisterMap:
         peripheral_map_list.sort(key=lambda x: x.address)
         return peripheral_map_list
 
-    def _build_map_peripheral(self, peripheral: Peripheral) -> MapPeripheral:
+    def _build_map_peripheral(self, peripheral: IPeripheral) -> MapPeripheral:
         registers: list[MapRegister] = []
         for register_cluster in peripheral.registers_clusters:
-            if isinstance(register_cluster, Register):
+            if isinstance(register_cluster, IRegister):
                 registers.append(self._build_map_register(peripheral.base_address, register_cluster))
-            if isinstance(register_cluster, Cluster):
+            if isinstance(register_cluster, ICluster):
                 registers.extend(self._build_map_cluster(peripheral.base_address, register_cluster))
 
         map_peripheral = MapPeripheral(
@@ -46,7 +46,7 @@ class PeripheralRegisterMap:
         )
         return map_peripheral
 
-    def _build_map_register(self, container_address: int, register: Register) -> MapRegister:
+    def _build_map_register(self, container_address: int, register: IRegister) -> MapRegister:
         address = container_address + register.address_offset
 
         map_register = MapRegister(
@@ -65,14 +65,14 @@ class PeripheralRegisterMap:
 
         return map_register
 
-    def _build_map_cluster(self, container_address: int, cluster: Cluster) -> list[MapRegister]:
+    def _build_map_cluster(self, container_address: int, cluster: ICluster) -> list[MapRegister]:
         address = container_address + cluster.address_offset
 
         registers: list[MapRegister] = []
         for register_cluster in cluster.registers_clusters:
-            if isinstance(register_cluster, Register):
+            if isinstance(register_cluster, IRegister):
                 registers.append(self._build_map_register(address, register_cluster))
-            if isinstance(register_cluster, Cluster):
+            if isinstance(register_cluster, ICluster):
                 registers.extend(self._build_map_cluster(address, register_cluster))
 
         return registers

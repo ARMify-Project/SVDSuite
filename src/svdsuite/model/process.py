@@ -122,7 +122,7 @@ class EnumeratedValueContainer:
 
 
 @dataclass(kw_only=True)
-class Field:
+class IField:
     dim: None | int
     dim_increment: None | int
     dim_index: None | str
@@ -139,7 +139,7 @@ class Field:
 
 
 @dataclass(kw_only=True)
-class Register:
+class IRegister:
     dim: None | int
     dim_increment: None | int
     dim_index: None | str
@@ -158,12 +158,12 @@ class Register:
     modified_write_values: ModifiedWriteValuesType
     write_constraint: None | WriteConstraint
     read_action: None | ReadActionType
-    fields: list[Field]
+    fields: list[IField]
     parsed: SVDRegister
 
 
 @dataclass(kw_only=True)
-class Cluster:
+class ICluster:
     dim: None | int
     dim_increment: None | int
     dim_index: None | str
@@ -177,12 +177,12 @@ class Cluster:
     alternate_cluster: None | str
     header_struct_name: None | str
     address_offset: int
-    registers_clusters: list["Register | Cluster"]
+    registers_clusters: list["IRegister | ICluster"]
     parsed: SVDCluster
 
 
 @dataclass(kw_only=True)
-class Peripheral:
+class IPeripheral:
     dim: None | int
     dim_increment: None | int
     dim_index: None | str
@@ -203,7 +203,7 @@ class Peripheral:
     base_address: int
     address_blocks: list[AddressBlock]
     interrupts: list[Interrupt]
-    registers_clusters: list[Register | Cluster]
+    registers_clusters: list[IRegister | ICluster]
     parsed: SVDPeripheral
 
 
@@ -226,5 +226,5 @@ class Device:
     header_definitions_prefix: None | str
     address_unit_bits: int
     width: int
-    peripherals: list[Peripheral]
+    peripherals: list[IPeripheral]
     parsed: SVDDevice

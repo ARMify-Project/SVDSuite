@@ -28,10 +28,10 @@ from svdsuite.model.parse import (
 )
 from svdsuite.model.process import (
     Device,
-    Peripheral,
-    Cluster,
-    Register,
-    Field,
+    IPeripheral,
+    ICluster,
+    IRegister,
+    IField,
 )
 from svdsuite.model.types import EnumUsageType
 
@@ -46,7 +46,7 @@ class Resolver:
         self._root_node_: None | ElementNode = None
         self._logger = ResolverLogger(resolver_logging_file_path, self._resolver_graph)
         self._are_repeating_steps_finished_after_current_round = False
-        self._peripherals_resolved: None | list[Peripheral] = None
+        self._peripherals_resolved: None | list[IPeripheral] = None
 
     @property
     def _root_node(self) -> ElementNode:
@@ -55,7 +55,7 @@ class Resolver:
 
         return self._root_node_
 
-    def resolve_peripherals(self, parsed_device: SVDDevice) -> list[Peripheral]:
+    def resolve_peripherals(self, parsed_device: SVDDevice) -> list[IPeripheral]:
         self._initialization(parsed_device)
 
         self._logger.log_repeating_steps_start()
@@ -327,41 +327,41 @@ class Resolver:
             raise ResolveException("Unknown node type")
 
     def _finalize_device_node(self, _: ElementNode, children_nodes: list[ElementNode]):
-        peripherals = [cast(Peripheral, node.processed) for node in children_nodes if not node.is_dim_template]
+        peripherals = [cast(IPeripheral, node.processed) for node in children_nodes if not node.is_dim_template]
         self._peripherals_resolved = sorted(peripherals, key=lambda p: (p.base_address, p.name))
 
     def _finalize_peripheral_node(self, peripheral_node: ElementNode, children_nodes: list[ElementNode]):
-        peripheral = cast(Peripheral, peripheral_node.processed)
+        peripheral = cast(IPeripheral, peripheral_node.processed)
         peripheral.size = self._calculate_size(
-            peripheral_node, [cast(Register | Cluster, node.processed) for node in children_nodes]
+            peripheral_node, [cast(IRegister | ICluster, node.processed) for node in children_nodes]
         )
 
         registers_clusters = [
-            cast(Register | Cluster, node.processed) for node in children_nodes if not node.is_dim_template
+            cast(IRegister | ICluster, node.processed) for node in children_nodes if not node.is_dim_template
         ]
 
         peripheral.registers_clusters = sorted(registers_clusters, key=lambda rc: (rc.address_offset, rc.name))
 
     def _finalize_cluster_node(self, cluster_node: ElementNode, children_nodes: list[ElementNode]):
-        cluster = cast(Cluster, cluster_node.processed)
+        cluster = cast(ICluster, cluster_node.processed)
         cluster.size = self._calculate_size(
-            cluster_node, [cast(Register | Cluster, node.processed) for node in children_nodes]
+            cluster_node, [cast(IRegister | ICluster, node.processed) for node in children_nodes]
         )
 
         registers_clusters = [
-            cast(Register | Cluster, node.processed) for node in children_nodes if not node.is_dim_template
+            cast(IRegister | ICluster, node.processed) for node in children_nodes if not node.is_dim_template
         ]
 
         cluster.registers_clusters = sorted(registers_clusters, key=lambda rc: (rc.address_offset, rc.name))
 
     def _finalize_register_node(self, register_node: ElementNode, children_nodes: list[ElementNode]):
-        register = cast(Register, register_node.processed)
-        fields = [cast(Field, node.processed) for node in children_nodes if not node.is_dim_template]
+        register = cast(IRegister, register_node.processed)
+        fields = [cast(IField, node.processed) for node in children_nodes if not node.is_dim_template]
 
         register.fields = sorted(fields, key=lambda f: (f.lsb, f.name))
 
     def _finalize_field_node(self, field_node: ElementNode, children_nodes: list[ElementNode]):
-        field = cast(Field, field_node.processed)
+        field = cast(IField, field_node.processed)
 
         containers = [
             self._process._process_enumerated_value_container(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
@@ -385,8 +385,8 @@ class Resolver:
 
         field.enumerated_value_containers = containers
 
-    def _calculate_size(self, node: ElementNode, child_elements: list[Register | Cluster]) -> int:
-        element = cast(Register | Cluster, node.processed)
+    def _calculate_size(self, node: ElementNode, child_elements: list[IRegister | ICluster]) -> int:
+        element = cast(IRegister | ICluster, node.processed)
 
         own_size = element.size if element.size is not None else -1
 
@@ -409,7 +409,7 @@ class Resolver:
             return 32  # default size for device
 
         element = parent.processed
-        if not isinstance(element, Peripheral | Cluster):
+        if not isinstance(element, IPeripheral | ICluster):
             raise ResolveException("Parent of node is not a Peripheral or Cluster")
 
         if element.size is not None:
@@ -505,19 +505,19 @@ class Resolver:
     ) -> ProcessedDimablePeripheralTypes:
         if isinstance(parsed_element, SVDPeripheral):
             return self._process._process_peripheral(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
-                index, name, parsed_element, cast(None | Peripheral, base_element)
+                index, name, parsed_element, cast(None | IPeripheral, base_element)
             )
         elif isinstance(parsed_element, SVDCluster):
             return self._process._process_cluster(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
-                index, name, parsed_element, cast(None | Cluster, base_element)
+                index, name, parsed_element, cast(None | ICluster, base_element)
             )
         elif isinstance(parsed_element, SVDRegister):
             return self._process._process_register(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
-                index, name, display_name, parsed_element, cast(None | Register, base_element)
+                index, name, display_name, parsed_element, cast(None | IRegister, base_element)
             )
         elif isinstance(parsed_element, SVDField):
             return self._process._process_field(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
-                index, name, parsed_element, cast(None | Field, base_element)
+                index, name, parsed_element, cast(None | IField, base_element)
             )
         else:
             raise ResolveException(f"Unknown type {type(parsed_element)} in _create_dimable_element")

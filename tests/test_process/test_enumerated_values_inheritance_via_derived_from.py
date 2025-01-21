@@ -2,7 +2,7 @@ from typing import Callable
 import pytest
 
 from svdsuite.process import ProcessException
-from svdsuite.model.process import Device, Register
+from svdsuite.model.process import Device, IRegister
 from svdsuite.model.types import EnumUsageType
 
 
@@ -17,7 +17,7 @@ def test_backward_reference_different_scope(get_processed_device_from_testfile: 
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 1
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
@@ -64,7 +64,7 @@ def test_forward_reference_different_scope(get_processed_device_from_testfile: C
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 1
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32

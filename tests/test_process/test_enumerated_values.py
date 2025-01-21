@@ -2,7 +2,7 @@ from typing import Callable
 import pytest
 
 from svdsuite.process import Process, ProcessException
-from svdsuite.model.process import Device, Register
+from svdsuite.model.process import Device, IRegister
 from svdsuite.model.types import EnumUsageType
 
 
@@ -11,7 +11,7 @@ def test_simple_read_write(get_processed_device_from_testfile: Callable[[str], D
 
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 1
-    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
     assert len(device.peripherals[0].registers_clusters[0].fields) == 1
 
     assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 1
@@ -55,7 +55,7 @@ def test_default_usage(get_processed_device_from_testfile: Callable[[str], Devic
 
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 1
-    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
     assert len(device.peripherals[0].registers_clusters[0].fields) == 1
 
     assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 1
@@ -97,7 +97,7 @@ def test_usage_combinations(
 
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 1
-    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
     assert len(device.peripherals[0].registers_clusters[0].fields) == 1
 
     assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 2
@@ -147,7 +147,7 @@ def test_do_not_care_handling(get_processed_device_from_testfile: Callable[[str]
 
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 1
-    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
     assert len(device.peripherals[0].registers_clusters[0].fields) == 1
 
     assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 1
@@ -201,7 +201,7 @@ def test_do_not_care_and_distinct_values(get_processed_device_from_testfile: Cal
 
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 1
-    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
     assert len(device.peripherals[0].registers_clusters[0].fields) == 1
 
     assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 1
@@ -239,7 +239,7 @@ def test_default_extension(get_processed_device_from_testfile: Callable[[str], D
 
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 1
-    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
     assert len(device.peripherals[0].registers_clusters[0].fields) == 1
 
     assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 1

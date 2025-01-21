@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from svdsuite.model.process import Peripheral, Register, Field
+from svdsuite.model.process import IPeripheral, IRegister, IField
 from svdsuite.model.types import AccessType, ProtectionStringType
 
 
@@ -15,8 +15,8 @@ class MapRegister:
     display_name: None | str = None
     description: None | str = None
     address: int
-    fields: list[Field] = field(default_factory=list)
-    processed: Register
+    fields: list[IField] = field(default_factory=list)
+    processed: IRegister
 
 
 @dataclass(kw_only=True)
@@ -26,4 +26,4 @@ class MapPeripheral:
     address: int
     allocated_range: tuple[int, int]
     registers: list[MapRegister] = field(default_factory=list)
-    processed: Peripheral
+    processed: IPeripheral

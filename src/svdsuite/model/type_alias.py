@@ -8,14 +8,14 @@ from svdsuite.model.parse import (
     SVDEnumeratedValueContainer,
 )
 from svdsuite.model.process import (
-    Peripheral,
-    Cluster,
-    Register,
-    Field,
+    IPeripheral,
+    ICluster,
+    IRegister,
+    IField,
     EnumeratedValueContainer,
 )
 
 ParsedPeripheralTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField | SVDEnumeratedValueContainer
 ParsedDimablePeripheralTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField
-ProcessedPeripheralTypes: TypeAlias = Peripheral | Cluster | Register | Field | EnumeratedValueContainer
-ProcessedDimablePeripheralTypes: TypeAlias = Peripheral | Cluster | Register | Field
+ProcessedPeripheralTypes: TypeAlias = IPeripheral | ICluster | IRegister | IField | EnumeratedValueContainer
+ProcessedDimablePeripheralTypes: TypeAlias = IPeripheral | ICluster | IRegister | IField

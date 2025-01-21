@@ -2,7 +2,7 @@ from typing import Callable
 import pytest
 
 from svdsuite.process import ProcessException
-from svdsuite.model.process import Device, Register, Cluster
+from svdsuite.model.process import Device, IRegister, ICluster
 
 
 def test_simple_array_peripheral_level(get_processed_device_from_testfile: Callable[[str], Device]):
@@ -15,12 +15,12 @@ def test_simple_array_peripheral_level(get_processed_device_from_testfile: Calla
     assert device.peripherals[0].size == 32
     assert len(device.peripherals[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[1], IRegister)
     assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[1].size == 32
@@ -30,12 +30,12 @@ def test_simple_array_peripheral_level(get_processed_device_from_testfile: Calla
     assert device.peripherals[1].size == 32
     assert len(device.peripherals[1].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[1].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[1].registers_clusters[0], IRegister)
     assert device.peripherals[1].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[1].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[1].registers_clusters[0].size == 32
 
-    assert isinstance(device.peripherals[1].registers_clusters[1], Register)
+    assert isinstance(device.peripherals[1].registers_clusters[1], IRegister)
     assert device.peripherals[1].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[1].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[1].registers_clusters[1].size == 32
@@ -47,34 +47,34 @@ def test_simple_array_cluster_level(get_processed_device_from_testfile: Callable
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], Cluster)
+    assert isinstance(device.peripherals[0].registers_clusters[0], ICluster)
     assert device.peripherals[0].registers_clusters[0].name == "Cluster0"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
     assert len(device.peripherals[0].registers_clusters[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[0], IRegister)
     assert device.peripherals[0].registers_clusters[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].registers_clusters[0].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[1], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[1], IRegister)
     assert device.peripherals[0].registers_clusters[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[0].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[0].registers_clusters[1].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], Cluster)
+    assert isinstance(device.peripherals[0].registers_clusters[1], ICluster)
     assert device.peripherals[0].registers_clusters[1].name == "Cluster1"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x8
     assert device.peripherals[0].registers_clusters[1].size == 32
     assert len(device.peripherals[0].registers_clusters[1].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[1].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[1].registers_clusters[0], IRegister)
     assert device.peripherals[0].registers_clusters[1].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[1].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[1].registers_clusters[0].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[1].registers_clusters[1], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[1].registers_clusters[1], IRegister)
     assert device.peripherals[0].registers_clusters[1].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[1].registers_clusters[1].size == 32
@@ -86,12 +86,12 @@ def test_simple_array_register_level(get_processed_device_from_testfile: Callabl
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
     assert device.peripherals[0].registers_clusters[0].name == "Register0"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[1], IRegister)
     assert device.peripherals[0].registers_clusters[1].name == "Register1"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[1].size == 32
@@ -121,34 +121,34 @@ def test_simple_list_cluster_level(get_processed_device_from_testfile: Callable[
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], Cluster)
+    assert isinstance(device.peripherals[0].registers_clusters[0], ICluster)
     assert device.peripherals[0].registers_clusters[0].name == "ClusterA"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
     assert len(device.peripherals[0].registers_clusters[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[0], IRegister)
     assert device.peripherals[0].registers_clusters[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].registers_clusters[0].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[1], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[1], IRegister)
     assert device.peripherals[0].registers_clusters[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[0].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[0].registers_clusters[1].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], Cluster)
+    assert isinstance(device.peripherals[0].registers_clusters[1], ICluster)
     assert device.peripherals[0].registers_clusters[1].name == "ClusterB"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x8
     assert device.peripherals[0].registers_clusters[1].size == 32
     assert len(device.peripherals[0].registers_clusters[1].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[1].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[1].registers_clusters[0], IRegister)
     assert device.peripherals[0].registers_clusters[1].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[1].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[1].registers_clusters[0].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[1].registers_clusters[1], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[1].registers_clusters[1], IRegister)
     assert device.peripherals[0].registers_clusters[1].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[1].registers_clusters[1].size == 32
@@ -160,67 +160,67 @@ def test_simple_list_register_level(get_processed_device_from_testfile: Callable
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 13
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
     assert device.peripherals[0].registers_clusters[0].name == "Register0"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[1], IRegister)
     assert device.peripherals[0].registers_clusters[1].name == "Register1"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[1].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[2], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[2], IRegister)
     assert device.peripherals[0].registers_clusters[2].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[2].address_offset == 0x8
     assert device.peripherals[0].registers_clusters[2].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[3], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[3], IRegister)
     assert device.peripherals[0].registers_clusters[3].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[3].address_offset == 0xC
     assert device.peripherals[0].registers_clusters[3].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[4], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[4], IRegister)
     assert device.peripherals[0].registers_clusters[4].name == "Register2"
     assert device.peripherals[0].registers_clusters[4].address_offset == 0x10
     assert device.peripherals[0].registers_clusters[4].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[5], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[5], IRegister)
     assert device.peripherals[0].registers_clusters[5].name == "Register3"
     assert device.peripherals[0].registers_clusters[5].address_offset == 0x14
     assert device.peripherals[0].registers_clusters[5].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[6], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[6], IRegister)
     assert device.peripherals[0].registers_clusters[6].name == "Register4"
     assert device.peripherals[0].registers_clusters[6].address_offset == 0x18
     assert device.peripherals[0].registers_clusters[6].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[7], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[7], IRegister)
     assert device.peripherals[0].registers_clusters[7].name == "RegisterC"
     assert device.peripherals[0].registers_clusters[7].address_offset == 0x1C
     assert device.peripherals[0].registers_clusters[7].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[8], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[8], IRegister)
     assert device.peripherals[0].registers_clusters[8].name == "RegisterD"
     assert device.peripherals[0].registers_clusters[8].address_offset == 0x20
     assert device.peripherals[0].registers_clusters[8].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[9], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[9], IRegister)
     assert device.peripherals[0].registers_clusters[9].name == "RegisterE"
     assert device.peripherals[0].registers_clusters[9].address_offset == 0x24
     assert device.peripherals[0].registers_clusters[9].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[10], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[10], IRegister)
     assert device.peripherals[0].registers_clusters[10].name == "RegisterF"
     assert device.peripherals[0].registers_clusters[10].address_offset == 0x28
     assert device.peripherals[0].registers_clusters[10].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[11], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[11], IRegister)
     assert device.peripherals[0].registers_clusters[11].name == "RegisterG"
     assert device.peripherals[0].registers_clusters[11].address_offset == 0x2C
     assert device.peripherals[0].registers_clusters[11].size == 32
 
-    assert isinstance(device.peripherals[0].registers_clusters[12], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[12], IRegister)
     assert device.peripherals[0].registers_clusters[12].name == "RegisterH"
     assert device.peripherals[0].registers_clusters[12].address_offset == 0x30
     assert device.peripherals[0].registers_clusters[12].size == 32
@@ -232,7 +232,7 @@ def test_simple_list_field_level(get_processed_device_from_testfile: Callable[[s
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 1
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
     assert len(device.peripherals[0].registers_clusters[0].fields) == 2
 
     assert device.peripherals[0].registers_clusters[0].fields[0].name == "FieldA"
@@ -349,13 +349,13 @@ def test_array_displayname_with_dim(get_processed_device_from_testfile: Callable
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
     assert device.peripherals[0].registers_clusters[0].name == "Register0"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
     assert device.peripherals[0].registers_clusters[0].display_name == "Register0"
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[1], IRegister)
     assert device.peripherals[0].registers_clusters[1].name == "Register1"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[1].size == 32
@@ -368,13 +368,13 @@ def test_list_displayname_with_dim(get_processed_device_from_testfile: Callable[
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
     assert device.peripherals[0].registers_clusters[0].display_name == "RegisterA"
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
+    assert isinstance(device.peripherals[0].registers_clusters[1], IRegister)
     assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[1].size == 32
