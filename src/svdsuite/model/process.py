@@ -209,13 +209,6 @@ class Peripheral:
 
 @dataclass(kw_only=True)
 class Device:
-    size: None | int
-    access: None | AccessType
-    protection: None | ProtectionStringType
-    reset_value: None | int
-    reset_mask: None | int
-@dataclass(kw_only=True)
-class Device:
     size: int
     access: AccessType
     protection: ProtectionStringType
