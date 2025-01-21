@@ -17,5 +17,5 @@ from svdsuite.model.process import (
 
 ParsedPeripheralTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField | SVDEnumeratedValueContainer
 ParsedDimablePeripheralTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField
-ProcessedPeripheralTypes: TypeAlias = IPeripheral | ICluster | IRegister | IField | EnumeratedValueContainer
-ProcessedDimablePeripheralTypes: TypeAlias = IPeripheral | ICluster | IRegister | IField
+IntermediatePeripheralTypes: TypeAlias = IPeripheral | ICluster | IRegister | IField | EnumeratedValueContainer
+IntermediateDimablePeripheralTypes: TypeAlias = IPeripheral | ICluster | IRegister | IField

@@ -17,15 +17,15 @@ from svdsuite.model.parse import (
 from svdsuite.model.process import (
     CPU,
     AddressBlock,
-    ICluster,
+    Cluster,
     Device,
     DimArrayIndex,
     EnumeratedValueContainer,
     EnumeratedValue,
-    IField,
+    Field,
     Interrupt,
-    IPeripheral,
-    IRegister,
+    Peripheral,
+    Register,
     SauRegion,
     SauRegionsConfig,
     WriteConstraint,
@@ -152,7 +152,7 @@ def process_parse_convert_enumerated_value_container(value: EnumeratedValueConta
         header_enum_name=value.header_enum_name,
         usage=value.usage,
         enumerated_values=enumerated_values,
-        derived_from=value.derived_from,
+        derived_from=None,
         parent=None,  # set by parent field
     )
 
@@ -162,7 +162,7 @@ def process_parse_convert_enumerated_value_container(value: EnumeratedValueConta
     return svd_value
 
 
-def process_parse_convert_field(field: IField) -> SVDField:
+def process_parse_convert_field(field: Field) -> SVDField:
     enumerated_value_containers = [
         process_parse_convert_enumerated_value_container(container) for container in field.enumerated_value_containers
     ]
@@ -189,7 +189,7 @@ def process_parse_convert_field(field: IField) -> SVDField:
     return svd_field
 
 
-def process_parse_convert_register(register: IRegister) -> SVDRegister:
+def process_parse_convert_register(register: Register) -> SVDRegister:
     fields = [process_parse_convert_field(field) for field in register.fields]
 
     svd_register = SVDRegister(
@@ -221,12 +221,12 @@ def process_parse_convert_register(register: IRegister) -> SVDRegister:
     return svd_register
 
 
-def process_parse_convert_cluster(cluster: ICluster) -> SVDCluster:
+def process_parse_convert_cluster(cluster: Cluster) -> SVDCluster:
     registers_clusters: list[SVDCluster | SVDRegister] = []
     for register_cluster in cluster.registers_clusters:
-        if isinstance(register_cluster, IRegister):
+        if isinstance(register_cluster, Register):
             converted = process_parse_convert_register(register_cluster)
-        elif isinstance(register_cluster, ICluster):  # pyright: ignore[reportUnnecessaryIsInstance]
+        elif isinstance(register_cluster, Cluster):  # pyright: ignore[reportUnnecessaryIsInstance]
             converted = process_parse_convert_cluster(register_cluster)
         else:
             raise ValueError(f"Invalid register type: {type(register_cluster)}")
@@ -255,15 +255,15 @@ def process_parse_convert_cluster(cluster: ICluster) -> SVDCluster:
     return svd_cluster
 
 
-def process_parse_convert_peripheral(peripheral: IPeripheral) -> SVDPeripheral:
+def process_parse_convert_peripheral(peripheral: Peripheral) -> SVDPeripheral:
     address_blocks = [process_parse_convert_address_block(block) for block in peripheral.address_blocks]
     interrupts = [process_parse_convert_interrupt(interrupt) for interrupt in peripheral.interrupts]
 
     registers_clusters: list[SVDCluster | SVDRegister] = []
     for register_cluster in peripheral.registers_clusters:
-        if isinstance(register_cluster, IRegister):
+        if isinstance(register_cluster, Register):
             converted = process_parse_convert_register(register_cluster)
-        elif isinstance(register_cluster, ICluster):  # pyright: ignore[reportUnnecessaryIsInstance]
+        elif isinstance(register_cluster, Cluster):  # pyright: ignore[reportUnnecessaryIsInstance]
             converted = process_parse_convert_cluster(register_cluster)
         else:
             raise ValueError(f"Invalid register type: {type(register_cluster)}")

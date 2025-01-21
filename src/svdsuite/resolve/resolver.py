@@ -12,8 +12,8 @@ from svdsuite.resolve.exception import (
     CycleException,
 )
 from svdsuite.model.type_alias import (
-    ProcessedPeripheralTypes,
-    ProcessedDimablePeripheralTypes,
+    IntermediatePeripheralTypes,
+    IntermediateDimablePeripheralTypes,
     ParsedDimablePeripheralTypes,
     ParsedPeripheralTypes,
 )
@@ -27,7 +27,7 @@ from svdsuite.model.parse import (
     SVDEnumeratedValueContainer,
 )
 from svdsuite.model.process import (
-    Device,
+    IDevice,
     IPeripheral,
     ICluster,
     IRegister,
@@ -120,7 +120,7 @@ class Resolver:
                 f"Node '{derived_node.name}' and its base node '{base_node.name}' have different levels"
             )
 
-        if isinstance(base_node.processed_or_none, Device):
+        if isinstance(base_node.processed_or_none, IDevice):
             raise ResolveException("Base node can't be a Device")
 
         return base_node
@@ -143,7 +143,7 @@ class Resolver:
         self,
         node: ElementNode,
         base_node: None | ElementNode,
-        processed: ProcessedPeripheralTypes,
+        processed: IntermediatePeripheralTypes,
         is_dim_template: bool = False,
     ):
         # if derived, remove the derive edge and replicate the base node's descendants as descendants of current node
@@ -168,8 +168,8 @@ class Resolver:
         self,
         node: ElementNode,
         base_node: None | ElementNode,
-        processed_elements: list[ProcessedDimablePeripheralTypes],
-        processed_dim_element: ProcessedDimablePeripheralTypes,
+        processed_elements: list[IntermediateDimablePeripheralTypes],
+        processed_dim_element: IntermediateDimablePeripheralTypes,
     ):
         # update dim element itself (must be called before the new nodes are created in the next step)
         self._update_node(node, base_node, processed_dim_element, is_dim_template=True)
@@ -446,7 +446,7 @@ class Resolver:
             self._process_enumerated_value_container_node(node, base_node)
             return
 
-        if not isinstance(base_processed_element, None | ProcessedDimablePeripheralTypes):
+        if not isinstance(base_processed_element, None | IntermediateDimablePeripheralTypes):
             raise ResolveException(f"Unknown type {type(base_processed_element)} in _process_element")
 
         self._process_dimable_node(node, parsed_element, base_node, base_processed_element)
@@ -456,14 +456,14 @@ class Resolver:
         node: ElementNode,
         parsed_element: ParsedDimablePeripheralTypes,
         base_node: None | ElementNode,
-        base_processed_element: None | ProcessedDimablePeripheralTypes,
+        base_processed_element: None | IntermediateDimablePeripheralTypes,
     ):
         is_dim, resolved_dim_names, resolved_dim_display_names = (
             self._process._extract_and_process_dimension(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
                 parsed_element, base_processed_element
             )
         )
-        processed_dimable_elements: list[ProcessedDimablePeripheralTypes] = []
+        processed_dimable_elements: list[IntermediateDimablePeripheralTypes] = []
         for index, name in enumerate(resolved_dim_names):
             processed_dimable_elements.append(
                 self._create_dimable_element(
@@ -481,8 +481,8 @@ class Resolver:
             self._update_node(node, base_node, processed_dimable_elements[0])
 
     def _post_process_dim_elements(
-        self, dim_name: str, processed_dimable_elements: list[ProcessedDimablePeripheralTypes]
-    ) -> ProcessedDimablePeripheralTypes:
+        self, dim_name: str, processed_dimable_elements: list[IntermediateDimablePeripheralTypes]
+    ) -> IntermediateDimablePeripheralTypes:
         assert len(processed_dimable_elements) >= 1
 
         processed_dim_template = copy.copy(processed_dimable_elements[0])
@@ -501,8 +501,8 @@ class Resolver:
         name: str,
         display_name: None | str,
         parsed_element: ParsedPeripheralTypes,
-        base_element: None | ProcessedPeripheralTypes,
-    ) -> ProcessedDimablePeripheralTypes:
+        base_element: None | IntermediatePeripheralTypes,
+    ) -> IntermediateDimablePeripheralTypes:
         if isinstance(parsed_element, SVDPeripheral):
             return self._process._process_peripheral(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
                 index, name, parsed_element, cast(None | IPeripheral, base_element)

@@ -18,14 +18,19 @@ from svdsuite.model.parse import (
     SVDEnumeratedValue,
 )
 from svdsuite.model.process import (
+    IDevice,
     Device,
     CPU,
     SauRegionsConfig,
     SauRegion,
     IPeripheral,
+    Peripheral,
     ICluster,
+    Cluster,
     IRegister,
+    Register,
     IField,
+    Field,
     AddressBlock,
     Interrupt,
     WriteConstraint,
@@ -36,7 +41,7 @@ from svdsuite.util.process_parse_model_convert import process_parse_convert_devi
 from svdsuite.model.types import AccessType, ProtectionStringType, CPUNameType, ModifiedWriteValuesType, EnumUsageType
 from svdsuite.resolve.resolver import Resolver
 from svdsuite.resolve.exception import EnumeratedValueContainerException, LoopException, CycleException
-from svdsuite.model.type_alias import ParsedDimablePeripheralTypes, ProcessedDimablePeripheralTypes
+from svdsuite.model.type_alias import ParsedDimablePeripheralTypes, IntermediateDimablePeripheralTypes
 
 
 def or_if_none[T](a: None | T, b: None | T) -> None | T:
@@ -67,7 +72,7 @@ class Process:
     def __init__(self, parsed_device: SVDDevice, resolver_logging_file_path: None | str) -> None:
         resolver_logging_file_path = "/home/fedora/resolver_logging.html"  # TODO remove (debug)
         self._resolver = Resolver(self, resolver_logging_file_path)
-        self._processed_device = self._process_device(parsed_device)
+        self._processed_device: Device = self._process_device(parsed_device)
 
     def get_processed_device(self) -> Device:
         return self._processed_device
@@ -91,7 +96,7 @@ class Process:
         except CycleException as e:
             raise ProcessException("A circular inheritance was detected during resolving") from e
 
-        device = Device(
+        intermediate_device = IDevice(
             size=size,
             access=access,
             protection=protection,
@@ -113,7 +118,9 @@ class Process:
             parsed=parsed_device,
         )
 
-        _InheritProperties().inherit_properties(device)
+        _InheritProperties().inherit_properties(intermediate_device)
+
+        device = _ValidateAndFinalize().validate_and_finalize(intermediate_device)
 
         return device
 
@@ -194,7 +201,7 @@ class Process:
         group_name = or_if_none(parsed.group_name, base.group_name if base else None)
         prepend_to_name = or_if_none(parsed.prepend_to_name, base.prepend_to_name if base else None)
         append_to_name = or_if_none(parsed.append_to_name, base.append_to_name if base else None)
-        header_struct_name = or_if_none(parsed.header_struct_name, base.header_struct_name if base else None)
+        header_struct_name = parsed.header_struct_name  # not inherited in svdconv
         disable_condition = or_if_none(parsed.disable_condition, base.disable_condition if base else None)
         base_address = parsed.base_address if dim_increment is None else parsed.base_address + dim_increment * index
         address_blocks = self._process_address_blocks(parsed.address_blocks) or (base.address_blocks if base else [])
@@ -424,7 +431,7 @@ class Process:
         return _ProcessEnumeratedValueContainer().create_enumerated_value_container(parsed_enum_container, lsb, msb)
 
     def _extract_and_process_dimension(
-        self, parsed_element: ParsedDimablePeripheralTypes, base_element: None | ProcessedDimablePeripheralTypes
+        self, parsed_element: ParsedDimablePeripheralTypes, base_element: None | IntermediateDimablePeripheralTypes
     ) -> tuple[bool, list[str], list[None | str]]:
         dim = or_if_none(parsed_element.dim, base_element.dim if base_element else None)
         dim_index = or_if_none(parsed_element.dim_index, base_element.dim_index if base_element else None)
@@ -455,7 +462,7 @@ class Process:
 
 
 class _InheritProperties:
-    def inherit_properties(self, device: Device):
+    def inherit_properties(self, device: IDevice):
         for peripheral in device.peripherals:
             peripheral.size = or_if_none(peripheral.size, device.size)
             peripheral.access = or_if_none(peripheral.access, device.access)
@@ -512,6 +519,84 @@ class _InheritProperties:
         for field in fields:
             field.access = or_if_none(field.access, access)
             field.write_constraint = or_if_none(field.write_constraint, write_constraint)
+
+
+class _ValidateAndFinalize:
+    def validate_and_finalize(self, i_device: IDevice) -> Device:
+        peripherals = self._validate_and_finalize_peripherals(i_device.peripherals)
+
+        return Device.from_intermediate_device(i_device, peripherals)
+
+    def _validate_and_finalize_peripherals(self, i_peripherals: list[IPeripheral]) -> list[Peripheral]:
+        names: set[str] = set()
+        peripherals: list[Peripheral] = []
+        for i_peripheral in i_peripherals:
+            self._validate_name(names, i_peripheral)
+
+            peripheral = Peripheral.from_intermediate_peripheral(
+                i_peripheral=i_peripheral,
+                registers_clusters=self._validate_and_finalize_registers_clusters(i_peripheral.registers_clusters),
+                end_address_effective=0,  # TODO
+                end_address_specified=0,  # TODO
+                peripheral_size_effective=0,  # TODO
+                peripheral_size_specified=0,  # TODO
+            )
+
+            peripherals.append(peripheral)
+
+        return sorted(peripherals, key=lambda p: (p.base_address, p.name))
+
+    def _validate_and_finalize_registers_clusters(
+        self, i_registers_clusters: list[ICluster | IRegister]
+    ) -> list[Cluster | Register]:
+        names: set[str] = set()
+        registers_clusters: list[Cluster | Register] = []
+        for i_register_cluster in i_registers_clusters:
+            self._validate_name(names, i_register_cluster)
+
+            if isinstance(i_register_cluster, ICluster):
+                cluster = Cluster.from_intermediate_cluster(
+                    i_cluster=i_register_cluster,
+                    registers_clusters=self._validate_and_finalize_registers_clusters(
+                        i_register_cluster.registers_clusters
+                    ),
+                    base_address=0,  # TODO
+                    end_address=0,  # TODO
+                    cluster_size=0,  # TODO
+                )
+
+                registers_clusters.append(cluster)
+            elif isinstance(i_register_cluster, IRegister):  # pyright: ignore[reportUnnecessaryIsInstance]
+                register = Register.from_intermediate_register(
+                    i_register=i_register_cluster,
+                    fields=self._validate_and_finalize_fields(i_register_cluster.fields),
+                    base_address=0,  # TODO
+                )
+
+                registers_clusters.append(register)
+            else:
+                raise ProcessException("Unknown register cluster type")
+
+        # return sorted(registers_clusters, key=lambda rc: (rc.base_address, rc.name))
+        return sorted(registers_clusters, key=lambda rc: (rc.address_offset, rc.name))  # TODO remove
+
+    def _validate_and_finalize_fields(self, i_fields: list[IField]) -> list[Field]:
+        names: set[str] = set()
+        fields: list[Field] = []
+        for i_field in i_fields:
+            self._validate_name(names, i_field)
+
+            field = Field.from_intermediate_field(i_field)
+
+            fields.append(field)
+
+        return sorted(fields, key=lambda f: (f.lsb, f.name))
+
+    def _validate_name(self, names: set[str], element: IntermediateDimablePeripheralTypes):
+        if element.name in names:
+            raise ProcessException(f"Duplicate element name found: {element.name}")
+
+        names.add(element.name)
 
 
 class _ProcessDimension:

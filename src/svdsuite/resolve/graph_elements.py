@@ -2,7 +2,7 @@ from enum import Enum, auto
 from abc import ABC
 
 from svdsuite.model.parse import SVDDevice, SVDEnumeratedValueContainer
-from svdsuite.model.type_alias import ParsedPeripheralTypes, ProcessedPeripheralTypes
+from svdsuite.model.type_alias import ParsedPeripheralTypes, IntermediatePeripheralTypes
 from svdsuite.resolve.exception import ResolveException
 
 
@@ -49,7 +49,7 @@ class ElementNode(ResolverNode):
         level: ElementLevel,
         status: NodeStatus,
         parsed: SVDDevice | ParsedPeripheralTypes,
-        processed: None | ProcessedPeripheralTypes = None,
+        processed: None | IntermediatePeripheralTypes = None,
         is_dim_template: bool = False,
     ):
         self._name = name
@@ -92,18 +92,18 @@ class ElementNode(ResolverNode):
         self._is_dim_template = is_dim_template
 
     @property
-    def processed(self) -> ProcessedPeripheralTypes:
+    def processed(self) -> IntermediatePeripheralTypes:
         if self._processed is None:
             raise ResolveException(f"Processed attribute of node '{self.name}' is None")
 
         return self._processed
 
     @property
-    def processed_or_none(self) -> None | ProcessedPeripheralTypes:
+    def processed_or_none(self) -> None | IntermediatePeripheralTypes:
         return self._processed
 
     @processed.setter
-    def processed(self, processed: ProcessedPeripheralTypes):
+    def processed(self, processed: IntermediatePeripheralTypes):
         if self._processed is not None:
             raise ResolveException(f"Processed attribute of node '{self.name}' is already set")
 

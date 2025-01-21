@@ -2,7 +2,7 @@ from typing import Callable
 import pytest
 
 from svdsuite.process import ProcessException, ProcessWarning
-from svdsuite.model.process import Device, IRegister
+from svdsuite.model.process import Device, Register
 from svdsuite.model.types import (
     AccessType,
     ProtectionStringType,
@@ -20,7 +20,7 @@ def test_simple_inheritance_backward_reference_same_scope(get_processed_device_f
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
@@ -29,7 +29,7 @@ def test_simple_inheritance_backward_reference_same_scope(get_processed_device_f
     assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 0
     assert device.peripherals[0].registers_clusters[0].fields[0].msb == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
     assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[1].size == 32
@@ -47,7 +47,7 @@ def test_simple_inheritance_forward_reference_same_scope(get_processed_device_fr
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
@@ -56,7 +56,7 @@ def test_simple_inheritance_forward_reference_same_scope(get_processed_device_fr
     assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 0
     assert device.peripherals[0].registers_clusters[0].fields[0].msb == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
     assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[1].size == 32
@@ -76,7 +76,7 @@ def test_simple_inheritance_backward_reference_different_scope(
     assert len(device.peripherals) == 2
 
     assert len(device.peripherals[0].registers_clusters) == 1
-    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
@@ -86,7 +86,7 @@ def test_simple_inheritance_backward_reference_different_scope(
     assert device.peripherals[0].registers_clusters[0].fields[0].msb == 2
 
     assert len(device.peripherals[1].registers_clusters) == 1
-    assert isinstance(device.peripherals[1].registers_clusters[0], IRegister)
+    assert isinstance(device.peripherals[1].registers_clusters[0], Register)
     assert device.peripherals[1].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[1].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[1].registers_clusters[0].size == 32
@@ -106,7 +106,7 @@ def test_simple_inheritance_forward_reference_different_scope(
     assert len(device.peripherals) == 2
 
     assert len(device.peripherals[0].registers_clusters) == 1
-    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
@@ -116,7 +116,7 @@ def test_simple_inheritance_forward_reference_different_scope(
     assert device.peripherals[0].registers_clusters[0].fields[0].msb == 2
 
     assert len(device.peripherals[1].registers_clusters) == 1
-    assert isinstance(device.peripherals[1].registers_clusters[0], IRegister)
+    assert isinstance(device.peripherals[1].registers_clusters[0], Register)
     assert device.peripherals[1].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[1].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[1].registers_clusters[0].size == 32
@@ -132,7 +132,7 @@ def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], D
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].display_name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].description == "RegisterA description"
@@ -156,7 +156,7 @@ def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], D
     assert device.peripherals[0].registers_clusters[0].fields[0].write_constraint is not None
     assert device.peripherals[0].registers_clusters[0].fields[0].write_constraint.write_as_read is True
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
     assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].display_name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].description == "RegisterA description"
@@ -187,7 +187,7 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].display_name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].description == "RegisterA description"
@@ -211,7 +211,7 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     assert device.peripherals[0].registers_clusters[0].fields[0].write_constraint is not None
     assert device.peripherals[0].registers_clusters[0].fields[0].write_constraint.write_as_read is True
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
     assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].display_name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].description == "RegisterB description"
@@ -250,7 +250,7 @@ def test_multiple_inheritance_backward_reference(get_processed_device_from_testf
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 3
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
@@ -259,7 +259,7 @@ def test_multiple_inheritance_backward_reference(get_processed_device_from_testf
     assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 0
     assert device.peripherals[0].registers_clusters[0].fields[0].msb == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
     assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[1].size == 32
@@ -268,7 +268,7 @@ def test_multiple_inheritance_backward_reference(get_processed_device_from_testf
     assert device.peripherals[0].registers_clusters[1].fields[0].lsb == 0
     assert device.peripherals[0].registers_clusters[1].fields[0].msb == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[2], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[2], Register)
     assert device.peripherals[0].registers_clusters[2].name == "RegisterC"
     assert device.peripherals[0].registers_clusters[2].address_offset == 0x8
     assert device.peripherals[0].registers_clusters[2].size == 32
@@ -286,7 +286,7 @@ def test_multiple_inheritance_forward_reference(get_processed_device_from_testfi
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 3
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
@@ -295,7 +295,7 @@ def test_multiple_inheritance_forward_reference(get_processed_device_from_testfi
     assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 0
     assert device.peripherals[0].registers_clusters[0].fields[0].msb == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
     assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[1].size == 32
@@ -304,7 +304,7 @@ def test_multiple_inheritance_forward_reference(get_processed_device_from_testfi
     assert device.peripherals[0].registers_clusters[1].fields[0].lsb == 0
     assert device.peripherals[0].registers_clusters[1].fields[0].msb == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[2], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[2], Register)
     assert device.peripherals[0].registers_clusters[2].name == "RegisterC"
     assert device.peripherals[0].registers_clusters[2].address_offset == 0x8
     assert device.peripherals[0].registers_clusters[2].size == 32
@@ -353,7 +353,7 @@ def test_same_address(get_processed_device_from_testfile: Callable[[str], Device
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
@@ -362,7 +362,7 @@ def test_same_address(get_processed_device_from_testfile: Callable[[str], Device
     assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 0
     assert device.peripherals[0].registers_clusters[0].fields[0].msb == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
     assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[1].size == 32
@@ -379,7 +379,7 @@ def test_register_overlap(get_processed_device_from_testfile: Callable[[str], De
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
@@ -388,7 +388,7 @@ def test_register_overlap(get_processed_device_from_testfile: Callable[[str], De
     assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 0
     assert device.peripherals[0].registers_clusters[0].fields[0].msb == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
     assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x2
     assert device.peripherals[0].registers_clusters[1].size == 16

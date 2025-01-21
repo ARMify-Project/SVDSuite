@@ -2,7 +2,7 @@ from typing import Callable
 import pytest
 
 from svdsuite.process import Process, ProcessException
-from svdsuite.model.process import IRegister, ICluster
+from svdsuite.model.process import Register, Cluster
 
 
 @pytest.mark.parametrize(
@@ -63,16 +63,16 @@ def test_test_setup_1(path: str, get_test_svd_file_content: Callable[[str], byte
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], ICluster)
+    assert isinstance(device.peripherals[0].registers_clusters[0], Cluster)
     assert device.peripherals[0].registers_clusters[0].name == "ClusterA"
     assert len(device.peripherals[0].registers_clusters[0].registers_clusters) == 1
 
-    assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[0], ICluster)
+    assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[0], Cluster)
     assert device.peripherals[0].registers_clusters[0].registers_clusters[0].name == "ClusterB"
     assert len(device.peripherals[0].registers_clusters[0].registers_clusters[0].registers_clusters) == 1
 
     registera = device.peripherals[0].registers_clusters[0].registers_clusters[0].registers_clusters[0]
-    assert isinstance(registera, IRegister)
+    assert isinstance(registera, Register)
     assert registera.name == "RegisterA"
     assert registera.address_offset == 0x0
     assert registera.size == 32
@@ -82,7 +82,7 @@ def test_test_setup_1(path: str, get_test_svd_file_content: Callable[[str], byte
     assert registera.fields[0].lsb == 0
     assert registera.fields[0].msb == 0
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
     assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[1].size == 32
@@ -124,16 +124,16 @@ def test_test_setup_2(path: str, get_test_svd_file_content: Callable[[str], byte
     assert device.peripherals[0].name == "SameA"
     assert len(device.peripherals[0].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[0].registers_clusters[0], ICluster)
+    assert isinstance(device.peripherals[0].registers_clusters[0], Cluster)
     assert device.peripherals[0].registers_clusters[0].name == "SameA"
     assert len(device.peripherals[0].registers_clusters[0].registers_clusters) == 1
 
-    assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[0], ICluster)
+    assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[0], Cluster)
     assert device.peripherals[0].registers_clusters[0].registers_clusters[0].name == "SameA"
     assert len(device.peripherals[0].registers_clusters[0].registers_clusters[0].registers_clusters) == 1
 
     registera = device.peripherals[0].registers_clusters[0].registers_clusters[0].registers_clusters[0]
-    assert isinstance(registera, IRegister)
+    assert isinstance(registera, Register)
     assert registera.name == "SameA"
     assert registera.address_offset == 0x0
     assert registera.size == 32
@@ -143,7 +143,7 @@ def test_test_setup_2(path: str, get_test_svd_file_content: Callable[[str], byte
     assert registera.fields[0].lsb == 0
     assert registera.fields[0].msb == 0
 
-    assert isinstance(device.peripherals[0].registers_clusters[1], IRegister)
+    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
     assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[1].size == 32
@@ -181,7 +181,7 @@ def test_test_setup_3(path: str, get_test_svd_file_content: Callable[[str], byte
     assert device.peripherals[1].name == "PeripheralA"
     assert len(device.peripherals[1].registers_clusters) == 2
 
-    assert isinstance(device.peripherals[1].registers_clusters[1], IRegister)
+    assert isinstance(device.peripherals[1].registers_clusters[1], Register)
     assert device.peripherals[1].registers_clusters[1].name == "RegisterB"
     assert len(device.peripherals[1].registers_clusters[1].fields) == 1
     assert device.peripherals[1].registers_clusters[1].fields[0].name == "FieldB"
@@ -215,7 +215,7 @@ def test_test_setup_4(path: str, get_test_svd_file_content: Callable[[str], byte
     assert device.peripherals[1].name == "PeripheralA"
     assert len(device.peripherals[1].registers_clusters) == 3
 
-    assert isinstance(device.peripherals[1].registers_clusters[2], IRegister)
+    assert isinstance(device.peripherals[1].registers_clusters[2], Register)
     assert device.peripherals[1].registers_clusters[2].name == "RegisterB"
     assert len(device.peripherals[1].registers_clusters[2].fields) == 1
     assert device.peripherals[1].registers_clusters[2].fields[0].name == "FieldB"
@@ -245,7 +245,7 @@ def test_test_setup_5(path: str, get_test_svd_file_content: Callable[[str], byte
 
     assert device.peripherals[1].name == "PeripheralB"
     assert len(device.peripherals[1].registers_clusters) == 1
-    assert isinstance(device.peripherals[1].registers_clusters[0], IRegister)
+    assert isinstance(device.peripherals[1].registers_clusters[0], Register)
     assert device.peripherals[1].registers_clusters[0].name == "RegisterA"
     assert len(device.peripherals[1].registers_clusters[0].fields) == 1
     assert device.peripherals[1].registers_clusters[0].fields[0].name == "FieldA"
@@ -287,14 +287,14 @@ def test_test_setup_6(path: str, get_test_svd_file_content: Callable[[str], byte
 
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 1
-    assert isinstance(device.peripherals[0].registers_clusters[0], ICluster)
+    assert isinstance(device.peripherals[0].registers_clusters[0], Cluster)
     assert device.peripherals[0].registers_clusters[0].name == "ClusterA"
     assert len(device.peripherals[0].registers_clusters[0].registers_clusters) == 1
-    assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[0], ICluster)
+    assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[0], Cluster)
     assert device.peripherals[0].registers_clusters[0].registers_clusters[0].name == "ClusterB"
     assert len(device.peripherals[0].registers_clusters[0].registers_clusters[0].registers_clusters) == 1
     registera = device.peripherals[0].registers_clusters[0].registers_clusters[0].registers_clusters[0]
-    assert isinstance(registera, IRegister)
+    assert isinstance(registera, Register)
     assert registera.name == "RegisterA"
     assert len(registera.fields) == 2
 
@@ -345,7 +345,7 @@ def test_test_setup_7(path: str, get_test_svd_file_content: Callable[[str], byte
 
     assert device.peripherals[2].name == "PeripheralC"
     assert len(device.peripherals[2].registers_clusters) == 1
-    assert isinstance(device.peripherals[2].registers_clusters[0], IRegister)
+    assert isinstance(device.peripherals[2].registers_clusters[0], Register)
     assert device.peripherals[2].registers_clusters[0].name == "RegisterA"
 
     if "_RegisterX" in path:
