@@ -1,6 +1,7 @@
 import pytest
 
 from svdsuite.process import _ProcessDimension, ProcessException  # pyright: ignore[reportPrivateUsage]
+from svdsuite.model.parse import SVDCluster
 
 
 class TestDimUtils:
@@ -40,9 +41,9 @@ class TestDimUtils:
     @pytest.mark.parametrize(
         "name,dim,dim_index,expected",
         [
-            ("GPIO_%s_CTRL", 2, "A, B", ["GPIO_A_CTRL", "GPIO_B_CTRL"]),
-            ("IRQ%s", 4, "3-6", ["IRQ3", "IRQ4", "IRQ5", "IRQ6"]),
-            ("MyArray[%s]", 3, None, ["MyArray0", "MyArray1", "MyArray2"]),
+            ("GPIO_%s_CTRL", 2, "A, B", (["GPIO_A_CTRL", "GPIO_B_CTRL"], [None, None])),
+            ("IRQ%s", 4, "3-6", (["IRQ3", "IRQ4", "IRQ5", "IRQ6"], [None, None, None, None])),
+            ("MyArray[%s]", 3, None, (["MyArray0", "MyArray1", "MyArray2"], [None, None, None])),
             pytest.param("MyArray[%s]", 0, None, None, marks=pytest.mark.xfail(strict=True, raises=ProcessException)),
         ],
     )
@@ -51,10 +52,10 @@ class TestDimUtils:
         name: str,
         dim: None | int,
         dim_index: None | str,
-        expected: None | list[str],
+        expected: None | tuple[list[str], list[None | str]],
     ):
         result = _ProcessDimension().process_dim(  # pylint: disable=W0212 #pyright: ignore[reportPrivateUsage]
-            name, dim, dim_index
+            name, None, dim, dim_index, type(SVDCluster)
         )
 
         assert result == expected
