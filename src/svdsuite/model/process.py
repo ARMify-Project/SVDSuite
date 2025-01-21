@@ -122,15 +122,11 @@ class EnumeratedValueContainer:
 
 
 @dataclass
-class IField:
-    dim: None | int
-    dim_increment: None | int
-    dim_index: None | str
+class FieldBase:
     name: str
     description: None | str
     lsb: int
     msb: int
-    access: None | AccessType
     modified_write_values: ModifiedWriteValuesType
     write_constraint: None | WriteConstraint
     read_action: None | ReadActionType
@@ -139,20 +135,27 @@ class IField:
 
 
 @dataclass
-class IRegister:
+class IField(FieldBase):
     dim: None | int
     dim_increment: None | int
     dim_index: None | str
-    size: None | int
     access: None | AccessType
-    protection: None | ProtectionStringType
-    reset_value: None | int
-    reset_mask: None | int
+
+
+@dataclass
+class Field(FieldBase):
+    access: AccessType
+    bit_offset: int
+    bit_width: int
+    bit_range: tuple[int, int]
+
+
+@dataclass
+class RegisterBase:
     name: str
     display_name: None | str
     description: None | str
     alternate_group: None | str
-    alternate_register: None | str
     address_offset: int
     data_type: None | DataTypeType
     modified_write_values: ModifiedWriteValuesType
@@ -163,7 +166,7 @@ class IRegister:
 
 
 @dataclass
-class ICluster:
+class IRegister(RegisterBase):
     dim: None | int
     dim_increment: None | int
     dim_index: None | str
@@ -172,17 +175,31 @@ class ICluster:
     protection: None | ProtectionStringType
     reset_value: None | int
     reset_mask: None | int
+    alternate_register: None | str
+
+
+@dataclass
+class Register(RegisterBase):
+    size: int
+    access: AccessType
+    protection: ProtectionStringType
+    reset_value: int
+    reset_mask: int
+    alternate_register: "None | Register"
+    base_address: int
+
+
+@dataclass
+class ClusterBase:
     name: str
     description: None | str
-    alternate_cluster: None | str
     header_struct_name: None | str
     address_offset: int
-    registers_clusters: list["IRegister | ICluster"]
     parsed: SVDCluster
 
 
 @dataclass
-class IPeripheral:
+class ICluster(ClusterBase):
     dim: None | int
     dim_increment: None | int
     dim_index: None | str
@@ -191,10 +208,29 @@ class IPeripheral:
     protection: None | ProtectionStringType
     reset_value: None | int
     reset_mask: None | int
+    alternate_cluster: None | str
+    registers_clusters: list["IRegister | ICluster"]
+
+
+@dataclass
+class Cluster(ClusterBase):
+    size: int
+    access: AccessType
+    protection: ProtectionStringType
+    reset_value: int
+    reset_mask: int
+    alternate_cluster: "None | Cluster"
+    registers_clusters: list["Register | Cluster"]
+    base_address: int
+    end_address: int
+    cluster_size: int
+
+
+@dataclass
+class PeripheralBase:
     name: str
     version: None | str
     description: None | str
-    alternate_peripheral: None | str
     group_name: None | str
     prepend_to_name: None | str
     append_to_name: None | str
@@ -203,8 +239,36 @@ class IPeripheral:
     base_address: int
     address_blocks: list[AddressBlock]
     interrupts: list[Interrupt]
-    registers_clusters: list[IRegister | ICluster]
     parsed: SVDPeripheral
+
+
+@dataclass
+class IPeripheral(PeripheralBase):
+    dim: None | int
+    dim_increment: None | int
+    dim_index: None | str
+    size: None | int
+    access: None | AccessType
+    protection: None | ProtectionStringType
+    reset_value: None | int
+    reset_mask: None | int
+    alternate_peripheral: None | str
+    registers_clusters: list[IRegister | ICluster]
+
+
+@dataclass
+class Peripheral(PeripheralBase):
+    size: int
+    access: AccessType
+    protection: ProtectionStringType
+    reset_value: int
+    reset_mask: int
+    alternate_peripheral: "None | Peripheral"
+    end_address_specified: int  # calculated from address block(s) specification
+    end_address_effective: int  # derived by summing the defined registers and clusters
+    peripheral_size_specified: int  # calculated from address block(s) specification
+    peripheral_size_effective: int  # derived by summing the defined registers and clusters
+    registers_clusters: list[Register | Cluster]
 
 
 @dataclass
