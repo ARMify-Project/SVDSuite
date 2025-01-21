@@ -214,6 +214,13 @@ class Device:
     protection: None | ProtectionStringType
     reset_value: None | int
     reset_mask: None | int
+@dataclass(kw_only=True)
+class Device:
+    size: int
+    access: AccessType
+    protection: ProtectionStringType
+    reset_value: int
+    reset_mask: int
     vendor: None | str
     vendor_id: None | str
     name: str

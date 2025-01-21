@@ -76,11 +76,11 @@ class Process:
         return process_parse_convert_device(self._processed_device)
 
     def _process_device(self, parsed_device: SVDDevice) -> Device:
-        size = or_if_none(parsed_device.size, 32)
-        access = or_if_none(parsed_device.access, AccessType.READ_WRITE)
-        protection = or_if_none(parsed_device.protection, ProtectionStringType.ANY)
-        reset_value = or_if_none(parsed_device.reset_value, 0)
-        reset_mask = or_if_none(parsed_device.reset_mask, 0xFFFFFFFF)
+        size = parsed_device.size if parsed_device.size is not None else 32
+        access = parsed_device.access if parsed_device.access is not None else AccessType.READ_WRITE
+        protection = parsed_device.protection if parsed_device.protection is not None else ProtectionStringType.ANY
+        reset_value = parsed_device.reset_value if parsed_device.reset_value is not None else 0
+        reset_mask = parsed_device.reset_mask if parsed_device.reset_mask is not None else 0xFFFFFFFF
 
         try:
             peripherals = self._resolver.resolve_peripherals(parsed_device)
