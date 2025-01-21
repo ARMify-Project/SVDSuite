@@ -31,7 +31,7 @@ from svdsuite.model.parse import (
 )
 
 
-@dataclass(kw_only=True)
+@dataclass
 class SauRegion:
     enabled: bool
     name: None | str
@@ -41,7 +41,7 @@ class SauRegion:
     parsed: SVDSauRegion
 
 
-@dataclass(kw_only=True)
+@dataclass
 class SauRegionsConfig:
     enabled: bool
     protection_when_disabled: ProtectionStringType
@@ -49,7 +49,7 @@ class SauRegionsConfig:
     parsed: SVDSauRegionsConfig
 
 
-@dataclass(kw_only=True)
+@dataclass
 class CPU:
     name: CPUNameType
     revision: str
@@ -71,7 +71,7 @@ class CPU:
     parsed: SVDCPU
 
 
-@dataclass(kw_only=True)
+@dataclass
 class EnumeratedValue:
     name: str
     description: None | str
@@ -80,14 +80,14 @@ class EnumeratedValue:
     parsed: SVDEnumeratedValue
 
 
-@dataclass(kw_only=True)
+@dataclass
 class DimArrayIndex:
     header_enum_name: None | str
     enumerated_values: list[EnumeratedValue]
     parsed: SVDDimArrayIndex
 
 
-@dataclass(kw_only=True)
+@dataclass
 class AddressBlock:
     offset: int
     size: int
@@ -96,7 +96,7 @@ class AddressBlock:
     parsed: SVDAddressBlock
 
 
-@dataclass(kw_only=True)
+@dataclass
 class Interrupt:
     name: str
     description: None | str
@@ -104,7 +104,7 @@ class Interrupt:
     parsed: SVDInterrupt
 
 
-@dataclass(kw_only=True)
+@dataclass
 class WriteConstraint:
     write_as_read: None | bool
     use_enumerated_values: None | bool
@@ -112,7 +112,7 @@ class WriteConstraint:
     parsed: SVDWriteConstraint
 
 
-@dataclass(kw_only=True)
+@dataclass
 class EnumeratedValueContainer:
     name: None | str
     header_enum_name: None | str
@@ -121,7 +121,7 @@ class EnumeratedValueContainer:
     parsed: SVDEnumeratedValueContainer
 
 
-@dataclass(kw_only=True)
+@dataclass
 class IField:
     dim: None | int
     dim_increment: None | int
@@ -138,7 +138,7 @@ class IField:
     parsed: SVDField
 
 
-@dataclass(kw_only=True)
+@dataclass
 class IRegister:
     dim: None | int
     dim_increment: None | int
@@ -162,7 +162,7 @@ class IRegister:
     parsed: SVDRegister
 
 
-@dataclass(kw_only=True)
+@dataclass
 class ICluster:
     dim: None | int
     dim_increment: None | int
@@ -181,7 +181,7 @@ class ICluster:
     parsed: SVDCluster
 
 
-@dataclass(kw_only=True)
+@dataclass
 class IPeripheral:
     dim: None | int
     dim_increment: None | int
@@ -207,7 +207,7 @@ class IPeripheral:
     parsed: SVDPeripheral
 
 
-@dataclass(kw_only=True)
+@dataclass
 class Device:
     size: int
     access: AccessType
