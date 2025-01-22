@@ -332,9 +332,7 @@ class Resolver:
 
     def _finalize_peripheral_node(self, peripheral_node: ElementNode, children_nodes: list[ElementNode]):
         peripheral = cast(IPeripheral, peripheral_node.processed)
-        peripheral.size = self._calculate_size(
-            peripheral_node, [cast(IRegister | ICluster, node.processed) for node in children_nodes]
-        )
+        peripheral.size = self._calculate_size(children_nodes)
 
         registers_clusters = [
             cast(IRegister | ICluster, node.processed) for node in children_nodes if not node.is_dim_template
@@ -344,9 +342,7 @@ class Resolver:
 
     def _finalize_cluster_node(self, cluster_node: ElementNode, children_nodes: list[ElementNode]):
         cluster = cast(ICluster, cluster_node.processed)
-        cluster.size = self._calculate_size(
-            cluster_node, [cast(IRegister | ICluster, node.processed) for node in children_nodes]
-        )
+        cluster.size = self._calculate_size(children_nodes)
 
         registers_clusters = [
             cast(IRegister | ICluster, node.processed) for node in children_nodes if not node.is_dim_template
@@ -385,17 +381,23 @@ class Resolver:
 
         field.enumerated_value_containers = containers
 
-    def _calculate_size(self, node: ElementNode, child_elements: list[IRegister | ICluster]) -> int:
-        element = cast(IRegister | ICluster, node.processed)
+    def _calculate_size(self, child_nodes: list[ElementNode]) -> int:
+        max_size = -1
+        for node in child_nodes:
+            if not isinstance(node.processed, IRegister | ICluster):
+                raise ResolveException("node is not of type Register or Cluster")
 
-        own_size = element.size if element.size is not None else -1
+            child_size = node.processed.size
+            if child_size is None:
+                child_size = self._get_parent_size_recursively(node)
 
-        inherited_size = self._get_parent_size_recursively(node)
+            if child_size > max_size:
+                max_size = child_size
 
-        child_sizes = [child.size for child in child_elements if child.size is not None]
-        max_child_size = max(child_sizes) if child_sizes else -1
+        if max_size == -1:
+            raise ResolveException("max_size can't be -1")
 
-        return max(own_size, inherited_size, max_child_size)
+        return max_size
 
     def _get_parent_size_recursively(self, node: ElementNode) -> int:
         parents = self._resolver_graph.get_element_parents(node)

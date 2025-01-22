@@ -419,9 +419,12 @@ class Process:
             if match:
                 field_msb, field_lsb = map(int, match.groups())
             else:
-                raise ValueError(f"Invalid bit range format: {parsed_field.bit_range}")
+                raise ProcessException(f"Invalid bit range format: {parsed_field.bit_range}")
         else:
             raise ProcessException("Field must have bit_offset and bit_width, lsb and msb, or bit_range")
+
+        if field_msb < field_lsb:
+            raise ProcessException(f"Field MSB must be greater than or equal to LSB")
 
         return (field_msb, field_lsb)
 

@@ -210,7 +210,7 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     assert device.peripherals[0].registers_clusters[1].size == 16
     assert device.peripherals[0].registers_clusters[1].access == AccessType.WRITE_ONCE
     assert device.peripherals[0].registers_clusters[1].protection == ProtectionStringType.NON_SECURE
-    assert device.peripherals[0].registers_clusters[1].reset_value == 0xF0F0F0F0
+    assert device.peripherals[0].registers_clusters[1].reset_value == 0x0F0F0F0F
     assert device.peripherals[0].registers_clusters[1].reset_mask == 0xABABABAB
     assert len(device.peripherals[0].registers_clusters[1].registers_clusters) == 2
     assert isinstance(device.peripherals[0].registers_clusters[1].registers_clusters[0], Register)
@@ -221,7 +221,7 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     assert (
         device.peripherals[0].registers_clusters[1].registers_clusters[0].protection == ProtectionStringType.NON_SECURE
     )
-    assert device.peripherals[0].registers_clusters[1].registers_clusters[0].reset_value == 0xF0F0F0F0
+    assert device.peripherals[0].registers_clusters[1].registers_clusters[0].reset_value == 0x0F0F0F0F
     assert device.peripherals[0].registers_clusters[1].registers_clusters[0].reset_mask == 0xABABABAB
 
     assert isinstance(device.peripherals[0].registers_clusters[1].registers_clusters[1], Register)
@@ -232,7 +232,7 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     assert (
         device.peripherals[0].registers_clusters[1].registers_clusters[1].protection == ProtectionStringType.NON_SECURE
     )
-    assert device.peripherals[0].registers_clusters[1].registers_clusters[1].reset_value == 0xF0F0F0F0
+    assert device.peripherals[0].registers_clusters[1].registers_clusters[1].reset_value == 0x0F0F0F0F
     assert device.peripherals[0].registers_clusters[1].registers_clusters[1].reset_mask == 0xABABABAB
 
 
@@ -496,11 +496,12 @@ def test_size_inheritance(get_processed_device_from_testfile: Callable[[str], De
 
     assert len(device.peripherals) == 1
     assert len(device.peripherals[0].registers_clusters) == 2
+    assert device.peripherals[0].size == 32
 
     assert isinstance(device.peripherals[0].registers_clusters[1], Cluster)
     assert device.peripherals[0].registers_clusters[1].name == "ClusterB"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x1
-    assert device.peripherals[0].registers_clusters[1].size == 8
+    assert device.peripherals[0].registers_clusters[1].size == 32
     assert len(device.peripherals[0].registers_clusters[1].registers_clusters) == 2
 
     assert isinstance(device.peripherals[0].registers_clusters[1].registers_clusters[0], Register)
@@ -511,4 +512,4 @@ def test_size_inheritance(get_processed_device_from_testfile: Callable[[str], De
     assert isinstance(device.peripherals[0].registers_clusters[1].registers_clusters[1], Register)
     assert device.peripherals[0].registers_clusters[1].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].registers_clusters[1].address_offset == 0x1
-    assert device.peripherals[0].registers_clusters[1].registers_clusters[1].size == 8
+    assert device.peripherals[0].registers_clusters[1].registers_clusters[1].size == 32
