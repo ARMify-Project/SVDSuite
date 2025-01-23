@@ -45,7 +45,6 @@ class Resolver:
         self._resolver_graph = ResolverGraph()
         self._root_node_: None | ElementNode = None
         self._logger = ResolverLogger(resolver_logging_file_path, self._resolver_graph)
-        self._are_repeating_steps_finished_after_current_round = False
         self._peripherals_resolved: None | list[IPeripheral] = None
 
     @property
@@ -60,11 +59,14 @@ class Resolver:
 
         self._logger.log_repeating_steps_start()
         previous_nodes: list[ElementNode] = []
-        while not self._are_repeating_steps_finished_after_current_round:
+        while True:
             self._logger.log_round_start()
 
             self._resolve_placeholders()
             processable_nodes = self._get_topological_sorted_processable_nodes()
+
+            if not processable_nodes:
+                break
 
             if processable_nodes == previous_nodes:
                 self._logger.log_loop_detected()
@@ -223,15 +225,7 @@ class Resolver:
             for child in self._resolver_graph.get_element_childrens(node):
                 stack.append(child)
 
-        self._update_are_repeating_steps_finished_after_current_round(result)
         return result
-
-    def _update_are_repeating_steps_finished_after_current_round(self, getting_processed_nodes: list[ElementNode]):
-        unprocessed_nodes = self._resolver_graph.get_unprocessed_nodes()
-        unprocessed_after_round_nodes = unprocessed_nodes - set(getting_processed_nodes)
-
-        if not unprocessed_after_round_nodes:
-            self._are_repeating_steps_finished_after_current_round = True
 
     def _resolve_placeholder(self, placeholder: PlaceholderNode):
         if not self._is_placeholder_parent_resolved(placeholder):
