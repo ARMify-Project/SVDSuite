@@ -751,3 +751,20 @@ def test_field_wrong_string_in_bitrangepattern(get_processed_device_from_testfil
 )
 def test_field_illogical_values_in_bitrangepattern(get_processed_device_from_testfile: Callable[[str], Device]):
     get_processed_device_from_testfile("logical_integrity/field_illogical_values_in_bitrangepattern.svd")
+
+
+def test_ignore_empty_peripheral(get_processed_device_from_testfile: Callable[[str], Device]):
+    with pytest.warns(ProcessWarning):
+        device = get_processed_device_from_testfile("logical_integrity/ignore_empty_peripheral.svd")
+
+    assert len(device.peripherals) == 2
+
+    assert device.peripherals[0].name == "PeripheralA"
+    assert len(device.peripherals[0].registers_clusters) == 1
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
+
+    assert device.peripherals[1].name == "PeripheralC"
+    assert len(device.peripherals[1].registers_clusters) == 1
+    assert isinstance(device.peripherals[1].registers_clusters[0], Register)
+    assert device.peripherals[1].registers_clusters[0].name == "RegisterA"
