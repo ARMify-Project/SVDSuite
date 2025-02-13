@@ -31,5 +31,21 @@
         </register>
       </registers>
     </peripheral>
+    <peripheral>
+      <name>PeripheralB</name>
+      <baseAddress>0x40002000</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x1000</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>RegisterA</name>
+          <addressOffset>0x0</addressOffset>
+          <size>32</size>
+        </register>
+      </registers>
+    </peripheral>
   </peripherals>
 </device>

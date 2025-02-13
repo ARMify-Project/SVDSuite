@@ -301,13 +301,13 @@ def test_register_size_bit_width(get_processed_device_from_testfile: Callable[[s
         device = get_processed_device_from_testfile("logical_integrity/register_size_bit_width.svd")
 
     assert len(device.peripherals) == 1
-    assert device.peripherals[0].name == "PeripheralA"
-    assert device.peripherals[0].base_address == 0x40001000
+    assert device.peripherals[0].name == "PeripheralB"
+    assert device.peripherals[0].base_address == 0x40002000
     assert len(device.peripherals[0].registers_clusters) == 1
     assert isinstance(device.peripherals[0].registers_clusters[0], Register)
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
-    assert device.peripherals[0].registers_clusters[0].size == 23
+    assert device.peripherals[0].registers_clusters[0].size == 32
 
 
 # TODO add @pytest.mark.filterwarnings("error::ProcessWarning") and for many other tests
