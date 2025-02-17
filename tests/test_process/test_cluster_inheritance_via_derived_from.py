@@ -206,7 +206,7 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     assert device.peripherals[0].registers_clusters[1].description == "ClusterB description"
     assert device.peripherals[0].registers_clusters[1].alternate_cluster == "ClusterD"
     assert device.peripherals[0].registers_clusters[1].header_struct_name == "HeaderStructName2"
-    assert device.peripherals[0].registers_clusters[1].address_offset == 0x1
+    assert device.peripherals[0].registers_clusters[1].address_offset == 0x2
     assert device.peripherals[0].registers_clusters[1].size == 16
     assert device.peripherals[0].registers_clusters[1].access == AccessType.WRITE_ONCE
     assert device.peripherals[0].registers_clusters[1].protection == ProtectionStringType.NON_SECURE

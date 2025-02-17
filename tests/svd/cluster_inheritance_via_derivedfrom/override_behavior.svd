@@ -45,7 +45,7 @@
           <description>ClusterB description</description>
           <alternateCluster>ClusterD</alternateCluster>
           <headerStructName>HeaderStructName2</headerStructName>
-          <addressOffset>0x1</addressOffset>
+          <addressOffset>0x2</addressOffset>
           <size>16</size>
           <access>writeOnce</access>
           <protection>n</protection>
