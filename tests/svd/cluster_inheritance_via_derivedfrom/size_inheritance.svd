@@ -37,10 +37,10 @@
         <cluster derivedFrom="ClusterA">
           <name>ClusterB</name>
           <description>ClusterB description</description>
-          <addressOffset>0x1</addressOffset>
+          <addressOffset>0x4</addressOffset>
           <register>
             <name>RegisterB</name>
-            <addressOffset>0x1</addressOffset>
+            <addressOffset>0x4</addressOffset>
           </register>
         </cluster>
       </registers>
