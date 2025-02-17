@@ -548,6 +548,8 @@ def _get_alignment(size_bytes: int) -> int:
         return 4
     elif size_bytes == 8:
         return 4
+    elif size_bytes == 16:
+        return 4
     else:
         raise ProcessException(f"Unsupported register size: {size_bytes} bytes")
 
