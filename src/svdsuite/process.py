@@ -41,7 +41,12 @@ from svdsuite.model.process import (
 from svdsuite.util.process_parse_model_convert import process_parse_convert_device
 from svdsuite.model.types import AccessType, ProtectionStringType, CPUNameType, ModifiedWriteValuesType, EnumUsageType
 from svdsuite.resolve.resolver import Resolver
-from svdsuite.resolve.exception import EnumeratedValueContainerException, LoopException, CycleException
+from svdsuite.resolve.exception import (
+    EnumeratedValueContainerException,
+    LoopException,
+    CycleException,
+    UnprocessedNodesException,
+)
 from svdsuite.model.type_alias import ParsedDimablePeripheralTypes, IntermediateDimablePeripheralTypes
 
 
@@ -96,6 +101,8 @@ class Process:
             raise ProcessException("Resolving stucks in a loop") from e
         except CycleException as e:
             raise ProcessException("A circular inheritance was detected during resolving") from e
+        except UnprocessedNodesException as e:
+            raise ProcessException("Some nodes were not processed during resolving") from e
 
         intermediate_device = IDevice(
             size=size,

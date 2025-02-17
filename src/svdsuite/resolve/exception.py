@@ -14,5 +14,9 @@ class CycleException(ResolveException):
     pass
 
 
+class UnprocessedNodesException(ResolveException):
+    pass
+
+
 class ResolverGraphException(Exception):
     pass

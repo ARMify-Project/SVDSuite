@@ -10,6 +10,7 @@ from svdsuite.resolve.exception import (
     EnumeratedValueContainerException,
     LoopException,
     CycleException,
+    UnprocessedNodesException,
 )
 from svdsuite.model.type_alias import (
     IntermediatePeripheralTypes,
@@ -80,6 +81,12 @@ class Resolver:
             self._logger.log_round_end()
 
         self._logger.log_repeating_steps_finished()
+
+        if self._resolver_graph.get_unprocessed_nodes():
+            raise UnprocessedNodesException(
+                f"Not all nodes were processed. Unresolved placeholders: {self._get_unresolved_placeholders_info()}"
+            )
+
         self._finalize_processing()
 
         if self._peripherals_resolved is None:
@@ -107,6 +114,15 @@ class Resolver:
         self._logger.log_processable_elements(topological_sorted_nodes)
 
         return topological_sorted_nodes
+
+    def _get_unresolved_placeholders_info(self) -> str:
+        return ";".join(
+            f"Element: '{node.name}' Level: {node.level}, derive_from_str: {placeholder.derive_path}"
+            for node, placeholder in (
+                (self._resolver_graph.get_placeholder_child(placeholder), placeholder)
+                for placeholder in self._resolver_graph.get_placeholders()
+            )
+        )
 
     def _finalize_processing(self):
         self._resolver_graph.bottom_up_node_traversal(self._finalize_node)
