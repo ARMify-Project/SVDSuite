@@ -1,5 +1,6 @@
 import re
 import itertools
+import warnings
 
 from svdsuite.parse import Parser
 from svdsuite.model.parse import (
@@ -70,7 +71,7 @@ class Process:
         return cls(Parser.from_xml_content(content).get_parsed_device(), resolver_logging_file_path)
 
     def __init__(self, parsed_device: SVDDevice, resolver_logging_file_path: None | str) -> None:
-        resolver_logging_file_path = "/home/fedora/resolver_logging.html"  # TODO remove (debug)
+        # resolver_logging_file_path = "/home/fedora/resolver_logging.html"  # TODO remove (debug)
         self._resolver = Resolver(self, resolver_logging_file_path)
         self._processed_device: Device = self._process_device(parsed_device)
 
@@ -372,7 +373,7 @@ class Process:
                 )
             )
 
-        return address_blocks
+        return sorted(address_blocks, key=lambda ab: ab.offset)
 
     def _process_interrupts(self, parsed_interrupts: list[SVDInterrupt]) -> list[Interrupt]:
         interrupts: list[Interrupt] = []
@@ -424,7 +425,7 @@ class Process:
             raise ProcessException("Field must have bit_offset and bit_width, lsb and msb, or bit_range")
 
         if field_msb < field_lsb:
-            raise ProcessException(f"Field MSB must be greater than or equal to LSB")
+            raise ProcessException("Field MSB must be greater than or equal to LSB")
 
         return (field_msb, field_lsb)
 
@@ -524,82 +525,223 @@ class _InheritProperties:
             field.write_constraint = or_if_none(field.write_constraint, write_constraint)
 
 
+def _to_byte(value: int) -> int:
+    if value % 8 != 0:
+        raise ProcessException("Value must be a multiple of 8")
+
+    return value // 8
+
+
+def _get_alignment(size_bytes: int) -> int:
+    if size_bytes == 1:
+        return 1
+    elif size_bytes == 2:
+        return 2
+    elif size_bytes == 4:
+        return 4
+    elif size_bytes == 8:
+        return 4
+    else:
+        raise ProcessException(f"Unsupported register size: {size_bytes} bytes")
+
+
 class _ValidateAndFinalize:
     def validate_and_finalize(self, i_device: IDevice) -> Device:
+        # Finalize the device by processing its peripherals.
         peripherals = self._validate_and_finalize_peripherals(i_device.peripherals)
-
         return Device.from_intermediate_device(i_device, peripherals)
 
     def _validate_and_finalize_peripherals(self, i_peripherals: list[IPeripheral]) -> list[Peripheral]:
-        names: set[str] = set()
-        peripherals: list[Peripheral] = []
+        seen_names: set[str] = set()
+        finalized_peripherals: list[Peripheral] = []
         for i_peripheral in i_peripherals:
-            self._validate_name(names, i_peripheral)
+            # Finalize registers/clusters for the peripheral.
+            registers_clusters = self._validate_and_finalize_registers_clusters(
+                i_peripheral.registers_clusters, i_peripheral.base_address
+            )
+
+            # Skip peripheral if no registers/clusters are defined.
+            if not registers_clusters:
+                warnings.warn(
+                    f"Peripheral '{i_peripheral.name}' has no registers or clusters. Peripheral will be ignored!",
+                    ProcessWarning,
+                )
+                continue
+
+            # Warn if base address is not 4-byte aligned.
+            if i_peripheral.base_address % 4 != 0:
+                warnings.warn(
+                    f"Peripheral '{i_peripheral.name}' base address is not 4 byte aligned",
+                    ProcessWarning,
+                )
+
+            # Check if specified size is a multiple of 8.
+            if i_peripheral.size is not None and i_peripheral.size % 8 != 0:
+                warnings.warn(
+                    f"Peripheral '{i_peripheral.name}' size must be a multiple of 8. Peripheral will be ignored!",
+                    ProcessWarning,
+                )
+                continue
+
+            self._validate_name(seen_names, i_peripheral)
+
+            if not i_peripheral.address_blocks:
+                raise ProcessException(f"Peripheral '{i_peripheral.name}' has no address blocks")
+
+            # Check that address blocks do not overlap.
+            for idx in range(1, len(i_peripheral.address_blocks)):
+                prev = i_peripheral.address_blocks[idx - 1]
+                curr = i_peripheral.address_blocks[idx]
+                if curr.offset < prev.offset + prev.size:
+                    raise ProcessException(
+                        f"Address block with offset '{curr.offset}' overlaps "
+                        f"with address block with offset '{prev.offset}'"
+                    )
+
+            # Calculate specified end address and peripheral size from address blocks.
+            end_address_specified = max(
+                i_peripheral.base_address + ab.offset + ab.size - 1 for ab in i_peripheral.address_blocks
+            )
+            peripheral_size_specified = sum(block.size for block in i_peripheral.address_blocks)
+
+            # Calculate effective end address from registers/clusters.
+            end_address_effective = max(
+                i_peripheral.base_address
+                + r.address_offset
+                + (_to_byte(r.size) if isinstance(r, Register) else r.cluster_size)
+                - 1
+                for r in registers_clusters
+            )
+            peripheral_size_effective = end_address_effective - i_peripheral.base_address + 1
 
             peripheral = Peripheral.from_intermediate_peripheral(
                 i_peripheral=i_peripheral,
-                registers_clusters=self._validate_and_finalize_registers_clusters(i_peripheral.registers_clusters),
-                end_address_effective=0,  # TODO
-                end_address_specified=0,  # TODO
-                peripheral_size_effective=0,  # TODO
-                peripheral_size_specified=0,  # TODO
+                registers_clusters=registers_clusters,
+                end_address_effective=end_address_effective,
+                end_address_specified=end_address_specified,
+                peripheral_size_effective=peripheral_size_effective,
+                peripheral_size_specified=peripheral_size_specified,
             )
+            finalized_peripherals.append(peripheral)
 
-            peripherals.append(peripheral)
+        finalized_peripherals.sort(key=lambda p: (p.base_address, p.name))
 
-        return sorted(peripherals, key=lambda p: (p.base_address, p.name))
+        # Warn if peripheral addresses overlap.
+        for idx in range(1, len(finalized_peripherals)):
+            prev = finalized_peripherals[idx - 1]
+            curr = finalized_peripherals[idx]
+            if curr.base_address <= prev.end_address_effective:
+                warnings.warn(
+                    f"Effective peripheral address overlap: '{curr.name}' overlaps with '{prev.name}'",
+                    ProcessWarning,
+                )
+            if curr.base_address <= prev.end_address_specified:
+                warnings.warn(
+                    f"Specified peripheral address overlap in address_blocks: '{curr.name}' "
+                    f"overlaps with '{prev.name}'",
+                    ProcessWarning,
+                )
+        return finalized_peripherals
 
     def _validate_and_finalize_registers_clusters(
-        self, i_registers_clusters: list[ICluster | IRegister]
+        self, i_registers_clusters: list[ICluster | IRegister], parent_base: int
     ) -> list[Cluster | Register]:
-        names: set[str] = set()
-        registers_clusters: list[Cluster | Register] = []
-        for i_register_cluster in i_registers_clusters:
-            self._validate_name(names, i_register_cluster)
+        seen_names: set[str] = set()
+        finalized_rc: list[Cluster | Register] = []
+        for i_reg_cluster in i_registers_clusters:
+            self._validate_name(seen_names, i_reg_cluster)
+            effective_base = parent_base + i_reg_cluster.address_offset
 
-            if isinstance(i_register_cluster, ICluster):
+            # Check if size is not None
+            if i_reg_cluster.size is None:
+                raise ProcessException(f"Register/Cluster '{i_reg_cluster.name}' size is None")
+
+            # Ensure size is a multiple of 8 if specified.
+            if i_reg_cluster.size % 8 != 0:
+                warnings.warn(
+                    f"Register/Cluster '{i_reg_cluster.name}' size must be a multiple of 8. "
+                    "Register/Cluster will be ignored!",
+                    ProcessWarning,
+                )
+                continue
+
+            # Check that the offset is size aligned.
+            alignment = _get_alignment(_to_byte(i_reg_cluster.size))
+            if i_reg_cluster.address_offset % alignment != 0:
+                raise ProcessException(
+                    f"Register/Cluster '{i_reg_cluster.name}' offset ({hex(i_reg_cluster.address_offset)}) "
+                    f"is not properly aligned to {alignment} bytes."
+                )
+
+            if isinstance(i_reg_cluster, ICluster):
+                children = self._validate_and_finalize_registers_clusters(
+                    i_reg_cluster.registers_clusters, effective_base
+                )
+                if children:
+                    cluster_effective_end = max(
+                        child.base_address
+                        + (_to_byte(child.size) if isinstance(child, Register) else child.cluster_size)
+                        - 1
+                        for child in children
+                    )
+                else:
+                    cluster_effective_end = effective_base + i_reg_cluster.size - 1
+
+                cluster_size = cluster_effective_end - effective_base + 1
                 cluster = Cluster.from_intermediate_cluster(
-                    i_cluster=i_register_cluster,
-                    registers_clusters=self._validate_and_finalize_registers_clusters(
-                        i_register_cluster.registers_clusters
-                    ),
-                    base_address=0,  # TODO
-                    end_address=0,  # TODO
-                    cluster_size=0,  # TODO
+                    i_cluster=i_reg_cluster,
+                    registers_clusters=children,
+                    base_address=effective_base,
+                    end_address=cluster_effective_end,
+                    cluster_size=cluster_size,
                 )
+                finalized_rc.append(cluster)
 
-                registers_clusters.append(cluster)
-            elif isinstance(i_register_cluster, IRegister):  # pyright: ignore[reportUnnecessaryIsInstance]
+            elif isinstance(i_reg_cluster, IRegister):  # pyright: ignore[reportUnnecessaryIsInstance]
                 register = Register.from_intermediate_register(
-                    i_register=i_register_cluster,
-                    fields=self._validate_and_finalize_fields(i_register_cluster.fields),
-                    base_address=0,  # TODO
+                    i_register=i_reg_cluster,
+                    fields=self._validate_and_finalize_fields(i_reg_cluster.fields, i_reg_cluster.size),
+                    base_address=effective_base,
                 )
-
-                registers_clusters.append(register)
+                finalized_rc.append(register)
             else:
                 raise ProcessException("Unknown register cluster type")
+        finalized_rc.sort(key=lambda m: (m.base_address, m.name))
 
-        # return sorted(registers_clusters, key=lambda rc: (rc.base_address, rc.name))
-        return sorted(registers_clusters, key=lambda rc: (rc.address_offset, rc.name))  # TODO remove
+        # Warn if registers/clusters overlap.
+        for idx in range(1, len(finalized_rc)):
+            prev = finalized_rc[idx - 1]
+            prev_end = (
+                prev.base_address + (_to_byte(prev.size) if isinstance(prev, Register) else prev.cluster_size) - 1
+            )
+            curr = finalized_rc[idx]
+            if curr.base_address <= prev_end:
+                warnings.warn(f"Register/cluster '{curr.name}' overlaps with '{prev.name}'", ProcessWarning)
+        return finalized_rc
 
-    def _validate_and_finalize_fields(self, i_fields: list[IField]) -> list[Field]:
-        names: set[str] = set()
+    def _validate_and_finalize_fields(self, i_fields: list[IField], reg_size: int) -> list[Field]:
+        seen_names: set[str] = set()
         fields: list[Field] = []
         for i_field in i_fields:
-            self._validate_name(names, i_field)
+            self._validate_name(seen_names, i_field)
+            fields.append(Field.from_intermediate_field(i_field))
+        fields.sort(key=lambda f: f.lsb)
 
-            field = Field.from_intermediate_field(i_field)
+        for idx, field in enumerate(fields):
+            if field.msb >= reg_size:
+                warnings.warn(
+                    f"Field '{field.name}' msb {field.msb} exceeds register size limit of {reg_size} bits",
+                    ProcessWarning,
+                )
+            if idx > 0 and field.lsb <= fields[idx - 1].msb:
+                raise ProcessException(f"Field '{field.name}' overlaps with '{fields[idx - 1].name}'")
 
-            fields.append(field)
+        return fields
 
-        return sorted(fields, key=lambda f: (f.lsb, f.name))
-
-    def _validate_name(self, names: set[str], element: IntermediateDimablePeripheralTypes):
-        if element.name in names:
+    def _validate_name(self, seen_names: set[str], element: IntermediateDimablePeripheralTypes) -> None:
+        if element.name in seen_names:
             raise ProcessException(f"Duplicate element name found: {element.name}")
-
-        names.add(element.name)
+        seen_names.add(element.name)
 
 
 class _ProcessDimension:
