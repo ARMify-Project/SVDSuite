@@ -636,20 +636,23 @@ class _ValidateAndFinalize:
         finalized_peripherals.sort(key=lambda p: (p.base_address, p.name))
 
         # Warn if peripheral addresses overlap.
-        for idx in range(1, len(finalized_peripherals)):
-            prev = finalized_peripherals[idx - 1]
-            curr = finalized_peripherals[idx]
-            if curr.base_address <= prev.end_address_effective:
+        max_end_effective = -1
+        max_end_specified = -1
+        for periph in finalized_peripherals:
+            if periph.base_address <= max_end_effective:
                 warnings.warn(
-                    f"Effective peripheral address overlap: '{curr.name}' overlaps with '{prev.name}'",
+                    f"Effective peripheral address overlap: '{periph.name}' overlaps with a previous peripheral",
                     ProcessWarning,
                 )
-            if curr.base_address <= prev.end_address_specified:
+            if periph.base_address <= max_end_specified:
                 warnings.warn(
-                    f"Specified peripheral address overlap in address_blocks: '{curr.name}' "
-                    f"overlaps with '{prev.name}'",
+                    f"Specified peripheral address overlap in address_blocks: '{periph.name}' overlaps with a previous peripheral",
                     ProcessWarning,
                 )
+            # Update the running maximums
+            max_end_effective = max(max_end_effective, periph.end_address_effective)
+            max_end_specified = max(max_end_specified, periph.end_address_specified)
+
         return finalized_peripherals
 
     def _validate_and_finalize_registers_clusters(
@@ -718,14 +721,14 @@ class _ValidateAndFinalize:
         finalized_rc.sort(key=lambda m: (m.base_address, m.name))
 
         # Warn if registers/clusters overlap.
-        for idx in range(1, len(finalized_rc)):
-            prev = finalized_rc[idx - 1]
-            prev_end = (
-                prev.base_address + (_to_byte(prev.size) if isinstance(prev, Register) else prev.cluster_size) - 1
-            )
-            curr = finalized_rc[idx]
-            if curr.base_address <= prev_end:
-                warnings.warn(f"Register/cluster '{curr.name}' overlaps with '{prev.name}'", ProcessWarning)
+        max_rc_end = -1
+        for rc in finalized_rc:
+            # Compute current element’s end address based on its type.
+            current_end = rc.base_address + (_to_byte(rc.size) if isinstance(rc, Register) else rc.cluster_size) - 1
+            if rc.base_address <= max_rc_end:
+                warnings.warn(f"Register/cluster '{rc.name}' overlaps with a previous register/cluster", ProcessWarning)
+            max_rc_end = max(max_rc_end, current_end)
+
         return finalized_rc
 
     def _validate_and_finalize_fields(self, i_fields: list[IField], reg_size: int) -> list[Field]:
