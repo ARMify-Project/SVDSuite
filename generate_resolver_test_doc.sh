@@ -52,8 +52,9 @@ while IFS= read -r -d '' file; do
 # ${base}
 
 ::: ${module}
-    rendering:
-      show_source: false
+    options:
+      show_source: true
+      show_signature: false
 EOF
     NAV="${NAV}\n  - ${base}: ${base}.md"
 done < <(find tests/test_process -type f -name "test_*.py" ! -name "*conftest*" -print0)
@@ -74,7 +75,79 @@ plugins:
           setup_commands:
             - import sys
             - sys.path.insert(0, ".")
+hooks:
+  - mkdocs_hook.py
 $(echo -e "$NAV")
+EOF
+
+# Create a minimal mkdocs_hook.py file to handle the mkdocstrings plugin.
+cat <<EOF > mkdocs_hook.py
+import os
+import re
+from bs4 import BeautifulSoup
+from pygments import highlight
+from pygments.lexers import XmlLexer
+from pygments.formatters import HtmlFormatter
+
+
+class CodeHtmlFormatter(HtmlFormatter):
+
+    def wrap(self, source):
+        return self._wrap_code(source)
+
+    def _wrap_code(self, source):
+        yield 0, "<pre><code>"
+        for i, t in source:
+            yield i, t
+        yield 0, "</code></pre>"
+
+
+def on_page_content(html: str, **_) -> str:
+    soup = BeautifulSoup(html, "html.parser")
+    pattern = re.compile(
+        r'(?:get_processed_device_from_testfile\(\s*"([^"]+\.svd)"\s*\)|file_name\s*=\s*"([^"]+\.svd)")'
+    )
+    formatter = CodeHtmlFormatter(linenos="table", nobackground=True)
+
+    # Find all <details> elements with class "quote"
+    for details in soup.find_all("details", class_="quote"):
+        text = details.get_text()
+        match = pattern.search(text)
+        if match:
+            # Choose the captured group
+            svd_rel_path = match.group(1) if match.group(1) is not None else match.group(2)
+            # Compute full SVD file path (assuming SVD files live in "tests/svd")
+            full_svd_path = os.path.join("tests/svd", svd_rel_path)
+            if os.path.exists(full_svd_path):
+                with open(full_svd_path, "r", encoding="utf-8") as f:
+                    svd_content = f.read()
+
+                highlighted = highlight(svd_content, XmlLexer(), formatter)
+
+                # Parse the entire highlighted output as HTML.
+                highlighted_fragment = BeautifulSoup(highlighted, "html.parser")
+
+                # Create a new <details> element for the SVD file.
+                new_details = soup.new_tag("details", **{"class": "quote"})
+
+                # Create summary with "SVD file: " text and the svd_rel_path wrapped in a <code> element.
+                summary = soup.new_tag("summary")
+                summary.append("SVD file: ")
+                code_tag = soup.new_tag("code")
+                code_tag.string = svd_rel_path
+                summary.append(code_tag)
+                new_details.append(summary)
+
+                # Append the entire highlighted_fragment, preserving all inner elements.
+                new_details.append(highlighted_fragment)
+
+                # Insert the new details element immediately after the current details element.
+                details.insert_after(new_details)
+            else:
+                print(f"Warning: SVD file not found at {full_svd_path}")
+
+    # Return the modified HTML as a string.
+    return str(soup)
 EOF
 
 # Build the documentation with mkdocs.
@@ -82,6 +155,6 @@ EOF
 mkdocs build --site-dir resolver_test_doc
 
 # Remove mkdocs.yml and docs folder.
-rm -rf mkdocs.yml docs
+rm -rf mkdocs.yml mkdocs_hook.py docs
 
 echo "MkDocs documentation generated in the 'resolver_test_doc' folder."
