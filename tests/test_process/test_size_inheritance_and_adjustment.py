@@ -107,15 +107,15 @@ def test_simple_size_adjustment(get_processed_device_from_testfile: Callable[[st
     it should inherit the size from the peripheral level, while `RegisterB` has an explicit size defined.
     `svdconv` processes this file correctly, applying size adjustments based on the highest level's explicit
     settings.
-    
-    Expected Outcome: The parser should correctly adjust the sizes, processing the SVD file without errors. The
+
+    **Expected Outcome:** The parser should correctly adjust the sizes, processing the SVD file without errors. The
     peripheral should have two registers, `RegisterA` and `RegisterB`. The overall size of the peripheral should
     be set to 64 bits, which overrides the explicit 16-bit setting due to size adjustments. `RegisterA`, with no
     explicit size set, should inherit the peripheral's size and be 64 bits. `RegisterB`, which explicitly has a
     size of 64 bits, should retain this size. The parser should process the inheritance and size adjustment
     algorithm correctly, reflecting the behavior of `svdconv`.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("size_inheritance_and_adjustment/simple_size_adjustment.svd")
@@ -143,8 +143,8 @@ def test_complex_size_adjustment(get_processed_device_from_testfile: Callable[[s
     inheritance rules and adjustments at different levels. In this case, the sizes within the clusters and
     registers are adjusted, either explicitly or inherited, following a recursive calculation of the maximum
     effective size.
-    
-    Expected Outcome: The parser should process the file without errors, correctly inheriting and adjusting sizes
+
+    **Expected Outcome:** The parser should process the file without errors, correctly inheriting and adjusting sizes
     across clusters and registers. ClusterA, which has no explicit size defined, should have its size adjusted to
     64 bits, inherited from ClusterB and its child registers. Both `RegisterA` and `RegisterB` within ClusterA
     should also have effective sizes of 64 bits. Similarly, ClusterB should inherit a size of 64 bits from its
@@ -154,8 +154,8 @@ def test_complex_size_adjustment(get_processed_device_from_testfile: Callable[[s
     no size is set for PeripheralA. Finally, PeripheralA should adjust its size to 64 bits, reflecting the largest
     size found in its children. The parser should handle all these size adjustments and inheritance steps
     accurately, consistent with the behavior of `svdconv`.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("size_inheritance_and_adjustment/complex_size_adjustment.svd")
@@ -228,15 +228,15 @@ def test_overlap_due_to_size_adjustment(get_processed_device_from_testfile: Call
     adjusted to 64 bits due to the size of `RegisterB`. `RegisterA`, which does not have an explicit size,
     inherits its size from the peripheral, leading to an overlap with `RegisterB`, which has an address offset of
     0x4.
-    
-    Expected Outcome: The parser should process the file and issue a warning about the overlap caused by the size
+
+    **Expected Outcome:** The parser should process the file and issue a warning about the overlap caused by the size
     adjustment. `PeripheralA` should have a final size of 64 bits, overriding the original size of 32 bits due to
     the size of `RegisterB`. `RegisterA`, which does not have a size defined, should inherit the size from
     `PeripheralA` and have a final size of 64 bits. This leads to an overlap with `RegisterB`, whose size is
     explicitly set to 64 bits, starting at address offset 0x4. The parser should handle this case by adjusting the
     sizes correctly and raising a warning due to the overlap, similar to the behavior in `svdconv`.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     with pytest.warns(ProcessWarning):

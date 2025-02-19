@@ -29,12 +29,12 @@ def test_backward_reference_same_scope(get_processed_device_from_testfile: Calla
     `derivedFrom`. Consequently, attempting to derive in this way results in an error, as `svdconv` correctly
     detects. A robust parser implementation should behave similarly, rejecting this configuration and raising an
     appropriate error to ensure compliance with the standard's technical limitations.
-    
-    Expected Outcome: The parser should raise an error, indicating that two `enumeratedValues` containers cannot
+
+    **Expected Outcome:** The parser should raise an error, indicating that two `enumeratedValues` containers cannot
     coexist within the same field unless they have distinct `read` and `write` usage types. This behavior matches
     that of `svdconv`.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("enum_copy_via_derivedfrom/backward_reference_same_scope.svd")
@@ -46,12 +46,12 @@ def test_backward_reference_different_scope(get_processed_device_from_testfile: 
     SVD file, `FieldA` defines an enumerated values container named `FieldAEnumeratedValue`, while `FieldB` copies
     this container using the `derivedFrom` attribute. This allows `FieldB` to reuse the same set of enumerated
     values as `FieldA`, ensuring consistency across fields.
-    
-    Expected Outcome: The parser should successfully process the SVD file, allowing `FieldB` to copy the
+
+    **Expected Outcome:** The parser should successfully process the SVD file, allowing `FieldB` to copy the
     enumerated values from `FieldA`'s `FieldAEnumeratedValue`. The enumerated values should be identical for both
     `FieldA` and `FieldB`, and no conflicts or errors should arise during parsing.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("enum_copy_via_derivedfrom/backward_reference_different_scope.svd")
@@ -107,13 +107,13 @@ def test_forward_reference_different_scope(get_processed_device_from_testfile: C
     values container named `FieldAEnumeratedValue`, while `FieldA` copies this container using the `derivedFrom`
     attribute. This allows `FieldA` to reuse the same set of enumerated values as `FieldB`, ensuring consistency
     across fields.
-    
-    Expected Outcome: The parser should successfully process the SVD file, allowing `FieldA` to copy the
+
+    **Expected Outcome:** The parser should successfully process the SVD file, allowing `FieldA` to copy the
     enumerated values from `FieldB`'s `FieldAEnumeratedValue`. The enumerated values should be identical for both
     `FieldA` and `FieldB`, and no conflicts or errors should arise during parsing. `svdconv` can't parse the file
     since it does not support forward references.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     device = get_processed_device_from_testfile("enum_copy_via_derivedfrom/forward_reference_different_scope.svd")

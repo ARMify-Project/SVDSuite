@@ -19,14 +19,14 @@ def test_simple_inheritance_backward_reference_same_scope(get_processed_device_f
     its properties from `ClusterA`. The test verifies that `ClusterB` correctly inherits the settings of
     `ClusterA`, such as address offsets and register definitions, without requiring explicit redefinition. This
     allows for efficient reuse of configurations and consistency across similar clusters.
-    
-    Expected Outcome: The parser should successfully interpret the SVD file, recognizing `ClusterB` as a
+
+    **Expected Outcome:** The parser should successfully interpret the SVD file, recognizing `ClusterB` as a
     derivative of `ClusterA`. `ClusterB` should inherit all properties from `ClusterA`, including the register
     within it. The test should confirm that the derived cluster behaves exactly as if it were fully defined on its
     own, ensuring no loss of information or incorrect settings. The implementation must accurately parse and apply
     the inheritance mechanism, consistent with how `svdconv` processes the file.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile(
@@ -65,14 +65,14 @@ def test_simple_inheritance_forward_reference_same_scope(get_processed_device_fr
     that the parser can correctly resolve forward references, allowing `ClusterA` to derive from `ClusterB`, even
     though `ClusterB` is defined later in the SVD file. `svdconv` cannot handle forward references within the same
     scope, leading to an error, but a robust parser should be capable of managing such cases without issues.
-    
-    Expected Outcome: The parser should successfully process the SVD file, correctly handling the forward
+
+    **Expected Outcome:** The parser should successfully process the SVD file, correctly handling the forward
     reference so that `ClusterA` inherits all properties from `ClusterB`. This includes the register defined
     within the base cluster. The test should confirm that `ClusterA` behaves as though it were explicitly defined
     with the same settings as `ClusterB`, ensuring consistency and accurate inheritance. The implementation must
     be able to parse these forward references efficiently, overcoming the limitations observed in `svdconv`.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     device = get_processed_device_from_testfile(
@@ -113,15 +113,15 @@ def test_simple_inheritance_backward_reference_different_scope(
     peripheral inherits its properties. This setup is intended to confirm that cross-scope inheritance works
     correctly, ensuring that the derived cluster can access and copy properties from a base cluster, even when
     they reside within different scopes or peripherals.
-    
-    Expected Outcome: The parser should accurately resolve the `derivedFrom` reference across different scopes,
+
+    **Expected Outcome:** The parser should accurately resolve the `derivedFrom` reference across different scopes,
     allowing `ClusterA` in the second peripheral to inherit all the properties from `ClusterA` in the first
     peripheral. This includes settings such as size and any registers defined within the original cluster. The
     implementation should validate that properties are correctly inherited and applied to the derived cluster,
     ensuring consistency and accuracy. The parser's ability to handle this cross-scope inheritance efficiently is
     crucial, as `svdconv` processes these scenarios without issues.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile(
@@ -165,14 +165,14 @@ def test_simple_inheritance_forward_reference_different_scope(
     appears later and exists within a different peripheral scope. `svdconv` cannot handle forward references
     within a different scope, leading to an error, but a robust parser should be capable of managing such cases
     without issues.
-    
-    Expected Outcome: The parser should successfully handle the `derivedFrom` reference, allowing `ClusterA` in
+
+    **Expected Outcome:** The parser should successfully handle the `derivedFrom` reference, allowing `ClusterA` in
     the first peripheral to inherit from `ClusterA` defined in the second peripheral. It must accurately inherit
     all properties, including sizes and register definitions. The parser should ensure that cross-scope and
     forward references do not disrupt the resolution of inherited properties, maintaining consistent and accurate
     behavior.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     device = get_processed_device_from_testfile(
@@ -212,8 +212,8 @@ def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], D
     The goal is to ensure that the parser accurately handles the propagation of these values, maintaining
     consistency across derived clusters without requiring them to redefine attributes that are already specified
     in their base counterparts.
-    
-    Expected Outcome: The parser should successfully interpret the `derivedFrom` attribute and apply all the
+
+    **Expected Outcome:** The parser should successfully interpret the `derivedFrom` attribute and apply all the
     relevant properties from the base cluster to the derived cluster. For instance, `ClusterB` should inherit
     settings from `ClusterA`, including but not limited to description, access permissions, protection level, and
     reset values. The properties like `alternateCluster`, `headerStructName`, and size should also be correctly
@@ -222,8 +222,8 @@ def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], D
     inherited attributes, demonstrating the parser’s ability to resolve and apply complex inheritance patterns.
     This behavior mirrors the expected output of `svdconv`, which processes these scenarios correctly, reinforcing
     the parser's robustness in dealing with value inheritance via `derivedFrom`.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("cluster_inheritance_via_derivedfrom/value_inheritance.svd")
@@ -271,8 +271,8 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     This test case examines how derived clusters can override specific properties inherited from their base
     cluster using the `derivedFrom` attribute. When a derived cluster redefines certain attributes, it should
     effectively replace the values that would otherwise be inherited.
-    
-    Expected Outcome: The parser should correctly handle scenarios where a derived cluster overrides properties
+
+    **Expected Outcome:** The parser should correctly handle scenarios where a derived cluster overrides properties
     inherited from a base cluster. For `ClusterA`, all attributes should match those defined in the base
     configuration, reflecting typical inheritance. However, `ClusterB`, while still inheriting from a similar
     base, should show overridden properties where explicitly defined. Attributes such as `alternate_cluster`,
@@ -282,8 +282,8 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     ensuring that `ClusterB` retains a consistent but modified behavior compared to `ClusterA`. This behavior
     mirrors what `svdconv` processes, ensuring that derived configurations accurately apply the specified
     overrides without causing any inconsistencies.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("cluster_inheritance_via_derivedfrom/override_behavior.svd")
@@ -361,16 +361,16 @@ def test_multiple_inheritance_backward_reference(get_processed_device_from_testf
     `ClusterB` and `ClusterC`. This setup tests the parser's ability to correctly inherit properties across
     multiple layers of derivation, ensuring that each derived cluster appropriately inherits all relevant
     attributes from its predecessors.
-    
-    Expected Outcome: The parser should successfully process the multiple inheritance chain, maintaining the
+
+    **Expected Outcome:** The parser should successfully process the multiple inheritance chain, maintaining the
     correct properties throughout each level. `ClusterA` should be recognized as the base, with all its defined
     properties and a register named `RegisterA`. `ClusterB`, derived from `ClusterA`, should inherit all the base
     attributes and the `RegisterA` structure, located at a new offset, demonstrating that it has extended the
     base. Finally, `ClusterC` should inherit the cumulative properties from both `ClusterA` and `ClusterB`,
     further verifying the parser's capability to manage complex inheritance patterns across multiple derived
     entities. This behavior should mirror `svdconv`'s processing and ensure consistent, hierarchical inheritance.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile(
@@ -420,8 +420,8 @@ def test_multiple_inheritance_forward_reference(get_processed_device_from_testfi
     from `ClusterC` as the base, with `ClusterB` inheriting from it, and `ClusterA` inheriting from `ClusterB`.
     This configuration challenges the parser to correctly resolve references even when the base entity appears
     later in the file.
-    
-    Expected Outcome: The parser should be able to process the forward references correctly, linking each derived
+
+    **Expected Outcome:** The parser should be able to process the forward references correctly, linking each derived
     cluster back to its base cluster despite the forward order of definition. `ClusterA`, appearing first in the
     SVD file, should correctly inherit properties from `ClusterB`, which in turn inherits from `ClusterC`. Each
     derived cluster should maintain the properties defined in its base and apply them consistently. `ClusterA`,
@@ -429,8 +429,8 @@ def test_multiple_inheritance_forward_reference(get_processed_device_from_testfi
     through the chain, confirming that the parser effectively handles forward inheritance. This contrasts with
     `svdconv`, which fails to process such forward references, making robust support for this feature a valuable
     enhancement in the parser.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     device = get_processed_device_from_testfile(
@@ -480,13 +480,13 @@ def test_circular_inheritance(get_processed_device_from_testfile: Callable[[str]
     which is logically invalid and should not be allowed. Proper parsing should identify this circular reference
     and raise an error, preventing further processing. Circular inheritance could lead to infinite loops or
     unresolved dependencies if not handled correctly.
-    
-    Expected Outcome: The parser should detect the circular inheritance between `ClusterA` and `ClusterB` and
+
+    **Expected Outcome:** The parser should detect the circular inheritance between `ClusterA` and `ClusterB` and
     raise an appropriate error, indicating that circular references are not supported. Unlike some other complex
     inheritance scenarios, where forward or backward references might be resolved by proper linkage, circular
     inheritance represents a fundamental logical flaw.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("cluster_inheritance_via_derivedfrom/circular_inheritance.svd")
@@ -503,15 +503,15 @@ def test_nested_cluster_inheritance(get_processed_device_from_testfile: Callable
     from their parent clusters in this manner. Attempting to resolve such inheritance could lead to recursive
     loops or other unintended behavior, making it essential for the parser to detect and handle this case
     appropriately.
-    
-    Expected Outcome: The parser should raise an error upon encountering this nested inheritance, clearly
+
+    **Expected Outcome:** The parser should raise an error upon encountering this nested inheritance, clearly
     indicating that this pattern is not supported. The parser's robustness should ensure that it does not attempt
     to process the inheritance further, as doing so could result in a circular dependency or recursive issues.
     Unlike `svdconv`, which crashes with a segmentation fault (SigSegV) when encountering such a configuration, a
     well-implemented parser should gracefully handle this invalid setup by issuing a clear error message,
     preventing further processing of the file.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("cluster_inheritance_via_derivedfrom/nested_cluster_inheritance.svd")
@@ -531,13 +531,13 @@ def test_register_inheritance_same_name(get_processed_device_from_testfile: Call
     this results in a conflict where `RegisterA` is effectively defined twice within `ClusterB`. While `svdconv`
     correctly identifies this issue and raises an error, a robust parser must also handle this case by issuing an
     appropriate error message.
-    
-    Expected Outcome: The parser should raise an error indicating that `RegisterA` is already defined in
+
+    **Expected Outcome:** The parser should raise an error indicating that `RegisterA` is already defined in
     `ClusterA`, and therefore cannot be inherited by `ClusterB` because it has the same name. The error should be
     explicit, preventing further processing and avoiding any ambiguity around the derived cluster's register
     structure.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("cluster_inheritance_via_derivedfrom/register_inheritance_same_name.svd")
@@ -555,13 +555,13 @@ def test_register_inheritance_same_address(get_processed_device_from_testfile: C
     0474194f865c74/tools/svdconv/SVDModel/src/SvdPeripheral.cpp#L721). For a parser designed to work with both new
     and old SVD files, it is recommended to allow registers with the same addresses but issue a warning to the
     user.
-    
-    Expected Outcome: The parser should process the file successfully but must issue a warning indicating that
+
+    **Expected Outcome:** The parser should process the file successfully but must issue a warning indicating that
     `RegisterB` is assigned the same address as `RegisterA` due to inheritance. The warning should explicitly
     state the address conflict, providing enough information for developers to recognize and address any
     unintended overlaps in the register configurations.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     with pytest.warns(ProcessWarning):
@@ -609,14 +609,14 @@ def test_register_inheritance_overlap_address(get_processed_device_from_testfile
     files should similarly allow registers with overlapping addresses while issuing a clear warning to alert users
     of the overlap. This approach ensures that backward compatibility is maintained, but it also makes developers
     aware of potential problems that could arise from such configurations.
-    
-    Expected Outcome: The parser should successfully process the SVD file, but it must issue a warning indicating
+
+    **Expected Outcome:** The parser should successfully process the SVD file, but it must issue a warning indicating
     that `RegisterB` overlaps with `RegisterA` within `ClusterB`. The warning should clearly state the address
     conflict and provide details about the overlapping addresses and sizes. This behavior mirrors that of
     `svdconv`, ensuring that the parser maintains backward compatibility while still alerting developers to
     potential configuration issues that could cause unexpected behavior in hardware interaction.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     with pytest.warns(ProcessWarning):
@@ -660,12 +660,12 @@ def test_same_address(get_processed_device_from_testfile: Callable[[str], Device
     recognize this behavior and for compatibility, newer versions issue a warning instead of an error to inform
     users of the potential address conflict. A modern parser should replicate this behavior by allowing the SVD
     file to be processed but should issue a warning to alert the user of the address overlap.
-    
-    Expected Outcome: The parser should successfully parse the SVD file, identifying both `ClusterA` and
+
+    **Expected Outcome:** The parser should successfully parse the SVD file, identifying both `ClusterA` and
     `ClusterB` at the same address offset (`0x0`). However, a warning should be issued to inform the user that
     `ClusterB` shares the same address as `ClusterA`, indicating a potential conflict.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     with pytest.warns(ProcessWarning):
@@ -704,15 +704,15 @@ def test_cluster_overlap(get_processed_device_from_testfile: Callable[[str], Dev
     clusters. While `svdconv` processes this file without detecting the overlap, this behavior appears to be a
     bug. Ideally, a parser should issue a warning to alert the user of the overlap, ensuring that any unintended
     address conflicts are recognized and can be corrected.
-    
-    Expected Outcome: The parser should correctly process the SVD file, identifying both `ClusterA` and `ClusterB`
+
+    **Expected Outcome:** The parser should correctly process the SVD file, identifying both `ClusterA` and `ClusterB`
     while issuing a warning to indicate that their address ranges overlap. Specifically, `ClusterA` occupies the
     range starting at `0x0` for `16` bytes, and `ClusterB` starts at `0x1` with a size of `8`, causing the two
     clusters to share overlapping addresses. The warning should provide clear information about which clusters are
     affected and the nature of the overlap, giving users the necessary insights to address any configuration
     issues in their SVD definitions.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     with pytest.warns(ProcessWarning):
@@ -749,16 +749,16 @@ def test_alternate_cluster(get_processed_device_from_testfile: Callable[[str], D
     and is marked as an alternate cluster by specifying `ClusterA` in the `<alternateCluster>` tag. Both clusters
     share the same address offset (`0x0`), implying that they can be used interchangeably, depending on the use
     case.
-    
-    Expected Outcome: The parser should correctly interpret `ClusterB` as an alternate of `ClusterA`. It should
+
+    **Expected Outcome:** The parser should correctly interpret `ClusterB` as an alternate of `ClusterA`. It should
     process the `derivedFrom` attribute, allowing `ClusterB` to inherit all characteristics from `ClusterA`.
     Additionally, the parser should recognize the `<alternateCluster>` tag and confirm that `ClusterB` is
     designated as an alternate of `ClusterA`. Both clusters should be treated as residing at the same address
     offset (`0x0`), with `ClusterA` having no `alternateCluster` association, while `ClusterB` explicitly
     references `ClusterA`. The parsing process should proceed without errors or warnings, consistent with the
     behavior of `svdconv`, which correctly handles this feature.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("cluster_inheritance_via_derivedfrom/alternate_cluster.svd")
@@ -796,12 +796,12 @@ def test_derive_from_self(get_processed_device_from_testfile: Callable[[str], De
     configuration. In the SVD file, `ClusterA` is defined with a `derivedFrom` attribute pointing to its own name.
     Such configurations should be detected as erroneous because a cluster cannot logically inherit properties from
     itself. This kind of self-reference should lead to a parsing error.
-    
-    Expected Outcome: The parser should detect the invalid self-referential inheritance and raise an error,
+
+    **Expected Outcome:** The parser should detect the invalid self-referential inheritance and raise an error,
     indicating that a cluster cannot derive from itself. This ensures that the system handles such configurations
     correctly by stopping further processing and informing the user of the issue.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("cluster_inheritance_via_derivedfrom/derive_from_self.svd")
@@ -814,12 +814,12 @@ def test_size_inheritance(get_processed_device_from_testfile: Callable[[str], De
     for `RegisterA`. Since `RegisterB` in `ClusterB` does not define its own `size`, it should inherit the `size`
     attribute from `RegisterA` in `ClusterA`. This test confirms that the parser correctly applies this
     inheritance, ensuring consistent `size` values across derived elements without explicit redefinition.
-    
-    Expected Outcome: The parser should successfully inherit the `size` attribute for `RegisterB`, resulting in
+
+    **Expected Outcome:** The parser should successfully inherit the `size` attribute for `RegisterB`, resulting in
     `ClusterB` and its registers having the same size attributes as the elements in `ClusterA`. Specifically,
     `RegisterB` in `ClusterB` should inherit a `size` of 8.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("cluster_inheritance_via_derivedfrom/size_inheritance.svd")

@@ -22,15 +22,15 @@ def test_simple_read_write(get_processed_device_from_testfile: Callable[[str], D
     values, each with a unique description. The enumerated values allow for a human-readable interpretation of the
     bitfield content. The parser must accurately interpret and process these enumerations, ensuring the values are
     correctly mapped to their corresponding descriptions.
-    
-    Expected Outcome: The parser should successfully process the enumerated values for the field within the
+
+    **Expected Outcome:** The parser should successfully process the enumerated values for the field within the
     register. It should recognize the container name as "FieldAEnumeratedValue" and categorize it for both read
     and write access. The container should contain four enumerated values, each associated with the binary values
     `0b00`, `0b01`, `0b10`, and `0b11`, with their respective descriptions. The parser should not mark any of
     these values as default. The entire structure should be parsed without any errors, matching the expected
     behavior of `svdconv`.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("enumerated_values/simple_read_write.svd")
@@ -80,15 +80,15 @@ def test_three_containers(get_processed_device_from_testfile: Callable[[str], De
     The SVD file used in this test case deliberately includes three `<enumeratedValues>` containers, which exceeds
     the allowable configuration. This setup aims to verify that the parser correctly identifies and rejects the
     improper use of multiple enumerated value containers.
-    
-    Expected Outcome: The parser should raise an error due to the presence of three `<enumeratedValues>`
+
+    **Expected Outcome:** The parser should raise an error due to the presence of three `<enumeratedValues>`
     containers in the SVD file. It must recognize that more than two containers are not permitted, regardless of
     the usage attributes specified. This behavior aligns with the CMSIS-SVD standard, which allows a maximum of
     two separate containers (one for read and one for write) or a single combined container for both. Since
     `svdconv` does not support more than two containers, a compliant parser implementation should similarly
     enforce this restriction, triggering an error in this scenario.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("enumerated_values/three_containers.svd")
@@ -101,13 +101,13 @@ def test_default_usage(get_processed_device_from_testfile: Callable[[str], Devic
     values should default to `read-write`. This behavior simplifies the definition of common cases where
     enumerated values apply equally to both read and write operations. The SVD file for this test omits the
     `<usage>` attribute to confirm that the parser correctly defaults to `read-write`.
-    
-    Expected Outcome: The parser should process the SVD file without errors, correctly interpreting the
+
+    **Expected Outcome:** The parser should process the SVD file without errors, correctly interpreting the
     `<enumeratedValues>` container as having a `read-write` usage. It must ensure that, even when the `<usage>`
     attribute is missing, the enumerated values are accessible for both reading and writing. This behavior aligns
     with `svdconv`, which also treats the absence of a `<usage>` attribute as equivalent to `read-write`.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("enumerated_values/default_usage.svd")
@@ -153,14 +153,14 @@ def test_usage_combinations(
     "FIRST_INPUT" and "SECOND_INPUT" with combinations of `read`, `write`, and `read-write`, allowing multiple
     test cases to be evaluated. The goal is to verify if the parser correctly accepts valid combinations, like
     `read` and `write`, and raises errors for invalid ones, such as `read-write` paired with any other value.
-    
-    Expected Outcome: The parser should process the file successfully when the `<usage>` combination is `read` and
+
+    **Expected Outcome:** The parser should process the file successfully when the `<usage>` combination is `read` and
     `write`, creating two valid `<enumeratedValues>` containers with the expected `read` and `write` usage types.
     However, it must raise errors for all other combinations, including `write` and `write`, `read` and `read`, or
     any instance where `read-write` is used in conjunction with another `<usage>`. This behavior is consistent
     with `svdconv`, which also restricts most of these combinations, except for the `read` and `write` pairing.
-    
-    Processable with svdconv: the combination of read and write yes, other combinations not
+
+    **Processable with svdconv:** the combination of read and write yes, other combinations not
     """
 
     file_name = "enumerated_values/usage_combinations.svd"
@@ -204,13 +204,13 @@ def test_value_name_already_defined_same_container(get_processed_device_from_tes
     While `svdconv` allows this scenario, issuing only a warning and subsequently ignoring the duplicated
     enumerated value, a robust parser implementation should enforce stricter validation by treating it as an
     error. This approach prevents potential misconfigurations or ambiguity in interpreting register values.
-    
-    Expected Outcome: The parser should detect the duplicate enumerated value names within the same container and
+
+    **Expected Outcome:** The parser should detect the duplicate enumerated value names within the same container and
     raise an error, signaling a violation of the expected naming conventions. Unlike `svdconv`, which issues a
     warning and ignores the conflicting value, the parser should ensure strict enforcement of unique enumerated
     value names within each container, thereby promoting consistency and clear register definitions.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     get_processed_device_from_testfile("enumerated_values/value_name_already_defined_same_container.svd")
@@ -228,13 +228,13 @@ def test_value_already_defined(get_processed_device_from_testfile: Callable[[str
     mapping between a numerical value and its descriptive name to avoid ambiguity. `svdconv` does allow such
     duplicate definitions but issues a warning, and ignores the value. However, a parser implementation should
     enforce stricter rules by treating these duplicate value definitions as an error.
-    
-    Expected Outcome: The parser should identify the duplicate values within the `<enumeratedValues>` container
+
+    **Expected Outcome:** The parser should identify the duplicate values within the `<enumeratedValues>` container
     and raise an error, indicating that multiple enumerations cannot share the same underlying value. Unlike
     `svdconv`, which warns and ignores the value, the parser must enforce uniqueness for each value definition
     within the container to ensure clarity and prevent conflicting interpretations of register settings.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     get_processed_device_from_testfile("enumerated_values/value_already_defined.svd")
@@ -254,14 +254,14 @@ def test_multiple_isdefault(get_processed_device_from_testfile: Callable[[str], 
     without issuing a warning or error, this behavior appears to be a bug or oversight. A robust parser
     implementation should flag such cases and enforce a rule that only one enumerated value can be marked as
     `isDefault` within a container.
-    
-    Expected Outcome: The parser should detect when more than one enumerated value is marked as `isDefault` in the
+
+    **Expected Outcome:** The parser should detect when more than one enumerated value is marked as `isDefault` in the
     same container and raise an error to indicate this improper configuration. Unlike `svdconv`, which processes
     the file without complaints, the parser must ensure clarity and consistency by strictly enforcing that only
     one enumerated value can be assigned as the default, preventing potential conflicts or misinterpretations
     during peripheral configuration.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     get_processed_device_from_testfile("enumerated_values/multiple_isdefault.svd")
@@ -274,14 +274,14 @@ def test_do_not_care_handling(get_processed_device_from_testfile: Callable[[str]
     not influence the final behavior of the register. This is commonly represented using wildcards or
     placeholders, and the parser must interpret these "do not care" bits correctly to allow multiple enumerations
     with the same description but different effective values.
-    
-    Expected Outcome: The parser should accurately interpret and process the "do not care" bits, allowing multiple
+
+    **Expected Outcome:** The parser should accurately interpret and process the "do not care" bits, allowing multiple
     enumerated values that represent different numeric values to share the same logical name and description. This
     results in a list of enumerated values that map distinct values, such as `0x00`, `0x04`, `0x01`, `0x05`, and
     so on, under similar names based on their functional grouping. The parser must handle this scenario without
     confusion or conflicts, ensuring that each enumeration is correctly represented in the output.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("enumerated_values/do_not_care_handling.svd")
@@ -344,13 +344,13 @@ def test_do_not_care_and_distinct_values(get_processed_device_from_testfile: Cal
     treated as irrelevant, while other values must be distinctly recognized. The parser needs to accurately
     interpret these scenarios, grouping together values that share a logical behavior despite differing in
     specific bit positions, while still uniquely identifying distinct values where necessary.
-    
-    Expected Outcome: The parser should successfully process the test file, correctly handling both "do not care"
+
+    **Expected Outcome:** The parser should successfully process the test file, correctly handling both "do not care"
     bits and distinct values within the same container. Enumerated values that include wildcard or ignored bits
     should be grouped under the same name and description, such as `0x00` and `0x02`, both treated as `0bx0`.
     Meanwhile, fully distinct values like `0x03` should be uniquely recognized as `0b11`.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("enumerated_values/do_not_care_and_distinct_values.svd")
@@ -393,15 +393,15 @@ def test_do_not_care_and_distinct_result_in_same_value(get_processed_device_from
     multiple bit combinations to be interpreted as the same value, but there is also a specific, distinct
     enumerated value defined separately. In such cases, it is essential for the parser to correctly identify and
     handle these overlaps, avoiding unintended duplications.
-    
-    Expected Outcome: The parser should raise an error when encountering this situation. Unlike `svdconv`, which
+
+    **Expected Outcome:** The parser should raise an error when encountering this situation. Unlike `svdconv`, which
     processes the configuration but issues a warning and ignores the second, duplicated value, a robust parser
     implementation should actively prevent this ambiguity by raising an exception. This ensures that no unintended
     behaviors occur due to overlapping definitions, maintaining clarity and consistency in the representation of
     enumerated values. The parser should report the issue clearly, specifying that there is a conflicting value
     already defined within the container.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     get_processed_device_from_testfile("enumerated_values/do_not_care_and_distinct_result_in_same_value.svd")
@@ -415,8 +415,8 @@ def test_default_extension(get_processed_device_from_testfile: Callable[[str], D
     description for all other values that are not explicitly listed. This means a robust parser should extend the
     enumerated values to include all potential values not explicitly defined, using the `isDefault` entry as a
     template.
-    
-    Expected Outcome: The parser should go beyond `svdconv`'s behavior by automatically identifying all values not
+
+    **Expected Outcome:** The parser should go beyond `svdconv`'s behavior by automatically identifying all values not
     covered by explicit `enumeratedValue` entries and adding them to the container using the `isDefault`
     description. For example, if the `isDefault` value is defined with a description like "Description for
     default," the parser should generate new entries for every unlisted possible value, appending them to the
@@ -424,8 +424,8 @@ def test_default_extension(get_processed_device_from_testfile: Callable[[str], D
     explicitly listed, while the values `0`, `1`, and `3` are not. It should then add these values using the
     `isDefault` template, resulting in a complete and exhaustive set of enumerated values, ensuring that any
     unspecified cases are properly accounted for and described, thus enhancing clarity and usability.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("enumerated_values/default_extension.svd")
@@ -471,13 +471,13 @@ def test_isdefault_with_value(get_processed_device_from_testfile: Callable[[str]
     The CMSIS-SVD standard specifies that `enumeratedValue` should contain either `isDefault` or `value`, but not
     both simultaneously. However, `svdconv` does not enforce this rule and will not flag cases where both elements
     are present, potentially leading to ambiguous or unintended configurations.
-    
-    Expected Outcome: A robust parser should detect when an `enumeratedValue` entry incorrectly includes both
+
+    **Expected Outcome:** A robust parser should detect when an `enumeratedValue` entry incorrectly includes both
     `isDefault` and `value` and raise an error, preventing potential misinterpretations. If a field is marked as
     `isDefault`, it should not have an explicitly defined `value`. The parser must ensure strict adherence to this
     rule.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     get_processed_device_from_testfile("enumerated_values/isdefault_with_value.svd")

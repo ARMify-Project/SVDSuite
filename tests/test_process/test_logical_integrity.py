@@ -25,14 +25,14 @@ def test_peripherals_same_names(get_processed_device_from_testfile: Callable[[st
     raise an error when it encounters peripherals with the same name, as this represents a violation of the naming
     rules.
 
-    Expected Outcome: The parser should raise an error indicating that there is a peripheral naming conflict
+    **Expected Outcome:** The parser should raise an error indicating that there is a peripheral naming conflict
     because both peripherals are named `PeripheralA`. This conflict results in ambiguity, which prevents the
     unique identification of peripherals within the device. As a result, the parser must stop processing the SVD
     file and provide an appropriate error message to inform the user of the issue. This behavior is consistent
     with `svdconv`, which also raises an error for such cases to maintain consistency and avoid incorrect memory
     mappings or register configurations.
 
-    Processable with svdconv: no
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("logical_integrity/peripherals_same_names.svd")
@@ -47,14 +47,14 @@ def test_peripherals_same_address(get_processed_device_from_testfile: Callable[[
     peripherals sharing the same base address without an alternate relationship are not allowed. However, a more
     robust parser implementation should issue a warning and continue processing.
 
-    Expected Outcome: The parser should process the file successfully while issuing a warning to notify the user
+    **Expected Outcome:** The parser should process the file successfully while issuing a warning to notify the user
     that `PeripheralA` and `PeripheralB` share the same base address of `0x40001000` without being designated as
     alternate peripherals. The device should contain two peripherals: `PeripheralA` and `PeripheralB`, both with
     the same base address, and each should have one register. The parser should allow the file to be processed
     while alerting the user about the address conflict, handling the situation gracefully while still providing
     feedback on the potential issue, unlike `svdconv`, which raises an error in this case.
 
-    Processable with svdconv: no
+    **Processable with svdconv:** no
     """
 
     with pytest.warns(ProcessWarning):
@@ -77,7 +77,7 @@ def test_peripherals_overlap_address(get_processed_device_from_testfile: Callabl
     processes such files, it generates a warning due to the overlap. A parser should mimic this behavior by
     allowing the file to be processed while issuing a warning to the user about the overlapping address spaces.
 
-    Expected Outcome: The parser should process the file successfully but issue a warning to inform the user that
+    **Expected Outcome:** The parser should process the file successfully but issue a warning to inform the user that
     `PeripheralA` and `PeripheralB` have overlapping address ranges. Specifically, `PeripheralA` occupies an
     address range starting at `0x40001000`, and `PeripheralB` starts at `0x40001500`, leading to an overlap. The
     device should contain two peripherals: `PeripheralA`, which starts at `0x40001000` and has one register, and
@@ -85,7 +85,7 @@ def test_peripherals_overlap_address(get_processed_device_from_testfile: Callabl
     warning the user, ensuring that the file is processed correctly while making them aware of the potential
     conflict, similar to `svdconv` behavior.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     with pytest.warns(ProcessWarning):
@@ -108,13 +108,13 @@ def test_different_register_names_in_peripheral(get_processed_device_from_testfi
     test is to verify that the parser can accurately differentiate between registers with different names within
     the same peripheral and correctly handle their respective properties.
 
-    Expected Outcome: The parser should successfully process the SVD file, identifying that the peripheral
+    **Expected Outcome:** The parser should successfully process the SVD file, identifying that the peripheral
     contains two registers, `RegisterA` and `RegisterB`. `RegisterA` should have an address offset of `0x0` and a
     size of 32 bits, while `RegisterB` should have an address offset of `0x4` and a size of 32 bits. The parser
     should correctly handle both registers, ensuring that they are uniquely identified within the same peripheral
     without any naming conflicts or errors.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/different_register_names_in_peripheral.svd")
@@ -146,13 +146,13 @@ def test_same_register_names_in_peripheral(get_processed_device_from_testfile: C
     peripheral should have unique names to avoid ambiguity. The behavior of the parser should align with
     `svdconv`, which raises an error in the case of identical register names.
 
-    Expected Outcome: The parser should raise an error indicating a register naming conflict when it encounters
+    **Expected Outcome:** The parser should raise an error indicating a register naming conflict when it encounters
     two registers within the same peripheral sharing the name `RegisterA`. This error ensures that each register
     is uniquely identifiable, preventing ambiguity in the peripheral's register definition. The parser should halt
     processing for this file and notify the user about the conflict, mirroring `svdconv` behavior, which also does
     not allow registers with the same name in the same peripheral.
 
-    Processable with svdconv: no
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("logical_integrity/same_register_names_in_peripheral.svd")
@@ -169,7 +169,7 @@ def test_register_and_cluster_register_same_names_in_peripheral(
     contexts—i.e., one as a standalone register and the other as part of a cluster—without causing naming
     conflicts.
 
-    Expected Outcome: The parser should successfully process the SVD file without errors, correctly identifying
+    **Expected Outcome:** The parser should successfully process the SVD file without errors, correctly identifying
     the register and cluster, even though both contexts contain a register with the same name, `RegisterA`. The
     peripheral should contain two top-level entities: the first is a standalone register named `RegisterA` with an
     address offset of `0x0` and a size of 32 bits. The second is a cluster named `ClusterA` with an address offset
@@ -178,7 +178,7 @@ def test_register_and_cluster_register_same_names_in_peripheral(
     defined—differentiating the standalone register from the register within the cluster—and process the file
     without raising any naming conflict errors.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile(
@@ -218,13 +218,13 @@ def test_register_and_cluster_same_names_in_peripheral(get_processed_device_from
     must have unique identifiers within the same peripheral to avoid ambiguity, the expected behavior is for the
     parser to detect this naming conflict and raise an appropriate error, similar to the behavior of `svdconv`.
 
-    Expected Outcome: The parser should raise an error indicating a naming conflict between the register and the
+    **Expected Outcome:** The parser should raise an error indicating a naming conflict between the register and the
     cluster, both named `RegisterA` within the same peripheral. This conflict makes it impossible to uniquely
     identify the register and cluster entities. The parser should fail processing the file and notify the user of
     the conflict, ensuring that each element within a peripheral has a distinct and unique name, consistent with
     the requirements for logical integrity.
 
-    Processable with svdconv: no
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("logical_integrity/register_and_cluster_same_names_in_peripheral.svd")
@@ -241,7 +241,7 @@ def test_register_and_nested_cluster_same_names_in_peripheral(
     test is intended to verify that the parser can differentiate between entities in different hierarchical levels
     despite having the same name.
 
-    Expected Outcome: The parser should successfully process the SVD file, correctly identifying the relationships
+    **Expected Outcome:** The parser should successfully process the SVD file, correctly identifying the relationships
     and hierarchies of the elements within the peripheral, even when a register and a nested cluster share the
     same name. The peripheral should contain two top-level entities: the first is a standalone register named
     `RegisterA` with an address offset of `0x0` and a size of 32 bits, and the second is a cluster named
@@ -251,7 +251,7 @@ def test_register_and_nested_cluster_same_names_in_peripheral(
     should accurately distinguish between the standalone register and the registers and clusters within the nested
     structure, processing the file without any naming conflicts or errors.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile(
@@ -298,7 +298,7 @@ def test_same_register_addresses_in_peripheral(get_processed_device_from_testfil
     (e.g., when using `dim`). For a parser designed to work with both new and old SVD files, it is recommended to
     allow registers with the same addresses but issue a warning to the user.
 
-    Expected Outcome: The parser should process the file successfully but should issue a warning
+    **Expected Outcome:** The parser should process the file successfully but should issue a warning
     (`ProcessWarning`) indicating that `RegisterA` and `RegisterB` have the same address offset of `0x0`. The
     peripheral should contain two registers, both of which are correctly parsed despite the address overlap. The
     first register, `RegisterA`, should have an address offset of `0x0` and a size of 32 bits, while the second
@@ -306,7 +306,7 @@ def test_same_register_addresses_in_peripheral(get_processed_device_from_testfil
     handle this scenario by allowing the registers with the same addresses but warning the user about the conflict
     to maintain compatibility and awareness of potential issues.
 
-    Processable with svdconv: no
+    **Processable with svdconv:** no
     """
 
     with pytest.warns(ProcessWarning):
@@ -335,14 +335,14 @@ def test_overlap_register_addresses_in_peripheral(get_processed_device_from_test
     overlapping registers usually signal a potential conflict in memory mapping, `svdconv` processes such cases
     with warnings rather than errors to ensure backward compatibility.
 
-    Expected Outcome: The parser should successfully process the file while issuing a warning indicating that
+    **Expected Outcome:** The parser should successfully process the file while issuing a warning indicating that
     `RegisterA` and `RegisterB` have overlapping address spaces. The peripheral should contain two registers:
     `RegisterA` with an address offset of `0x0` and a size of 32 bits, and `RegisterB` with an address offset of
     `0x2` and a size of 16 bits. Despite the overlap in address ranges, the parser should allow the SVD file to be
     processed, maintaining compatibility with `svdconv` behavior, and should alert the user to the potential issue
     through a warning, ensuring awareness of the address overlap without halting the process.
 
-    Processable with svdconv: yes - with warnings
+    **Processable with svdconv:** yes - with warnings
     """
 
     with pytest.warns(ProcessWarning):
@@ -373,7 +373,7 @@ def test_same_register_cluster_addresses_in_peripheral(get_processed_device_from
     to `RegisterA` and `RegisterB` having the same absolute address. For clarity and consistency, a parser
     implementation should warn the user about this address conflict.
 
-    Expected Outcome: The parser should process the file successfully but issue a warning to inform the user that
+    **Expected Outcome:** The parser should process the file successfully but issue a warning to inform the user that
     `RegisterA` and `ClusterA` overlap at address offset `0x0`, and as a result, `RegisterB` within `ClusterA`
     ends up sharing the same absolute address as `RegisterA`. The peripheral should contain two top-level
     entities: `RegisterA` with an address offset of `0x0` and a size of 32 bits, and `ClusterA` also with an
@@ -382,7 +382,7 @@ def test_same_register_cluster_addresses_in_peripheral(get_processed_device_from
     user about these overlapping absolute addresses to ensure that such potential conflicts are clearly
     communicated, despite being allowed during processing for compatibility reasons.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     with pytest.warns(ProcessWarning):
@@ -421,7 +421,7 @@ def test_overlap_register_cluster_addresses_in_peripheral(get_processed_device_f
     condition and issue a warning to the user, as overlapping address ranges can lead to ambiguity in register
     mapping and potential issues during integration.
 
-    Expected Outcome: The parser should successfully process the SVD file while issuing a warning to inform the
+    **Expected Outcome:** The parser should successfully process the SVD file while issuing a warning to inform the
     user that `RegisterA` and `ClusterA` have overlapping address ranges. Specifically, `RegisterA` starts at
     `0x0` with a size of 32 bits, and `ClusterA` starts at `0x2` with a size of 16 bits, which causes part of
     `ClusterA` (including `RegisterB` at offset `0x2`) to overlap with the address range covered by `RegisterA`.
@@ -431,7 +431,7 @@ def test_overlap_register_cluster_addresses_in_peripheral(get_processed_device_f
     address overlap. The parser should handle this situation by issuing a warning, allowing the file to be
     processed while ensuring that users are informed of the potential conflict.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     with pytest.warns(ProcessWarning):
@@ -468,7 +468,7 @@ def test_peripheral_sorting(get_processed_device_from_testfile: Callable[[str], 
     base address, they should be sorted by their names alphabetically. This sorting approach aims to improve
     consistency and ease of navigation while acknowledging the differences from `svdconv`'s default behavior.
 
-    Expected Outcome: The parser should process the SVD file and sort the peripherals by their base addresses in
+    **Expected Outcome:** The parser should process the SVD file and sort the peripherals by their base addresses in
     ascending order. If any peripherals share the same base address, they should be sorted further by their names.
     For this particular test file, the device should contain four peripherals, sorted as follows: `PeripheralA`
     with a base address of `0x40001000`, followed by `PeripheralB` with a base address of `0x40002000`, then
@@ -476,7 +476,7 @@ def test_peripheral_sorting(get_processed_device_from_testfile: Callable[[str], 
     `0x40004000`. Each peripheral should retain its respective properties, and the sorted order should improve
     predictability compared to the original file order while maintaining consistency in naming conventions.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/peripheral_sorting.svd")
@@ -505,7 +505,7 @@ def test_register_cluster_sorting_in_peripheral(get_processed_device_from_testfi
     for better organization and consistency. If registers or clusters have the same address, they should further
     be sorted by their names alphabetically to ensure predictable behavior and avoid ambiguity.
 
-    Expected Outcome: The parser should process the SVD file and sort the registers and clusters within the
+    **Expected Outcome:** The parser should process the SVD file and sort the registers and clusters within the
     peripheral by their address offsets. The peripheral should contain two entities in the sorted order:
     `ClusterA` should appear first with an address offset of `0x0`, followed by `RegisterA` with an address offset
     of `0x8`. Inside `ClusterA`, the contained registers should also be sorted by address offset, starting with
@@ -513,7 +513,7 @@ def test_register_cluster_sorting_in_peripheral(get_processed_device_from_testfi
     accurately, maintaining each register and cluster's respective properties while ensuring a consistent and
     predictable output.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/register_cluster_sorting_in_peripheral.svd")
@@ -553,14 +553,14 @@ def test_peripheral_unaligned_address(get_processed_device_from_testfile: Callab
     replicate this behavior—processing the SVD file but issuing a warning to inform the user about the unaligned
     address.
 
-    Expected Outcome: The parser should successfully process the SVD file, allowing the unaligned base address of
+    **Expected Outcome:** The parser should successfully process the SVD file, allowing the unaligned base address of
     `PeripheralA`, but it should issue a warning to inform the user that the peripheral base address is not 4-byte
     aligned. The device should contain one peripheral named `PeripheralA` with a base address of `0x40001007` and
     a size of 8 bits. The peripheral should include one register, `RegisterA`, which has an address offset of
     `0x0` and a size of 8 bits. The parser should maintain the integrity of the data while warning the user about
     the address misalignment, ensuring the user is aware of the potential impact of unaligned memory addresses.
 
-    Processable with svdconv: yes - with warning
+    **Processable with svdconv:** yes - with warning
     """
 
     with pytest.warns(ProcessWarning):
@@ -591,13 +591,13 @@ def test_register_unaligned_address(get_processed_device_from_testfile: Callable
     indicating that the register's position is not aligned properly. A parser implementation should mimic this
     behavior by raising an error when it encounters a register with an unaligned address.
 
-    Expected Outcome: The parser should raise an error indicating that `RegisterA` is unaligned and that unaligned
+    **Expected Outcome:** The parser should raise an error indicating that `RegisterA` is unaligned and that unaligned
     registers are not supported. `RegisterA` is defined with an address offset of `0x00000003` and a size of 16
     bits, which is not properly aligned. The parser should prevent further processing of the SVD file and inform
     the user about this issue. This behavior aligns with `svdconv`, which also raises an error for unaligned
     register definitions.
 
-    Processable with svdconv: no
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("logical_integrity/register_unaligned_address.svd")
@@ -612,14 +612,14 @@ def test_register_size_bit_width(get_processed_device_from_testfile: Callable[[s
     behavior, allowing the file to be processed while issuing a warning to alert the user of the non-standard
     register size.
 
-    Expected Outcome: The parser should successfully process the SVD file, but it should issue a warning to notify
+    **Expected Outcome:** The parser should successfully process the SVD file, but it should issue a warning to notify
     the user that the size of `RegisterA` is non-standard and must be 8, 16, 32, or 64 bits. The device should
     contain one peripheral, `PeripheralA`, with a base address of `0x40001000`, and it should include a register,
     `RegisterA`, with an address offset of `0x0` and a size of 23 bits. The parser should allow the file to be
     processed while warning the user about the unusual bit width of the register, maintaining consistency with how
     `svdconv` handles this situation.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     with pytest.warns(ProcessWarning):
@@ -645,7 +645,7 @@ def test_alternate_peripheral(get_processed_device_from_testfile: Callable[[str]
     memory space, which must be explicitly defined to avoid conflicts. `svdconv` processes this file without
     errors, and a parser implementation should do the same while respecting the alternate peripheral relationship.
 
-    Expected Outcome: The parser should process the SVD file without errors, correctly identifying `PeripheralA`
+    **Expected Outcome:** The parser should process the SVD file without errors, correctly identifying `PeripheralA`
     and `PeripheralB` as sharing the same base address of `0x40001000`. The device should contain two peripherals.
     `PeripheralA` should have no alternate peripheral specified, while `PeripheralB` should correctly list
     `PeripheralA` as its alternate peripheral. Both peripherals should retain their respective properties, with
@@ -653,7 +653,7 @@ def test_alternate_peripheral(get_processed_device_from_testfile: Callable[[str]
     without any issues, ensuring that the alternate peripheral relationship is respected and processed in line
     with the behavior of `svdconv`.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/alternate_peripheral.svd")
@@ -678,7 +678,7 @@ def test_alternate_peripheral_forward_reference(get_processed_device_from_testfi
     alternate peripheral definitions, a more robust parser implementation should be able to process the file
     without any errors or warnings by correctly resolving the forward reference.
 
-    Expected Outcome: The parser should successfully process the SVD file without raising any errors or warnings,
+    **Expected Outcome:** The parser should successfully process the SVD file without raising any errors or warnings,
     correctly resolving the forward reference between `PeripheralA` and `PeripheralB`. `PeripheralA` should be
     identified with a base address of `0x40001000` and should correctly refer to `PeripheralB` as its alternate
     peripheral. `PeripheralB`, which is defined later in the file, should also have a base address of `0x40001000`
@@ -686,7 +686,7 @@ def test_alternate_peripheral_forward_reference(get_processed_device_from_testfi
     properties intact, and the parser should handle the forward reference seamlessly, ensuring a superior parsing
     experience compared to `svdconv`.
 
-    Processable with svdconv: no - error (Peripheral 'PeripheralB' (@0x40001000) has same address as 'PeripheralA'
+    **Processable with svdconv:** no - error (Peripheral 'PeripheralB' (@0x40001000) has same address as 'PeripheralA'
     (Line 18))
     """
 
@@ -717,14 +717,14 @@ def test_alternate_peripheral_same_name(get_processed_device_from_testfile: Call
     `svdconv` raises an error in this case due to the naming conflict, and a parser should similarly reject this
     file to prevent confusion in the device definition.
 
-    Expected Outcome: The parser should raise an error indicating that a peripheral cannot be marked as an
+    **Expected Outcome:** The parser should raise an error indicating that a peripheral cannot be marked as an
     alternate peripheral of another peripheral with the same name. Both peripherals are named identically, which
     creates ambiguity and violates the requirement for unique peripheral names. The parser should halt processing
     and notify the user of the conflict, ensuring that each peripheral is uniquely identified. This behavior
     aligns with `svdconv`, which also raises an error in such cases, preventing the SVD file from being processed
     due to the naming conflict.
 
-    Processable with svdconv: no
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("logical_integrity/alternate_peripheral_same_name.svd")
@@ -740,14 +740,14 @@ def test_alternate_peripheral_overlap(get_processed_device_from_testfile: Callab
     issue, and a parser implementation should behave similarly, handling the overlap correctly when alternate
     peripherals are defined.
 
-    Expected Outcome: The parser should process the SVD file successfully without raising any errors or warnings.
+    **Expected Outcome:** The parser should process the SVD file successfully without raising any errors or warnings.
     The device should contain two peripherals: `PeripheralA` with a base address of `0x40001000` and no alternate
     peripheral, and `PeripheralB` with a base address of `0x40001500`, which overlaps with `PeripheralA` but is
     correctly marked as an alternate peripheral of `PeripheralA`. Both peripherals should contain their respective
     registers, and the parser should ensure that the overlap is handled correctly due to the alternate peripheral
     relationship, consistent with how `svdconv` handles such scenarios.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/alternate_peripheral_overlap.svd")
@@ -772,7 +772,7 @@ def test_alternate_peripheral_multiple(get_processed_device_from_testfile: Calla
     is valid, and `svdconv` processes the file without any issues. A parser implementation should also handle this
     configuration smoothly, allowing multiple alternate peripherals without raising errors or warnings.
 
-    Expected Outcome: The parser should successfully process the SVD file, correctly identifying that
+    **Expected Outcome:** The parser should successfully process the SVD file, correctly identifying that
     `PeripheralB` and `PeripheralC` share the same base address as `PeripheralA` and are marked as alternate
     peripherals. The device should contain three peripherals: `PeripheralA` with a base address of `0x40001000`
     and no alternate peripheral, `PeripheralB` with the same base address and marked as an alternate peripheral of
@@ -781,7 +781,7 @@ def test_alternate_peripheral_multiple(get_processed_device_from_testfile: Calla
     alternate peripheral relationships without any errors or warnings, consistent with how `svdconv` processes
     such files.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/alternate_peripheral_multiple.svd")
@@ -814,7 +814,7 @@ def test_alternate_peripheral_multiple_svdconv_warning(get_processed_device_from
     `PeripheralA`, without respecting the alternate peripheral relationships. A more robust parser should process
     this configuration without generating such an incorrect warning.
 
-    Expected Outcome: The parser should process the file without any errors or incorrect warnings, correctly
+    **Expected Outcome:** The parser should process the file without any errors or incorrect warnings, correctly
     recognizing the alternate relationships. The device should contain four peripherals: `PeripheralA` with a base
     address of `0x40001000` and no alternate, `PeripheralB` and `PeripheralC`, both with the same base address and
     marked as alternates of `PeripheralA`, and `PeripheralD`, which also shares the same base address but is an
@@ -822,7 +822,7 @@ def test_alternate_peripheral_multiple_svdconv_warning(get_processed_device_from
     setup seamlessly, ensuring that the alternate relationships are processed correctly without the erroneous
     warnings generated by `svdconv`.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/alternate_peripheral_multiple_svdconv_warning.svd")
@@ -858,14 +858,14 @@ def test_alternate_register(get_processed_device_from_testfile: Callable[[str], 
     can handle the alternate register relationship without issues. `svdconv` processes this file without errors,
     and a parser implementation should also be able to handle this scenario correctly.
 
-    Expected Outcome: The parser should successfully process the SVD file, correctly identifying that `RegisterB`
+    **Expected Outcome:** The parser should successfully process the SVD file, correctly identifying that `RegisterB`
     is an alternate register of `RegisterA`. The device should contain one peripheral with two registers:
     `RegisterA`, which has an address offset of `0x0` and a size of 32 bits, and `RegisterB`, which also has an
     address offset of `0x0` and a size of 32 bits but is marked as an alternate register of `RegisterA`. The
     parser should accurately reflect this relationship without any warnings or errors, ensuring that the alternate
     register configuration is handled properly, consistent with the behavior of `svdconv`.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/alternate_register.svd")
@@ -894,7 +894,7 @@ def test_alternate_register_forward_reference(get_processed_device_from_testfile
     references in alternate register definitions and raises an error, a robust parser implementation should
     resolve this forward reference and process the file without any issues.
 
-    Expected Outcome: The parser should successfully process the SVD file without raising any errors or warnings,
+    **Expected Outcome:** The parser should successfully process the SVD file without raising any errors or warnings,
     correctly resolving the forward reference between `RegisterA` and `RegisterB`. The device should contain one
     peripheral with two registers: `RegisterA`, which has an address offset of `0x0` and a size of 32 bits, and
     lists `RegisterB` as its alternate register. `RegisterB`, declared later, should also have an address offset
@@ -902,7 +902,7 @@ def test_alternate_register_forward_reference(get_processed_device_from_testfile
     reference seamlessly, ensuring that both registers are processed correctly, without any of the limitations
     present in `svdconv`.
 
-    Processable with svdconv: no
+    **Processable with svdconv:** no
     """
 
     device = get_processed_device_from_testfile("logical_integrity/alternate_register_forward_reference.svd")
@@ -937,13 +937,13 @@ def test_alternate_register_same_name(get_processed_device_from_testfile: Callab
     marked as an alternate. A parser implementation should also detect this naming conflict and raise an
     appropriate error.
 
-    Expected Outcome: The parser should raise an error indicating that `RegisterA` cannot be defined as both a
+    **Expected Outcome:** The parser should raise an error indicating that `RegisterA` cannot be defined as both a
     regular register and an alternate register with the same name within the same peripheral. The file should fail
     to process due to the naming conflict, as each register in a peripheral must have a unique identifier to avoid
     ambiguity. The parser should halt processing and notify the user of the conflict, ensuring that register names
     remain distinct, which aligns with the behavior of `svdconv`, which also raises an error in this case.
 
-    Processable with svdconv: no
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("logical_integrity/alternate_register_same_name.svd")
@@ -957,14 +957,14 @@ def test_alternate_register_overlap(get_processed_device_from_testfile: Callable
     of `RegisterA`, allowing for the overlap. `svdconv` processes this file without any issues or warnings, and a
     parser implementation should also handle this scenario smoothly without raising any warnings or errors.
 
-    Expected Outcome: The parser should successfully process the SVD file, correctly identifying that `RegisterB`
+    **Expected Outcome:** The parser should successfully process the SVD file, correctly identifying that `RegisterB`
     overlaps with `RegisterA` and is marked as an alternate register. The device should contain one peripheral
     with two registers: `RegisterA` at address offset `0x0` with a size of 32 bits and `RegisterB` at address
     offset `0x2` with a size of 16 bits, which overlaps with `RegisterA` but is marked as its alternate register.
     The parser should handle this configuration without any warnings or errors, similar to `svdconv`, ensuring
     that the alternate register relationship is processed correctly despite the overlapping memory addresses.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/alternate_register_overlap.svd")
@@ -994,14 +994,14 @@ def test_alternate_register_multiple(get_processed_device_from_testfile: Callabl
     `RegisterD` is an alternate of `RegisterC`. While `svdconv` processes this file without issue, the parser
     should also handle the configuration without raising any errors.
 
-    Expected Outcome: The parser should process the file successfully, correctly identifying the relationships
+    **Expected Outcome:** The parser should process the file successfully, correctly identifying the relationships
     between the registers. `RegisterA` should be recognized as the primary register, with `RegisterB` and
     `RegisterC` being alternates of `RegisterA`. `RegisterD` should be recognized as an alternate of `RegisterC`.
     All registers share the same address offset of `0x0` and have a size of 32 bits. The parser should handle this
     setup without issuing any warnings or errors, ensuring it processes the multiple alternate register
     relationships as expected, similar to `svdconv`.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/alternate_register_multiple.svd")
@@ -1042,14 +1042,14 @@ def test_alternate_cluster(get_processed_device_from_testfile: Callable[[str], D
     this file without any errors or warnings, and a parser implementation should do the same, ensuring that the
     alternate cluster relationship is properly handled.
 
-    Expected Outcome: The parser should successfully process the SVD file, identifying the alternate cluster
+    **Expected Outcome:** The parser should successfully process the SVD file, identifying the alternate cluster
     relationship without any errors or warnings. The device should contain one peripheral with two clusters:
     `ClusterA`, which is defined at address offset `0x0` and has no alternate cluster, and `ClusterB`, which
     shares the same address offset of `0x0` and is marked as an alternate of `ClusterA`. Both clusters should have
     the correct size of 32 bits, and the parser should ensure that the alternate cluster relationship is respected
     and processed as intended, consistent with `svdconv`.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/alternate_cluster.svd")
@@ -1079,7 +1079,7 @@ def test_alternate_cluster_forward_reference(get_processed_device_from_testfile:
     relationship. A robust parser should correctly resolve the forward reference and process the file without
     generating any incorrect warnings.
 
-    Expected Outcome: The parser should successfully process the SVD file without issuing any incorrect warnings.
+    **Expected Outcome:** The parser should successfully process the SVD file without issuing any incorrect warnings.
     It should correctly identify `ClusterA` as being located at address offset `0x0` with a size of 32 bits and
     recognize `ClusterB` as its alternate cluster. Similarly, `ClusterB`, which is defined later in the file at
     the same address offset and with the same size, should be processed correctly as an alternate cluster of
@@ -1087,7 +1087,7 @@ def test_alternate_cluster_forward_reference(get_processed_device_from_testfile:
     that the alternate cluster relationship is respected and processed accurately, unlike `svdconv`, which
     incorrectly generates a warning about the overlapping addresses.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/alternate_cluster_forward_reference.svd")
@@ -1121,13 +1121,13 @@ def test_alternate_cluster_same_name(get_processed_device_from_testfile: Callabl
     as clusters within the same peripheral must have unique names. `svdconv` raises an error in this case, and the
     parser should behave similarly, rejecting the file due to the name conflict.
 
-    Expected Outcome: The parser should raise an error indicating that two clusters with the same name cannot
+    **Expected Outcome:** The parser should raise an error indicating that two clusters with the same name cannot
     exist within the same peripheral, even if one is designated as an alternate cluster. The file should fail to
     process because both clusters are named `ClusterA`, creating a naming conflict. The parser should halt further
     processing and notify the user about the issue, ensuring that cluster names are unique within a peripheral.
     This behavior is consistent with `svdconv`, which also raises an error for this kind of conflict.
 
-    Processable with svdconv: no
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("logical_integrity/alternate_cluster_same_name.svd")
@@ -1142,14 +1142,14 @@ def test_alternate_cluster_overlap(get_processed_device_from_testfile: Callable[
     implementation should handle the overlapping memory regions correctly, considering the alternate relationship
     between the clusters.
 
-    Expected Outcome: The parser should process the file successfully, identifying that `ClusterB` overlaps with
+    **Expected Outcome:** The parser should process the file successfully, identifying that `ClusterB` overlaps with
     `ClusterA` but is marked as an alternate cluster, which makes the overlap valid. The device should contain one
     peripheral with two clusters: `ClusterA` at address offset `0x0` with a size of 32 bits and no alternate
     cluster, and `ClusterB` at address offset `0x2` with a size of 16 bits, marked as an alternate of `ClusterA`.
     The parser should handle this alternate cluster relationship without any errors or warnings, ensuring that the
     overlap is processed correctly, similar to `svdconv`.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/alternate_cluster_overlap.svd")
@@ -1179,7 +1179,7 @@ def test_alternate_cluster_multiple(get_processed_device_from_testfile: Callable
     `ClusterC`. `svdconv` processes this file without any issues, and a parser implementation should also handle
     these relationships correctly.
 
-    Expected Outcome: The parser should process the SVD file successfully, recognizing the alternate relationships
+    **Expected Outcome:** The parser should process the SVD file successfully, recognizing the alternate relationships
     between the clusters. The device should contain one peripheral with four clusters. `ClusterA` should be
     defined at address offset `0x0` with a size of 32 bits and no alternate cluster. `ClusterB` and `ClusterC`
     should also be defined at address offset `0x0`, both with a size of 32 bits, marked as alternates of
@@ -1187,7 +1187,7 @@ def test_alternate_cluster_multiple(get_processed_device_from_testfile: Callable
     `ClusterC`. The parser should process this configuration without any warnings or errors, handling multiple
     alternate cluster relationships as intended, consistent with the behavior of `svdconv`.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/alternate_cluster_multiple.svd")
@@ -1228,7 +1228,7 @@ def test_register_alternate_group(get_processed_device_from_testfile: Callable[[
     alternate group `RegisterX`. `svdconv` processes this file without any issues, and the parser should be able
     to handle the alternate group associations properly.
 
-    Expected Outcome: The parser should process the file correctly, identifying the alternate group relationships
+    **Expected Outcome:** The parser should process the file correctly, identifying the alternate group relationships
     for the registers. `RegisterA` should be defined at address offset `0x0` with a size of 32 bits and no
     alternate group. The second `RegisterA`, also at the same address, should be part of the alternate group
     `RegisterX` and should be named `RegisterA_RegisterX`. Similarly, `RegisterB` should be at the same address
@@ -1236,7 +1236,7 @@ def test_register_alternate_group(get_processed_device_from_testfile: Callable[[
     should handle this configuration smoothly, without any errors or warnings, consistent with how `svdconv`
     processes this case.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/register_alternate_group.svd")
@@ -1270,14 +1270,14 @@ def test_register_alternate_group_forward_reference(get_processed_device_from_te
     `RegisterA_RegisterX` and `RegisterB_RegisterX` are part of the alternate group `RegisterX`, referencing
     `RegisterA`. A parser should be able to resolve these forward references without any issues.
 
-    Expected Outcome: The parser should process the file correctly, resolving the forward reference for the
+    **Expected Outcome:** The parser should process the file correctly, resolving the forward reference for the
     alternate register group. It should recognize that `RegisterA_RegisterX` and `RegisterB_RegisterX` both belong
     to the alternate group `RegisterX`, while `RegisterA`, defined later in the file, is the base register with no
     alternate group. All registers should have the same address offset of `0x0` and a size of 32 bits. The parser
     should process this setup without errors, ensuring that the alternate group relationships and forward
     references are handled as expected.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/register_alternate_group_forward_reference.svd")
@@ -1317,13 +1317,13 @@ def test_register_alternate_group_same_name(get_processed_device_from_testfile: 
     indicating that `RegisterA_RegisterX` is already defined. The parser should similarly detect this conflict and
     raise an error due to the duplicate register name within the alternate group.
 
-    Expected Outcome: The parser should raise an error, indicating that two registers in the same alternate group
+    **Expected Outcome:** The parser should raise an error, indicating that two registers in the same alternate group
     cannot have the same name. The file should fail to process because `RegisterA_RegisterX` is defined twice,
     leading to a naming conflict within `RegisterX`. The parser should halt further processing and notify the user
     about the issue, ensuring that register names within the same alternate group are unique, consistent with the
     warning behavior seen in `svdconv`.
 
-    Processable with svdconv: no - warning (RegisterA_RegisterX already defined)
+    **Processable with svdconv:** no - warning (RegisterA_RegisterX already defined)
     """
 
     get_processed_device_from_testfile("logical_integrity/register_alternate_group_same_name.svd")
@@ -1337,14 +1337,14 @@ def test_register_alternate_group_overlap(get_processed_device_from_testfile: Ca
     `RegisterX`, but they overlap in memory. `svdconv` processes this file without issues, and the parser should
     also handle these overlapping alternate group registers correctly.
 
-    Expected Outcome: The parser should process the SVD file without errors, recognizing that
+    **Expected Outcome:** The parser should process the SVD file without errors, recognizing that
     `RegisterA_RegisterX` and `RegisterB_RegisterX` belong to the same alternate group despite overlapping
     addresses. The device should contain one peripheral with three registers: `RegisterA` at address offset `0x0`
     with a size of 32 bits and no alternate group, `RegisterA_RegisterX` at the same address with a size of 16
     bits, and `RegisterB_RegisterX` at the same address with a size of 32 bits, both belonging to `RegisterX`. The
     parser should handle this alternate group overlap without errors or warnings, consistent with `svdconv`.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/register_alternate_group_overlap.svd")
@@ -1384,11 +1384,11 @@ def test_fields_same_names(get_processed_device_from_testfile: Callable[[str], D
     description. `svdconv` correctly identifies this issue as error, whereas the parser should explicitly raise an
     error, preventing the creation of registers with duplicated field names.
 
-    Expected Outcome: The parser should raise an error indicating that two fields within the same register share
+    **Expected Outcome:** The parser should raise an error indicating that two fields within the same register share
     the same name. The device should not be processed further, and the parser must halt execution due to the field
     naming conflict, ensuring the integrity of the SVD description.
 
-    Processable with svdconv: no
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("logical_integrity/fields_same_names.svd")
@@ -1406,11 +1406,11 @@ def test_fields_same_bit_offset(get_processed_device_from_testfile: Callable[[st
     share the same range, it creates a conflict that can lead to incorrect behavior in the device description. The
     parser must detect such overlaps and raise an error.
 
-    Expected Outcome: The parser should raise an error indicating that two fields within the same register have
+    **Expected Outcome:** The parser should raise an error indicating that two fields within the same register have
     the same range. The device description should not be processed further due to this conflict, ensuring that the
     integrity of the SVD file is maintained.
 
-    Processable with svdconv: no
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("logical_integrity/fields_same_bit_offset.svd")
@@ -1429,11 +1429,11 @@ def test_fields_overlap_bit_offset(get_processed_device_from_testfile: Callable[
     that can lead to incorrect behavior in the device description. The parser must detect such overlaps and raise
     an error.
 
-    Expected Outcome: The parser should raise an error indicating that two fields within the same register overlap
+    **Expected Outcome:** The parser should raise an error indicating that two fields within the same register overlap
     in their bit offsets. The device description should not be processed further due to this conflict, ensuring
     that the integrity of the SVD file is maintained.
 
-    Processable with svdconv: no
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("logical_integrity/fields_overlap_bit_offset.svd")
@@ -1448,13 +1448,13 @@ def test_field_bit_range_processing(get_processed_device_from_testfile: Callable
     consistent internal representation of the least significant bit (LSB) and the most significant bit (MSB) of
     the field.
 
-    Expected Outcome: The parser should correctly process the SVD file and handle all three bit range formats
+    **Expected Outcome:** The parser should correctly process the SVD file and handle all three bit range formats
     without errors. It should translate the fields defined by bitOffset/bitWidth, lsb/msb, and bitRange into
     consistent LSB and MSB values. Specifically, `FieldA`, `FieldB`, and `FieldC` should have correctly processed
     bit positions, ensuring that the register is fully described with non-overlapping bit fields from LSB 0 to MSB
     11.
 
-    Processable with svdconv: yes
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("logical_integrity/field_bit_range_processing.svd")
@@ -1489,11 +1489,11 @@ def test_field_wrong_string_in_bitrangepattern(get_processed_device_from_testfil
     test ensures that the parser validates the bit range format correctly, in line with how `svdconv` behaves when
     encountering invalid bit range strings.
 
-    Expected Outcome: The parser should raise an error indicating that the string in the `bitRangePattern` is
+    **Expected Outcome:** The parser should raise an error indicating that the string in the `bitRangePattern` is
     incorrect, as it does not match the required format. The test will fail if the parser does not handle this
     invalid format appropriately, which corresponds with the behavior seen in `svdconv`.
 
-    Processable with svdconv: no
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("logical_integrity/field_wrong_string_in_bitrangepattern.svd")
@@ -1510,11 +1510,11 @@ def test_field_illogical_values_in_bitrangepattern(get_processed_device_from_tes
     greater than the most significant bit (MSB). Such a configuration is illogical and should trigger an error.
     `svdconv` detects this issue and raises an error when encountering this scenario.
 
-    Expected Outcome: The parser should raise an error indicating that the bit range is illogical because the LSB
+    **Expected Outcome:** The parser should raise an error indicating that the bit range is illogical because the LSB
     is greater than the MSB. This is consistent with the behavior of `svdconv`, which also detects and flags this
     error when processing similar cases.
 
-    Processable with svdconv: no
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("logical_integrity/field_illogical_values_in_bitrangepattern.svd")
@@ -1524,9 +1524,9 @@ def test_ignore_empty_peripheral(get_processed_device_from_testfile: Callable[[s
     """
     TODO: Add description
 
-    Expected Outcome: TODO
+    **Expected Outcome:** TODO
 
-    Processable with svdconv: TODO
+    **Processable with svdconv:** TODO
     """
 
     with pytest.warns(ProcessWarning):

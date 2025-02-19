@@ -11,9 +11,9 @@ def test_peripheral_level(get_processed_device_from_testfile: Callable[[str], De
     """
     TODO: Add description
 
-    Expected Outcome: TODO
+    **Expected Outcome:** TODO
 
-    Processable with svdconv: TODO
+    **Processable with svdconv:** TODO
     """
 
     device = get_processed_device_from_testfile("development/peripheral_level.svd")
@@ -67,9 +67,9 @@ def test_algorithm(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     TODO: Add description
 
-    Expected Outcome: TODO
+    **Expected Outcome:** TODO
 
-    Processable with svdconv: TODO
+    **Processable with svdconv:** TODO
     """
 
     device = get_processed_device_from_testfile("development/algorithm.svd")

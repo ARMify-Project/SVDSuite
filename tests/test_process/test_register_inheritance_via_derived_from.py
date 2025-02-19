@@ -25,14 +25,14 @@ def test_simple_inheritance_backward_reference_same_scope(get_processed_device_f
     address offset of `0x0`, and it contains a field named `FieldA` occupying bits 0 through 2. `RegisterB` is
     defined to inherit from `RegisterA` via the `derivedFrom` attribute, while being located at a different
     address offset (`0x4`).
-    
-    Expected Outcome: The parser should successfully process the SVD file, recognizing `RegisterB` as inheriting
+
+    **Expected Outcome:** The parser should successfully process the SVD file, recognizing `RegisterB` as inheriting
     all attributes from `RegisterA`. This includes the field `FieldA` with the same bit positioning (bits 0 to 2).
     `RegisterA` should appear at address offset `0x0` and `RegisterB` at `0x4`, both having a size of 32 bits and
     containing an identical field structure. The parsing should complete without any issues, consistent with the
     expected behavior of `svdconv`, which correctly handles backward references within the same scope.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile(
@@ -71,15 +71,15 @@ def test_simple_inheritance_forward_reference_same_scope(get_processed_device_fr
     attribute to inherit from `RegisterB`, which is defined with an address offset of `0x4` and contains a field
     named `FieldA`. `RegisterA` should inherit all properties of `RegisterB`, while occupying its own distinct
     address offset (`0x0`).
-    
-    Expected Outcome: The parser should correctly handle the forward reference, resolving `RegisterA`'s
+
+    **Expected Outcome:** The parser should correctly handle the forward reference, resolving `RegisterA`'s
     inheritance from `RegisterB` and applying all relevant properties. `RegisterA` should have the same field
     structure as `RegisterB`, including `FieldA` occupying bits 0 through 2. Both registers should be correctly
     recognized, with `RegisterA` located at address offset `0x0` and `RegisterB` at `0x4`, each with a size of 32
     bits. Unlike `svdconv`, which cannot handle forward references and raises an error, the parser should resolve
     this scenario seamlessly.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     device = get_processed_device_from_testfile(
@@ -117,15 +117,15 @@ def test_simple_inheritance_backward_reference_different_scope(
     `PeripheralA`, located at base address `0x40001000`. This register contains a field named `FieldA`, occupying
     bits 0 through 2. In `PeripheralB`, which has a different base address (`0x40002000`), another `RegisterA` is
     defined that uses the `derivedFrom` attribute to inherit all properties from `PeripheralA.RegisterA`.
-    
-    Expected Outcome: The parser should correctly process the SVD file, recognizing that `PeripheralB.RegisterA`
+
+    **Expected Outcome:** The parser should correctly process the SVD file, recognizing that `PeripheralB.RegisterA`
     inherits all attributes from `PeripheralA.RegisterA`, including the field definition `FieldA`. Both registers
     should have identical structures, with the derived register correctly inheriting the properties from its base,
     even though they are defined in separate peripherals. The parsing should be consistent with `svdconv`, which
     successfully handles this cross-scope backward reference, resulting in `RegisterA` in `PeripheralB` being
     properly inherited and recognized without issues.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile(
@@ -165,16 +165,16 @@ def test_simple_inheritance_forward_reference_different_scope(
     `PeripheralB` is defined after `PeripheralA` in the SVD file. The base register `PeripheralB.RegisterA`
     contains a field named `FieldA` located at bits 0 through 2, and it is defined at address offset `0x0` within
     `PeripheralB`.
-    
-    Expected Outcome: The parser should be able to correctly handle this forward reference, recognizing that
+
+    **Expected Outcome:** The parser should be able to correctly handle this forward reference, recognizing that
     `PeripheralA.RegisterA` inherits all attributes from `PeripheralB.RegisterA`, including the field `FieldA`.
     Both registers should maintain identical structures, and the derived register should accurately reflect the
     inherited properties, despite the forward reference. Unlike `svdconv`, which cannot process this type of
     forward reference across different scopes and would produce an error, the parser is expected to resolve this
     relationship correctly, ensuring `RegisterA` in `PeripheralA` is properly inherited from
     `PeripheralB.RegisterA` without any issues.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     device = get_processed_device_from_testfile(
@@ -214,15 +214,15 @@ def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], D
     except for the explicitly overridden attributes. A special case is the attribute `displayName`. Although it is
     also inherited, it is only allowed to appear once within the scope. Therefore, it must be explicitly
     overridden in `RegisterB`.
-    
-    Expected Outcome: The parser should successfully process the SVD file and recognize that `RegisterB` inherits
+
+    **Expected Outcome:** The parser should successfully process the SVD file and recognize that `RegisterB` inherits
     all applicable properties from `RegisterA`. This includes attributes such as the display name, description,
     size, access type, and protection level, among others. `RegisterA` should be located at address offset `0x0`,
     while `RegisterB` should be at `0x2`, both with the same attributes and configurations. The inherited
     properties should match precisely, reflecting accurate inheritance behavior. This is consistent with
     `svdconv`, which also handles this scenario correctly without any issues.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("register_inheritance_via_derivedfrom/value_inheritance.svd")
@@ -287,8 +287,8 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     comprehensive set of attributes, including size, access type, reset values, and field details. `RegisterB`
     inherits these attributes via `derivedFrom`, but overrides certain properties such as size, description,
     access type, and field structure.
-    
-    Expected Outcome: The parser should correctly process `RegisterB`, inheriting all attributes from `RegisterA`
+
+    **Expected Outcome:** The parser should correctly process `RegisterB`, inheriting all attributes from `RegisterA`
     except those that are explicitly overridden in `RegisterB`. This means that `RegisterB` should retain
     properties like `alternateRegister`, `resetValue`, and `fields` from `RegisterA` unless a different value is
     specified. For example, `RegisterB` should inherit the field `FieldA` from `RegisterA` but should also
@@ -296,8 +296,8 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     seamlessly, producing a result where `RegisterA` and `RegisterB` are distinct yet connected through shared
     properties. This behavior matches the expected output from `svdconv`, which processes similar cases without
     issues.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("register_inheritance_via_derivedfrom/override_behavior.svd")
@@ -369,15 +369,15 @@ def test_multiple_inheritance_backward_reference(get_processed_device_from_testf
     inherits properties from `RegisterA` through `RegisterB`. The SVD file clearly defines the inheritance
     structure, allowing each derived register to have a distinct address offset while maintaining the core
     properties from the base register.
-    
-    Expected Outcome: The parser should correctly interpret the inheritance chain, ensuring that both `RegisterB`
+
+    **Expected Outcome:** The parser should correctly interpret the inheritance chain, ensuring that both `RegisterB`
     and `RegisterC` inherit all attributes from `RegisterA`. This means that `RegisterB` and `RegisterC` should
     have the same field (`FieldA` with bits 0 to 2) as defined in `RegisterA`. Each register should be positioned
     at their respective address offsets (`0x0` for `RegisterA`, `0x4` for `RegisterB`, and `0x8` for `RegisterC`)
     with a size of 32 bits. The parsing should be consistent with the expected behavior of `svdconv`, which
     handles such backward reference chains correctly.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile(
@@ -423,16 +423,16 @@ def test_multiple_inheritance_forward_reference(get_processed_device_from_testfi
     references. The objective is to verify if the parser can correctly resolve these references and apply the
     inheritance as intended. Each derived register should inherit properties from the subsequent one in the chain,
     even though they are defined in a forward manner.
-    
-    Expected Outcome: The parser should successfully process the SVD file, correctly handling the forward
+
+    **Expected Outcome:** The parser should successfully process the SVD file, correctly handling the forward
     references and applying the inheritance chain. This means that `RegisterA` should ultimately inherit
     properties from `RegisterC` via `RegisterB`, despite being defined earlier in the file. Each register should
     have the same field structure inherited from `RegisterC`, with `FieldA` occupying bits 0 to 2. The registers
     should appear at their respective address offsets: `0x0` for `RegisterA`, `0x4` for `RegisterB`, and `0x8` for
     `RegisterC`, all with a size of 32 bits. While `svdconv` does not handle such forward references, the parser
     should complete this without errors.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     device = get_processed_device_from_testfile(
@@ -479,13 +479,13 @@ def test_circular_inheritance(get_processed_device_from_testfile: Callable[[str]
     resolving the properties of the registers correctly, as there would be no clear point of reference for the
     inherited attributes. The goal is to ensure that the parser detects such circular dependencies and raises an
     appropriate error to avoid an infinite loop or incorrect processing.
-    
-    Expected Outcome: The parser should detect the circular inheritance between `RegisterA` and `RegisterB` and
+
+    **Expected Outcome:** The parser should detect the circular inheritance between `RegisterA` and `RegisterB` and
     raise an error. This indicates that circular inheritance is not allowed, and the parser correctly identifies
     and prevents it from being processed. `svdconv`, can't process the file, since deriving from `RegisterB` is
     not possible due to forward referencing.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("register_inheritance_via_derivedfrom/circular_inheritance.svd")
@@ -503,14 +503,14 @@ def test_field_inheritance_same_name(get_processed_device_from_testfile: Callabl
     According to SVD specifications, each field within a register should have a unique name, and inheriting a
     field with the same name as an existing field in the derived register leads to a conflict. The goal of this
     test is to ensure that the parser detects this scenario and raises an appropriate error.
-    
-    Expected Outcome: The parser should raise an error, indicating that `FieldA` cannot be redefined in
+
+    **Expected Outcome:** The parser should raise an error, indicating that `FieldA` cannot be redefined in
     `RegisterB` because it already exists in the inherited properties from `RegisterA`. This behavior prevents
     conflicts in field definitions and maintains the integrity of the register's structure. Like `svdconv`, which
     also throws an error in this situation, the parser's explicit handling of this case ensures that users are
     clearly informed about the issue, guiding them to resolve such naming conflicts in their SVD files.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("register_inheritance_via_derivedfrom/field_inheritance_same_name.svd")
@@ -528,13 +528,13 @@ def test_field_inheritance_same_bit_range(get_processed_device_from_testfile: Ca
     inherited field (`FieldA`). According to the SVD standard, fields within a register must not overlap in their
     bit ranges, and any such conflicts should be detected and flagged as errors. This test ensures that the parser
     correctly identifies the overlap and raises an appropriate error.
-    
-    Expected Outcome: The parser should raise an error indicating that `FieldA` and `FieldB` cannot coexist
+
+    **Expected Outcome:** The parser should raise an error indicating that `FieldA` and `FieldB` cannot coexist
     because they overlap in their bit ranges. This behavior aligns with `svdconv`, which also detects and reports
     such conflicts. The parser's ability to catch this issue helps maintain the integrity of register definitions
     by preventing ambiguous or conflicting field configurations.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("register_inheritance_via_derivedfrom/field_inheritance_same_bit_range.svd")
@@ -552,13 +552,13 @@ def test_field_inheritance_overlap_bit_range(get_processed_device_from_testfile:
     an inherited field (`FieldA`). According to the SVD standard, fields within a register must not overlap in
     their bit ranges, and any such conflicts should be detected and flagged as errors. This test ensures that the
     parser correctly identifies the overlap and raises an appropriate error.
-    
-    Expected Outcome: The parser should raise an error indicating that `FieldA` and `FieldB` cannot coexist
+
+    **Expected Outcome:** The parser should raise an error indicating that `FieldA` and `FieldB` cannot coexist
     because they overlap in their bit ranges. This behavior aligns with `svdconv`, which also detects and reports
     such conflicts. The parser's ability to catch this issue helps maintain the integrity of register definitions
     by preventing ambiguous or conflicting field configurations.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("register_inheritance_via_derivedfrom/field_inheritance_overlap_bit_range.svd")
@@ -572,14 +572,14 @@ def test_same_address(get_processed_device_from_testfile: Callable[[str], Device
     should not occupy the same address space unless they have an alternate relationship, and `svdconv` enforces
     this rule by issuing an error. However, for enhanced compatibility, especially with older `svdconv` versions,
     it may be advisable to allow such configurations while issuing a warning instead of an outright error.
-    
-    Expected Outcome: The parser should issue a warning indicating that `RegisterA` and `RegisterB` share the same
+
+    **Expected Outcome:** The parser should issue a warning indicating that `RegisterA` and `RegisterB` share the same
     address offset, but it should still successfully process the SVD file. This approach aligns with the idea of
     maintaining compatibility with various SVD formats, including older versions where multiple registers might
     share the same address. Although `svdconv` would reject this file outright, a more flexible parser should
     permit it while clearly warning users of the potential conflict.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     with pytest.warns(ProcessWarning):
@@ -615,13 +615,13 @@ def test_register_overlap(get_processed_device_from_testfile: Callable[[str], De
     can lead to conflicts, `svdconv` issues a warning rather than an error to maintain compatibility with older
     `svdconv` versions, which have not detected overlapping addresses. A robust parser implementation should mimic
     this behavior, issuing a warning to inform the user of the overlap but still proceed with processing the file.
-    
-    Expected Outcome: The parser should successfully process the SVD file but issue a warning indicating the
+
+    **Expected Outcome:** The parser should successfully process the SVD file but issue a warning indicating the
     address overlap between `RegisterA` and `RegisterB`. This approach maintains compatibility with existing tools
     like `svdconv`, which handle such scenarios by warning the user rather than blocking the processing
     altogether.
-    
-    Processable with svdconv: yes
+
+    **Processable with svdconv:** yes
     """
 
     with pytest.warns(ProcessWarning):
@@ -656,12 +656,12 @@ def test_derive_from_self(get_processed_device_from_testfile: Callable[[str], De
     configuration. In the SVD file, `RegisterA` is defined with a `derivedFrom` attribute pointing to its own
     name. Such configurations should be detected as erroneous because a register cannot logically inherit
     properties from itself. This kind of self-reference should lead to a parsing error.
-    
-    Expected Outcome: The parser should detect the invalid self-referential inheritance and raise an error,
+
+    **Expected Outcome:** The parser should detect the invalid self-referential inheritance and raise an error,
     indicating that a register cannot derive from itself. This ensures that the system handles such configurations
     correctly by stopping further processing and informing the user of the issue.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     get_processed_device_from_testfile("register_inheritance_via_derivedfrom/derive_from_self.svd")

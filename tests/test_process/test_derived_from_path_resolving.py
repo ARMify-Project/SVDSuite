@@ -109,12 +109,12 @@ def test_test_setup_1(path: str, get_test_svd_file_content: Callable[[str], byte
     clusters. The setup verifies whether the parser can correctly resolve paths to registers located within
     different levels of nested clusters. Additionally, it ensures that invalid paths are properly flagged as
     errors.
-    
-    Expected Outcome: Paths that correctly reference the target should be processed successfully. Invalid paths
+
+    **Expected Outcome:** Paths that correctly reference the target should be processed successfully. Invalid paths
     should raise an error, and the parser should provide clear diagnostics indicating the issue. This mimics
     `svdconv`'s behavior.
-    
-    Processable with svdconv: partly
+
+    **Processable with svdconv:** partly
     """
 
     file_name = "derivedfrom_path_resolving/test_setup_1.svd"
@@ -185,11 +185,11 @@ def test_test_setup_2(path: str, get_test_svd_file_content: Callable[[str], byte
     resolving, if a parent has the same name as the child. The setup verifies whether the parser can correctly
     resolve paths to registers located within different levels of nested clusters, if they have the same names.
     Additionally, it ensures that invalid paths are properly flagged as errors.
-    
-    Expected Outcome: Paths that correctly reference the target should be processed successfully. Invalid paths
+
+    **Expected Outcome:** Paths that correctly reference the target should be processed successfully. Invalid paths
     should raise an error, and the parser should provide clear diagnostics indicating the issue.
-    
-    Processable with svdconv: no
+
+    **Processable with svdconv:** no
     """
 
     file_name = "derivedfrom_path_resolving/test_setup_2.svd"
@@ -256,11 +256,11 @@ def test_test_setup_3(path: str, get_test_svd_file_content: Callable[[str], byte
     looks within the same scope, and if no match is found, it expands to all peripherals. Ultimately, `RegisterB`
     should inherit from `RegisterA` located in `PeripheralA`, meaning it must include `FieldB` instead of
     `FieldA`.
-    
-    Expected Outcome: Paths that correctly reference the target should be processed successfully. Invalid paths
+
+    **Expected Outcome:** Paths that correctly reference the target should be processed successfully. Invalid paths
     should raise an error, and the parser should provide clear diagnostics indicating the issue.
-    
-    Processable with svdconv: partly
+
+    **Processable with svdconv:** partly
     """
 
     file_name = "derivedfrom_path_resolving/test_setup_3.svd"
@@ -306,11 +306,11 @@ def test_test_setup_4(path: str, get_test_svd_file_content: Callable[[str], byte
     `PeripheralA` is found. The search should prioritize finding matches within the same scope first, and only
     expand to all peripherals if no match is found. Ultimately, `RegisterB` should inherit from `RegisterA` within
     `PeripheralA`, and it must therefore include `FieldB` instead of `FieldA`.
-    
-    Expected Outcome: Paths that correctly reference the target should be processed successfully. Invalid paths
+
+    **Expected Outcome:** Paths that correctly reference the target should be processed successfully. Invalid paths
     should raise an error, and the parser should provide clear diagnostics indicating the issue.
-    
-    Processable with svdconv: partly
+
+    **Processable with svdconv:** partly
     """
 
     file_name = "derivedfrom_path_resolving/test_setup_4.svd"
@@ -352,11 +352,11 @@ def test_test_setup_5(path: str, get_test_svd_file_content: Callable[[str], byte
     (`ClusterA`, `ClusterB`). Paths that correctly reference the target elements should be processed without
     errors, while incorrect paths should trigger clear diagnostic messages. This setup ensures that the parser
     handles `dim`-expanded elements flexibly, similar to how `svdconv` resolves these references.
-    
-    Expected Outcome: Paths that correctly reference the target should be processed successfully. Invalid paths
+
+    **Expected Outcome:** Paths that correctly reference the target should be processed successfully. Invalid paths
     should raise an error, and the parser should provide clear diagnostics indicating the issue.
-    
-    Processable with svdconv: partly
+
+    **Processable with svdconv:** partly
     """
 
     file_name = "derivedfrom_path_resolving/test_setup_5.svd"
@@ -405,11 +405,11 @@ def test_test_setup_5(path: str, get_test_svd_file_content: Callable[[str], byte
 def test_test_setup_6(path: str, get_test_svd_file_content: Callable[[str], bytes]):
     """
     This test setup examines how the parser handles resolving paths for enumerated values within nested clusters.
-    
-    Expected Outcome: Paths that correctly reference the target should be processed successfully. Invalid paths
+
+    **Expected Outcome:** Paths that correctly reference the target should be processed successfully. Invalid paths
     should raise an error, and the parser should provide clear diagnostics indicating the issue.
-    
-    Processable with svdconv: partly
+
+    **Processable with svdconv:** partly
     """
 
     file_name = "derivedfrom_path_resolving/test_setup_6.svd"
@@ -480,11 +480,11 @@ def test_test_setup_7(path: str, get_test_svd_file_content: Callable[[str], byte
     `PeripheralA.RegisterA` should reference the original register without any alternate association. `svdconv`
     can't resolve `alternateGroup` paths, if they are named equal as a element outside of the alternate group. A
     robust parser should be able to do so.
-    
-    Expected Outcome: Paths that correctly reference the target should be processed successfully. Invalid paths
+
+    **Expected Outcome:** Paths that correctly reference the target should be processed successfully. Invalid paths
     should raise an error, and the parser should provide clear diagnostics indicating the issue.
-    
-    Processable with svdconv: partly
+
+    **Processable with svdconv:** partly
     """
 
     file_name = "derivedfrom_path_resolving/test_setup_7.svd"
@@ -528,11 +528,11 @@ def test_test_setup_8(path: str, get_test_svd_file_content: Callable[[str], byte
     from `ClusterA`, effectively creating an inherited version of `RegisterA` within `ClusterB`. Thus, while
     `RegisterA` is not explicitly present in `ClusterB` in the original SVD file, it becomes accessible there due
     to inheritance.
-    
-    Expected Outcome: Paths that correctly reference the target should be processed successfully. Invalid paths
+
+    **Expected Outcome:** Paths that correctly reference the target should be processed successfully. Invalid paths
     should raise an error, and the parser should provide clear diagnostics indicating the issue.
-    
-    Processable with svdconv: partly
+
+    **Processable with svdconv:** partly
     """
 
     file_name = "derivedfrom_path_resolving/test_setup_8.svd"
@@ -566,11 +566,11 @@ def test_test_setup_8(path: str, get_test_svd_file_content: Callable[[str], byte
 def test_test_setup_9(path: str, get_test_svd_file_content: Callable[[str], bytes]):
     """
     Same as Test Setup 8, but with a forward reference.
-    
-    Expected Outcome: Paths that correctly reference the target should be processed successfully. Invalid paths
+
+    **Expected Outcome:** Paths that correctly reference the target should be processed successfully. Invalid paths
     should raise an error, and the parser should provide clear diagnostics indicating the issue.
-    
-    Processable with svdconv: partly
+
+    **Processable with svdconv:** partly
     """
 
     file_name = "derivedfrom_path_resolving/test_setup_9.svd"
