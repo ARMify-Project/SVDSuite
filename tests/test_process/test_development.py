@@ -1,9 +1,21 @@
+"""
+TODO Add description
+"""
+
 from typing import Callable
 
 from svdsuite.model.process import Device, Register, Cluster
 
 
 def test_peripheral_level(get_processed_device_from_testfile: Callable[[str], Device]):
+    """
+    TODO: Add description
+
+    Expected Outcome: TODO
+
+    Processable with svdconv: TODO
+    """
+
     device = get_processed_device_from_testfile("development/peripheral_level.svd")
 
     assert len(device.peripherals) == 14
@@ -52,6 +64,14 @@ def test_peripheral_level(get_processed_device_from_testfile: Callable[[str], De
 
 
 def test_algorithm(get_processed_device_from_testfile: Callable[[str], Device]):
+    """
+    TODO: Add description
+
+    Expected Outcome: TODO
+
+    Processable with svdconv: TODO
+    """
+
     device = get_processed_device_from_testfile("development/algorithm.svd")
 
     assert len(device.peripherals) == 6
