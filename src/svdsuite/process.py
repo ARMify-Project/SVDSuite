@@ -564,102 +564,100 @@ class _ValidateAndFinalize:
         peripheral_lookup: dict[str, Peripheral] = {}
         finalized_peripherals: list[Peripheral] = []
         for i_peripheral in i_peripherals:
-            # Finalize registers/clusters for the peripheral.
-            registers_clusters = self._validate_and_finalize_registers_clusters(
-                i_peripheral.registers_clusters, i_peripheral.base_address
-            )
-
-            # Skip peripheral if no registers/clusters are defined.
-            if not registers_clusters:
-                warnings.warn(
-                    f"Peripheral '{i_peripheral.name}' has no registers or clusters. Peripheral will be ignored!",
-                    ProcessWarning,
-                )
-                continue
-
-            # Warn if base address is not 4-byte aligned.
-            if i_peripheral.base_address % 4 != 0:
-                warnings.warn(
-                    f"Peripheral '{i_peripheral.name}' base address is not 4 byte aligned",
-                    ProcessWarning,
-                )
-
-            # Check if specified size is a multiple of 8.
-            if i_peripheral.size is not None and i_peripheral.size % 8 != 0:
-                warnings.warn(
-                    f"Peripheral '{i_peripheral.name}' size must be a multiple of 8. Peripheral will be ignored!",
-                    ProcessWarning,
-                )
-                continue
-
-            if not i_peripheral.address_blocks:
-                raise ProcessException(f"Peripheral '{i_peripheral.name}' has no address blocks")
-
-            # Check that address blocks do not overlap.
-            for idx in range(1, len(i_peripheral.address_blocks)):
-                prev = i_peripheral.address_blocks[idx - 1]
-                curr = i_peripheral.address_blocks[idx]
-                if curr.offset < prev.offset + prev.size:
-                    raise ProcessException(
-                        f"Address block with offset '{curr.offset}' overlaps "
-                        f"with address block with offset '{prev.offset}'"
-                    )
-
-            # Calculate specified end address and peripheral size from address blocks.
-            end_address_specified = max(
-                i_peripheral.base_address + ab.offset + ab.size - 1 for ab in i_peripheral.address_blocks
-            )
-            peripheral_size_specified = sum(block.size for block in i_peripheral.address_blocks)
-
-            # Calculate effective end address from registers/clusters.
-            end_address_effective = max(
-                i_peripheral.base_address
-                + r.address_offset
-                + (_to_byte(r.size) if isinstance(r, Register) else r.cluster_size)
-                - 1
-                for r in registers_clusters
-            )
-            peripheral_size_effective = end_address_effective - i_peripheral.base_address + 1
-
-            peripheral = Peripheral.from_intermediate_peripheral(
-                i_peripheral=i_peripheral,
-                registers_clusters=registers_clusters,
-                end_address_effective=end_address_effective,
-                end_address_specified=end_address_specified,
-                peripheral_size_effective=peripheral_size_effective,
-                peripheral_size_specified=peripheral_size_specified,
-            )
-
-            # Check for duplicate peripheral names
-            if peripheral.name in peripheral_lookup:
-                raise ProcessException(f"Duplicate peripheral name found: {peripheral.name}")
-
-            peripheral_lookup[peripheral.name] = peripheral
-            finalized_peripherals.append(peripheral)
+            peripheral = self._process_single_peripheral(i_peripheral, peripheral_lookup)
+            if peripheral:
+                peripheral_lookup[peripheral.name] = peripheral
+                finalized_peripherals.append(peripheral)
 
         finalized_peripherals.sort(key=lambda p: (p.base_address, p.name))
+        self._check_peripheral_address_overlaps(finalized_peripherals, peripheral_lookup)
 
-        # Warn if peripheral addresses overlap, considering alternate_peripherals
+        return finalized_peripherals
+
+    def _process_single_peripheral(
+        self, i_peripheral: IPeripheral, peripheral_lookup: dict[str, Peripheral]
+    ) -> None | Peripheral:
+        # Finalize registers/clusters.
+        registers_clusters = self._validate_and_finalize_registers_clusters(
+            i_peripheral.registers_clusters, i_peripheral.base_address
+        )
+        if not registers_clusters:
+            warnings.warn(
+                f"Peripheral '{i_peripheral.name}' has no registers or clusters. Peripheral will be ignored!",
+                ProcessWarning,
+            )
+            return None
+
+        # Warn if base address is not 4-byte aligned.
+        if i_peripheral.base_address % 4 != 0:
+            warnings.warn(
+                f"Peripheral '{i_peripheral.name}' base address is not 4 byte aligned",
+                ProcessWarning,
+            )
+
+        # Check if specified size is a multiple of 8.
+        if i_peripheral.size is not None and i_peripheral.size % 8 != 0:
+            warnings.warn(
+                f"Peripheral '{i_peripheral.name}' size must be a multiple of 8. Peripheral will be ignored!",
+                ProcessWarning,
+            )
+            return None
+
+        # Ensure address blocks are provided.
+        if not i_peripheral.address_blocks:
+            raise ProcessException(f"Peripheral '{i_peripheral.name}' has no address blocks")
+
+        # Validate that address blocks do not overlap.
+        self._validate_address_blocks(i_peripheral)
+
+        # Calculate specified end address and total size from address blocks.
+        end_address_specified = max(
+            i_peripheral.base_address + ab.offset + ab.size - 1 for ab in i_peripheral.address_blocks
+        )
+        peripheral_size_specified = sum(ab.size for ab in i_peripheral.address_blocks)
+
+        # Calculate effective end address and total size from registers/clusters.
+        end_address_effective = max(
+            i_peripheral.base_address
+            + r.address_offset
+            + ((_to_byte(r.size) if isinstance(r, Register) else r.cluster_size))
+            - 1
+            for r in registers_clusters
+        )
+        peripheral_size_effective = end_address_effective - i_peripheral.base_address + 1
+
+        peripheral = Peripheral.from_intermediate_peripheral(
+            i_peripheral=i_peripheral,
+            registers_clusters=registers_clusters,
+            end_address_effective=end_address_effective,
+            end_address_specified=end_address_specified,
+            peripheral_size_effective=peripheral_size_effective,
+            peripheral_size_specified=peripheral_size_specified,
+        )
+
+        if peripheral.name in peripheral_lookup:
+            raise ProcessException(f"Duplicate peripheral name found: {peripheral.name}")
+
+        return peripheral
+
+    def _validate_address_blocks(self, i_peripheral: IPeripheral) -> None:
+        for idx in range(1, len(i_peripheral.address_blocks)):
+            prev = i_peripheral.address_blocks[idx - 1]
+            curr = i_peripheral.address_blocks[idx]
+            if curr.offset < prev.offset + prev.size:
+                raise ProcessException(
+                    f"Address block with offset '{curr.offset}' overlaps with address block with offset '{prev.offset}'"
+                )
+
+    def _check_peripheral_address_overlaps(
+        self, finalized_peripherals: list[Peripheral], peripheral_lookup: dict[str, Peripheral]
+    ) -> None:
         effective_intervals: list[tuple[int, str]] = []
         specified_intervals: list[tuple[int, str]] = []
         for periph in finalized_peripherals:
-            allowed_names: set[str] = set()
+            allowed_names = self._compute_allowed_alternate_names(periph, peripheral_lookup)
 
-            # Only compute allowed alternate peripherals if the peripheral has an alternate_peripheral
-            if periph.alternate_peripheral:
-                to_process = {periph.alternate_peripheral}
-                while to_process:
-                    current = to_process.pop()
-                    if current not in allowed_names:
-                        allowed_names.add(current)
-                        # Add all peripherals that are alternates of the current
-                        to_process.update(n for n, p in peripheral_lookup.items() if p.alternate_peripheral == current)
-                        # Include the primary peripheral if the current is an alternate and not None
-                        primary_peripheral = peripheral_lookup[current].alternate_peripheral
-                        if primary_peripheral is not None:
-                            to_process.add(primary_peripheral)
-
-            # Check effective address overlap, considering allowed alternate peripherals
+            # Check effective address overlaps.
             for end, name in effective_intervals:
                 if periph.base_address <= end:
                     if allowed_names:
@@ -680,7 +678,7 @@ class _ValidateAndFinalize:
                                 ProcessWarning,
                             )
 
-            # Check specified address overlap, considering allowed alternate peripherals
+            # Check specified address overlaps.
             for end, name in specified_intervals:
                 if periph.base_address <= end:
                     if allowed_names:
@@ -702,11 +700,27 @@ class _ValidateAndFinalize:
                                 ProcessWarning,
                             )
 
-            # Add current peripheral to the intervals list for future overlap checks
             effective_intervals.append((periph.end_address_effective, periph.name))
             specified_intervals.append((periph.end_address_specified, periph.name))
 
-        return finalized_peripherals
+    def _compute_allowed_alternate_names(
+        self, periph: Peripheral, peripheral_lookup: dict[str, Peripheral]
+    ) -> set[str]:
+        allowed_names: set[str] = set()
+        if periph.alternate_peripheral:
+            to_process = {periph.alternate_peripheral}
+            while to_process:
+                current = to_process.pop()
+                if current not in allowed_names:
+                    allowed_names.add(current)
+                    # Add all peripherals that are alternates of the current.
+                    to_process.update(n for n, p in peripheral_lookup.items() if p.alternate_peripheral == current)
+                    # If the current peripheral is an alternate, include its primary if set.
+                    primary_peripheral = peripheral_lookup[current].alternate_peripheral
+                    if primary_peripheral is not None:
+                        to_process.add(primary_peripheral)
+
+        return allowed_names
 
     def _validate_and_finalize_registers_clusters(
         self, i_registers_clusters: list[ICluster | IRegister], parent_base: int
