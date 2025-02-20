@@ -655,7 +655,7 @@ class _ValidateAndFinalize:
         effective_intervals: list[tuple[int, str]] = []
         specified_intervals: list[tuple[int, str]] = []
         for periph in finalized_peripherals:
-            allowed_names = self._compute_allowed_alternate_names(periph, peripheral_lookup)
+            allowed_names = self._compute_allowed_alternate_peripheral_names(periph, peripheral_lookup)
 
             # Check effective address overlaps.
             for end, name in effective_intervals:
@@ -703,7 +703,7 @@ class _ValidateAndFinalize:
             effective_intervals.append((periph.end_address_effective, periph.name))
             specified_intervals.append((periph.end_address_specified, periph.name))
 
-    def _compute_allowed_alternate_names(
+    def _compute_allowed_alternate_peripheral_names(
         self, periph: Peripheral, peripheral_lookup: dict[str, Peripheral]
     ) -> set[str]:
         allowed_names: set[str] = set()
