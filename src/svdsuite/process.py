@@ -564,9 +564,12 @@ class _ValidateAndFinalize:
         peripheral_lookup: dict[str, Peripheral] = {}
         finalized_peripherals: list[Peripheral] = []
         for i_peripheral in i_peripherals:
-            peripheral = self._validate_and_finalize_peripheral(i_peripheral, peripheral_lookup)
+            peripheral = self._validate_and_finalize_peripheral(i_peripheral)
             if peripheral:
+                if peripheral.name in peripheral_lookup:
+                    raise ProcessException(f"Duplicate peripheral name found: {peripheral.name}")
                 peripheral_lookup[peripheral.name] = peripheral
+
                 finalized_peripherals.append(peripheral)
 
         finalized_peripherals.sort(key=lambda p: (p.base_address, p.name))
@@ -574,9 +577,7 @@ class _ValidateAndFinalize:
 
         return finalized_peripherals
 
-    def _validate_and_finalize_peripheral(
-        self, i_peripheral: IPeripheral, peripheral_lookup: dict[str, Peripheral]
-    ) -> None | Peripheral:
+    def _validate_and_finalize_peripheral(self, i_peripheral: IPeripheral) -> None | Peripheral:
         # Finalize registers/clusters.
         registers_clusters = self._validate_and_finalize_registers_clusters(
             i_peripheral.registers_clusters, i_peripheral.base_address
@@ -634,9 +635,6 @@ class _ValidateAndFinalize:
             peripheral_size_effective=peripheral_size_effective,
             peripheral_size_specified=peripheral_size_specified,
         )
-
-        if peripheral.name in peripheral_lookup:
-            raise ProcessException(f"Duplicate peripheral name found: {peripheral.name}")
 
         return peripheral
 
@@ -725,69 +723,20 @@ class _ValidateAndFinalize:
     def _validate_and_finalize_registers_clusters(
         self, i_registers_clusters: list[ICluster | IRegister], parent_base: int
     ) -> list[Cluster | Register]:
-        seen_names: set[str] = set()
+        reg_cluster_lookup: dict[str, Register | Cluster] = {}
         finalized_rc: list[Cluster | Register] = []
-        for i_reg_cluster in i_registers_clusters:
-            self._validate_name(seen_names, i_reg_cluster)
-            effective_base = parent_base + i_reg_cluster.address_offset
+        for i_register_cluster in i_registers_clusters:
+            register_cluster = self._validate_and_finalize_register_cluster(i_register_cluster, parent_base)
+            if register_cluster:
+                if register_cluster.name in reg_cluster_lookup:
+                    raise ProcessException(f"Duplicate register/cluster name found: {register_cluster.name}")
+                reg_cluster_lookup[register_cluster.name] = register_cluster
 
-            # Check if size is not None
-            if i_reg_cluster.size is None:
-                raise ProcessException(f"Register/Cluster '{i_reg_cluster.name}' size is None")
+                finalized_rc.append(register_cluster)
 
-            # Ensure size is a multiple of 8 if specified.
-            if i_reg_cluster.size % 8 != 0:
-                warnings.warn(
-                    f"Register/Cluster '{i_reg_cluster.name}' size must be a multiple of 8. "
-                    "Register/Cluster will be ignored!",
-                    ProcessWarning,
-                )
-                continue
-
-            # Check that the offset is size aligned.
-            alignment = _get_alignment(_to_byte(i_reg_cluster.size))
-            if i_reg_cluster.address_offset % alignment != 0:
-                raise ProcessException(
-                    f"Register/Cluster '{i_reg_cluster.name}' offset ({hex(i_reg_cluster.address_offset)}) "
-                    f"is not properly aligned to {alignment} bytes."
-                )
-
-            if isinstance(i_reg_cluster, ICluster):
-                children = self._validate_and_finalize_registers_clusters(
-                    i_reg_cluster.registers_clusters, effective_base
-                )
-                if children:
-                    cluster_effective_end = max(
-                        child.base_address
-                        + (_to_byte(child.size) if isinstance(child, Register) else child.cluster_size)
-                        - 1
-                        for child in children
-                    )
-                else:
-                    cluster_effective_end = effective_base + i_reg_cluster.size - 1
-
-                cluster_size = cluster_effective_end - effective_base + 1
-                cluster = Cluster.from_intermediate_cluster(
-                    i_cluster=i_reg_cluster,
-                    registers_clusters=children,
-                    base_address=effective_base,
-                    end_address=cluster_effective_end,
-                    cluster_size=cluster_size,
-                )
-                finalized_rc.append(cluster)
-
-            elif isinstance(i_reg_cluster, IRegister):  # pyright: ignore[reportUnnecessaryIsInstance]
-                register = Register.from_intermediate_register(
-                    i_register=i_reg_cluster,
-                    fields=self._validate_and_finalize_fields(i_reg_cluster.fields, i_reg_cluster.size),
-                    base_address=effective_base,
-                )
-                finalized_rc.append(register)
-            else:
-                raise ProcessException("Unknown register cluster type")
         finalized_rc.sort(key=lambda m: (m.base_address, m.name))
 
-        # Warn if registers/clusters overlap.
+        # Warn if registers/clusters overlap
         max_rc_end = -1
         for rc in finalized_rc:
             # Compute current element’s end address based on its type.
@@ -798,12 +747,71 @@ class _ValidateAndFinalize:
 
         return finalized_rc
 
+    def _validate_and_finalize_register_cluster(
+        self, i_reg_cluster: ICluster | IRegister, parent_base: int
+    ) -> None | Cluster | Register:
+        effective_base = parent_base + i_reg_cluster.address_offset
+
+        # Check if size is not None
+        if i_reg_cluster.size is None:
+            raise ProcessException(f"Register/Cluster '{i_reg_cluster.name}' size is None")
+
+        # Ensure size is a multiple of 8 if specified.
+        if i_reg_cluster.size % 8 != 0:
+            warnings.warn(
+                f"Register/Cluster '{i_reg_cluster.name}' size must be a multiple of 8. "
+                "Register/Cluster will be ignored!",
+                ProcessWarning,
+            )
+            return None
+
+        # Check that the offset is size aligned.
+        alignment = _get_alignment(_to_byte(i_reg_cluster.size))
+        if i_reg_cluster.address_offset % alignment != 0:
+            raise ProcessException(
+                f"Register/Cluster '{i_reg_cluster.name}' offset ({hex(i_reg_cluster.address_offset)}) "
+                f"is not properly aligned to {alignment} bytes."
+            )
+
+        if isinstance(i_reg_cluster, ICluster):
+            children = self._validate_and_finalize_registers_clusters(i_reg_cluster.registers_clusters, effective_base)
+            if children:
+                cluster_effective_end = max(
+                    child.base_address
+                    + (_to_byte(child.size) if isinstance(child, Register) else child.cluster_size)
+                    - 1
+                    for child in children
+                )
+            else:
+                cluster_effective_end = effective_base + i_reg_cluster.size - 1
+
+            cluster_size = cluster_effective_end - effective_base + 1
+            return Cluster.from_intermediate_cluster(
+                i_cluster=i_reg_cluster,
+                registers_clusters=children,
+                base_address=effective_base,
+                end_address=cluster_effective_end,
+                cluster_size=cluster_size,
+            )
+        elif isinstance(i_reg_cluster, IRegister):  # pyright: ignore[reportUnnecessaryIsInstance]
+            return Register.from_intermediate_register(
+                i_register=i_reg_cluster,
+                fields=self._validate_and_finalize_fields(i_reg_cluster.fields, i_reg_cluster.size),
+                base_address=effective_base,
+            )
+
+        raise ProcessException("Unknown register cluster type")
+
     def _validate_and_finalize_fields(self, i_fields: list[IField], reg_size: int) -> list[Field]:
         seen_names: set[str] = set()
         fields: list[Field] = []
         for i_field in i_fields:
-            self._validate_name(seen_names, i_field)
+            if i_field.name in seen_names:
+                raise ProcessException(f"Duplicate element name found: {i_field.name}")
+            seen_names.add(i_field.name)
+
             fields.append(Field.from_intermediate_field(i_field))
+
         fields.sort(key=lambda f: f.lsb)
 
         for idx, field in enumerate(fields):
@@ -816,12 +824,6 @@ class _ValidateAndFinalize:
                 raise ProcessException(f"Field '{field.name}' overlaps with '{fields[idx - 1].name}'")
 
         return fields
-
-    # TODO delete if not needed anymore
-    def _validate_name(self, seen_names: set[str], element: IntermediateDimablePeripheralTypes) -> None:
-        if element.name in seen_names:
-            raise ProcessException(f"Duplicate element name found: {element.name}")
-        seen_names.add(element.name)
 
 
 class _ProcessDimension:
