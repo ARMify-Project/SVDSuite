@@ -561,7 +561,7 @@ class _ValidateAndFinalize:
         return Device.from_intermediate_device(i_device, peripherals)
 
     def _validate_and_finalize_peripherals(self, i_peripherals: list[IPeripheral]) -> list[Peripheral]:
-        seen_names: set[str] = set()
+        peripheral_lookup: dict[str, Peripheral] = {}
         finalized_peripherals: list[Peripheral] = []
         for i_peripheral in i_peripherals:
             # Finalize registers/clusters for the peripheral.
@@ -591,8 +591,6 @@ class _ValidateAndFinalize:
                     ProcessWarning,
                 )
                 continue
-
-            self._validate_name(seen_names, i_peripheral)
 
             if not i_peripheral.address_blocks:
                 raise ProcessException(f"Peripheral '{i_peripheral.name}' has no address blocks")
@@ -631,27 +629,82 @@ class _ValidateAndFinalize:
                 peripheral_size_effective=peripheral_size_effective,
                 peripheral_size_specified=peripheral_size_specified,
             )
+
+            # Check for duplicate peripheral names
+            if peripheral.name in peripheral_lookup:
+                raise ProcessException(f"Duplicate peripheral name found: {peripheral.name}")
+
+            peripheral_lookup[peripheral.name] = peripheral
             finalized_peripherals.append(peripheral)
 
         finalized_peripherals.sort(key=lambda p: (p.base_address, p.name))
 
-        # Warn if peripheral addresses overlap.
-        max_end_effective = -1
-        max_end_specified = -1
+        # Warn if peripheral addresses overlap, considering alternate_peripherals
+        effective_intervals: list[tuple[int, str]] = []
+        specified_intervals: list[tuple[int, str]] = []
         for periph in finalized_peripherals:
-            if periph.base_address <= max_end_effective:
-                warnings.warn(
-                    f"Effective peripheral address overlap: '{periph.name}' overlaps with a previous peripheral",
-                    ProcessWarning,
-                )
-            if periph.base_address <= max_end_specified:
-                warnings.warn(
-                    f"Specified peripheral address overlap in address_blocks: '{periph.name}' overlaps with a previous peripheral",
-                    ProcessWarning,
-                )
-            # Update the running maximums
-            max_end_effective = max(max_end_effective, periph.end_address_effective)
-            max_end_specified = max(max_end_specified, periph.end_address_specified)
+            allowed_names: set[str] = set()
+
+            # Only compute allowed alternate peripherals if the peripheral has an alternate_peripheral
+            if periph.alternate_peripheral:
+                to_process = {periph.alternate_peripheral}
+                while to_process:
+                    current = to_process.pop()
+                    if current not in allowed_names:
+                        allowed_names.add(current)
+                        # Add all peripherals that are alternates of the current
+                        to_process.update(n for n, p in peripheral_lookup.items() if p.alternate_peripheral == current)
+                        # Include the primary peripheral if the current is an alternate and not None
+                        primary_peripheral = peripheral_lookup[current].alternate_peripheral
+                        if primary_peripheral is not None:
+                            to_process.add(primary_peripheral)
+
+            # Check effective address overlap, considering allowed alternate peripherals
+            for end, name in effective_intervals:
+                if periph.base_address <= end:
+                    if allowed_names:
+                        if name not in allowed_names:
+                            warnings.warn(
+                                f"Effective peripheral address overlap: '{periph.name}' overlaps with '{name}', "
+                                f"which is not among the allowed alternate peripherals {allowed_names}",
+                                ProcessWarning,
+                            )
+                    else:
+                        existing_peripheral = peripheral_lookup[name]
+                        if (
+                            not existing_peripheral.alternate_peripheral
+                            or existing_peripheral.alternate_peripheral != periph.name
+                        ):
+                            warnings.warn(
+                                f"Effective peripheral address overlap: '{periph.name}' overlaps with '{name}'",
+                                ProcessWarning,
+                            )
+
+            # Check specified address overlap, considering allowed alternate peripherals
+            for end, name in specified_intervals:
+                if periph.base_address <= end:
+                    if allowed_names:
+                        if name not in allowed_names:
+                            warnings.warn(
+                                f"Specified peripheral address overlap in address_blocks: '{periph.name}' overlaps "
+                                f"with '{name}', which is not among the allowed alternate peripherals {allowed_names}",
+                                ProcessWarning,
+                            )
+                    else:
+                        existing_peripheral = peripheral_lookup[name]
+                        if (
+                            not existing_peripheral.alternate_peripheral
+                            or existing_peripheral.alternate_peripheral != periph.name
+                        ):
+                            warnings.warn(
+                                f"Specified peripheral address overlap in address_blocks: '{periph.name}' "
+                                f"overlaps with '{name}'",
+                                ProcessWarning,
+                            )
+
+            # Add current peripheral to the intervals list for future overlap checks
+            effective_intervals.append((periph.end_address_effective, periph.name))
+            specified_intervals.append((periph.end_address_specified, periph.name))
 
         return finalized_peripherals
 
@@ -750,6 +803,7 @@ class _ValidateAndFinalize:
 
         return fields
 
+    # TODO delete if not needed anymore
     def _validate_name(self, seen_names: set[str], element: IntermediateDimablePeripheralTypes) -> None:
         if element.name in seen_names:
             raise ProcessException(f"Duplicate element name found: {element.name}")
