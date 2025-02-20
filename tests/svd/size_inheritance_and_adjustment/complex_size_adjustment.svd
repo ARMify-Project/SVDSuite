@@ -39,7 +39,7 @@
           <cluster>
             <name>ClusterB</name>
             <description>ClusterB description</description>
-            <addressOffset>0xc</addressOffset>
+            <addressOffset>0x10</addressOffset>
             <register>
               <name>RegisterA</name>
               <addressOffset>0x0</addressOffset>
@@ -54,7 +54,7 @@
         <cluster>
           <name>ClusterC</name>
           <description>ClusterC description</description>
-          <addressOffset>0x1c</addressOffset>
+          <addressOffset>0x20</addressOffset>
           <register>
             <name>RegisterA</name>
             <addressOffset>0x0</addressOffset>
@@ -66,7 +66,7 @@
         </cluster>
         <register>
           <name>RegisterA</name>
-          <addressOffset>0x2c</addressOffset>
+          <addressOffset>0x30</addressOffset>
         </register>
       </registers>
     </peripheral>

@@ -183,7 +183,7 @@ def test_complex_size_adjustment(get_processed_device_from_testfile: Callable[[s
     cluster_b = cluster_a.registers_clusters[2]
     assert isinstance(cluster_b, Cluster)
     assert cluster_b.name == "ClusterB"
-    assert cluster_b.address_offset == 0xC
+    assert cluster_b.address_offset == 0x10
     assert cluster_b.size == 64  # not set, size adjustment results in 64 from RegisterB
     assert len(cluster_b.registers_clusters) == 2
 
@@ -200,7 +200,7 @@ def test_complex_size_adjustment(get_processed_device_from_testfile: Callable[[s
     cluster_c = device.peripherals[0].registers_clusters[1]
     assert isinstance(cluster_c, Cluster)
     assert cluster_c.name == "ClusterC"
-    assert cluster_c.address_offset == 0x1C
+    assert cluster_c.address_offset == 0x20
     assert cluster_c.size == 32  # not set, size adjustment results implicit in 32 from RegisterA and RegisterB
     assert len(cluster_c.registers_clusters) == 2
 
@@ -216,7 +216,7 @@ def test_complex_size_adjustment(get_processed_device_from_testfile: Callable[[s
 
     assert isinstance(device.peripherals[0].registers_clusters[2], Register)
     assert device.peripherals[0].registers_clusters[2].name == "RegisterA"
-    assert device.peripherals[0].registers_clusters[2].address_offset == 0x2C
+    assert device.peripherals[0].registers_clusters[2].address_offset == 0x30
     assert device.peripherals[0].registers_clusters[2].size == 64  # not set, ef. size results in 64 from peripheral
 
 
