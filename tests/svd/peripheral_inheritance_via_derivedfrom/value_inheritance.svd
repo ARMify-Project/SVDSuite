@@ -19,7 +19,7 @@
       <name>PeripheralA</name>
       <version>1.0</version>
       <description>PeripheralA Description</description>
-      <alternatePeripheral>PeripheralC</alternatePeripheral>
+      <alternatePeripheral>PeripheralB</alternatePeripheral>
       <groupName>PeripheralsGroup</groupName>
       <prependToName>Prefix</prependToName>
       <appendToName>Suffix</appendToName>
