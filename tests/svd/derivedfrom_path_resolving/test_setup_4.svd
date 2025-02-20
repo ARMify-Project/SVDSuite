@@ -67,7 +67,7 @@
         </cluster>
         <register derivedFrom="PATH">
           <name>RegisterB</name>
-          <addressOffset>0x4</addressOffset>
+          <addressOffset>0x8</addressOffset>
         </register>
       </registers>
     </peripheral>
