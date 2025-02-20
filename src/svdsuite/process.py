@@ -564,7 +564,7 @@ class _ValidateAndFinalize:
         peripheral_lookup: dict[str, Peripheral] = {}
         finalized_peripherals: list[Peripheral] = []
         for i_peripheral in i_peripherals:
-            peripheral = self._process_single_peripheral(i_peripheral, peripheral_lookup)
+            peripheral = self._validate_and_finalize_peripheral(i_peripheral, peripheral_lookup)
             if peripheral:
                 peripheral_lookup[peripheral.name] = peripheral
                 finalized_peripherals.append(peripheral)
@@ -574,7 +574,7 @@ class _ValidateAndFinalize:
 
         return finalized_peripherals
 
-    def _process_single_peripheral(
+    def _validate_and_finalize_peripheral(
         self, i_peripheral: IPeripheral, peripheral_lookup: dict[str, Peripheral]
     ) -> None | Peripheral:
         # Finalize registers/clusters.
