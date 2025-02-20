@@ -100,6 +100,7 @@ def test_peripherals_overlap_address(get_processed_device_from_testfile: Callabl
     assert len(device.peripherals[1].registers_clusters) == 1
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_different_register_names_in_peripheral(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test ensures that the parser correctly processes a peripheral containing multiple registers, each with a
@@ -158,6 +159,7 @@ def test_same_register_names_in_peripheral(get_processed_device_from_testfile: C
     get_processed_device_from_testfile("logical_integrity/same_register_names_in_peripheral.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_register_and_cluster_register_same_names_in_peripheral(
     get_processed_device_from_testfile: Callable[[str], Device]
 ):
@@ -230,6 +232,7 @@ def test_register_and_cluster_same_names_in_peripheral(get_processed_device_from
     get_processed_device_from_testfile("logical_integrity/register_and_cluster_same_names_in_peripheral.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_register_and_nested_cluster_same_names_in_peripheral(
     get_processed_device_from_testfile: Callable[[str], Device]
 ):
@@ -459,6 +462,7 @@ def test_overlap_register_cluster_addresses_in_peripheral(get_processed_device_f
     assert device.peripherals[0].registers_clusters[1].registers_clusters[0].size == 16
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_peripheral_sorting(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test verifies whether the parser correctly sorts the peripherals based on their base addresses, and if
@@ -496,6 +500,7 @@ def test_peripheral_sorting(get_processed_device_from_testfile: Callable[[str], 
     assert device.peripherals[3].base_address == 0x40004000
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_register_cluster_sorting_in_peripheral(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks whether the parser correctly sorts registers and clusters within a peripheral based on their
@@ -635,7 +640,7 @@ def test_register_size_bit_width(get_processed_device_from_testfile: Callable[[s
     assert device.peripherals[0].registers_clusters[0].size == 32
 
 
-# TODO add @pytest.mark.filterwarnings("error::ProcessWarning") and for many other tests
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_peripheral(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test ensures that the parser correctly handles the scenario where two peripherals share the same base
@@ -669,6 +674,7 @@ def test_alternate_peripheral(get_processed_device_from_testfile: Callable[[str]
     assert len(device.peripherals[1].registers_clusters) == 1
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_peripheral_forward_reference(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks how the parser handles cases where an alternate peripheral is referenced before its
@@ -730,6 +736,7 @@ def test_alternate_peripheral_same_name(get_processed_device_from_testfile: Call
     get_processed_device_from_testfile("logical_integrity/alternate_peripheral_same_name.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_peripheral_overlap(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks whether the parser can correctly handle the scenario where two peripherals overlap in their
@@ -763,6 +770,7 @@ def test_alternate_peripheral_overlap(get_processed_device_from_testfile: Callab
     assert len(device.peripherals[1].registers_clusters) == 1
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_peripheral_multiple(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks whether the parser can correctly handle a scenario where multiple peripherals share the same
@@ -804,6 +812,7 @@ def test_alternate_peripheral_multiple(get_processed_device_from_testfile: Calla
     assert len(device.peripherals[2].registers_clusters) == 1
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_peripheral_multiple_svdconv_warning(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test evaluates how the parser handles a scenario where multiple peripherals share the same base address
@@ -850,6 +859,7 @@ def test_alternate_peripheral_multiple_svdconv_warning(get_processed_device_from
     assert len(device.peripherals[3].registers_clusters) == 1
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_register(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks whether the parser correctly handles registers that are marked as alternate registers. In
@@ -886,6 +896,7 @@ def test_alternate_register(get_processed_device_from_testfile: Callable[[str], 
     assert device.peripherals[0].registers_clusters[1].alternate_register == "RegisterA"
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_register_forward_reference(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks how the parser handles cases where a register is marked as an alternate register of another
@@ -949,6 +960,7 @@ def test_alternate_register_same_name(get_processed_device_from_testfile: Callab
     get_processed_device_from_testfile("logical_integrity/alternate_register_same_name.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_register_overlap(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks whether the parser can correctly handle registers that overlap in memory but are defined as
@@ -985,6 +997,7 @@ def test_alternate_register_overlap(get_processed_device_from_testfile: Callable
     assert device.peripherals[0].registers_clusters[1].alternate_register == "RegisterA"
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_register_multiple(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test ensures that the parser can handle multiple registers that share the same address and are designated
@@ -1034,6 +1047,7 @@ def test_alternate_register_multiple(get_processed_device_from_testfile: Callabl
     assert device.peripherals[0].registers_clusters[3].alternate_register == "RegisterC"
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_cluster(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks whether the parser can correctly handle clusters that share the same address and are
@@ -1070,6 +1084,7 @@ def test_alternate_cluster(get_processed_device_from_testfile: Callable[[str], D
     assert device.peripherals[0].registers_clusters[1].alternate_cluster == "ClusterA"
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_cluster_forward_reference(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks whether the parser can correctly handle forward references in alternate cluster definitions.
@@ -1133,6 +1148,7 @@ def test_alternate_cluster_same_name(get_processed_device_from_testfile: Callabl
     get_processed_device_from_testfile("logical_integrity/alternate_cluster_same_name.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_cluster_overlap(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks how the parser handles clusters that overlap in memory but are designated as alternates of
@@ -1170,6 +1186,7 @@ def test_alternate_cluster_overlap(get_processed_device_from_testfile: Callable[
     assert device.peripherals[0].registers_clusters[1].alternate_cluster == "ClusterA"
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_cluster_multiple(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test evaluates how the parser handles multiple clusters that share the same address and are designated as
@@ -1220,6 +1237,7 @@ def test_alternate_cluster_multiple(get_processed_device_from_testfile: Callable
     assert device.peripherals[0].registers_clusters[3].alternate_cluster == "ClusterC"
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_register_alternate_group(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test evaluates whether the parser can correctly process registers that share the same address but belong
@@ -1263,6 +1281,7 @@ def test_register_alternate_group(get_processed_device_from_testfile: Callable[[
     assert device.peripherals[0].registers_clusters[2].alternate_group == "RegisterX"
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_register_alternate_group_forward_reference(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test ensures that the parser can correctly handle forward references when defining alternate register
@@ -1329,6 +1348,7 @@ def test_register_alternate_group_same_name(get_processed_device_from_testfile: 
     get_processed_device_from_testfile("logical_integrity/register_alternate_group_same_name.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_register_alternate_group_overlap(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks whether the parser correctly handles registers that belong to the same alternate group but
@@ -1439,6 +1459,7 @@ def test_fields_overlap_bit_offset(get_processed_device_from_testfile: Callable[
     get_processed_device_from_testfile("logical_integrity/fields_overlap_bit_offset.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_field_bit_range_processing(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test validates the parser's ability to process and interpret bit ranges in a field using three mutually

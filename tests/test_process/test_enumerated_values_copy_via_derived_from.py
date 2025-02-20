@@ -40,6 +40,7 @@ def test_backward_reference_same_scope(get_processed_device_from_testfile: Calla
     get_processed_device_from_testfile("enum_copy_via_derivedfrom/backward_reference_same_scope.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_backward_reference_different_scope(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case verifies that an enumerated values container can be correctly copied from another field. In the
@@ -100,6 +101,7 @@ def test_backward_reference_different_scope(get_processed_device_from_testfile: 
     assert fieldb_enum_container.enumerated_values[1].is_default is False
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_forward_reference_different_scope(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case verifies that an enumerated values container can be correctly copied from another field,

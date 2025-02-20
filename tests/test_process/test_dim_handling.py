@@ -21,6 +21,7 @@ from svdsuite.process import ProcessException
 from svdsuite.model.process import Device, Register, Cluster
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_array_peripheral_level(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test validates whether the parser correctly handles arrays at the peripheral level using `dim` and
@@ -73,6 +74,7 @@ def test_simple_array_peripheral_level(get_processed_device_from_testfile: Calla
     assert device.peripherals[1].registers_clusters[1].size == 32
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_array_cluster_level(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case checks the parser's ability to correctly handle arrays defined at the cluster level. The `dim`
@@ -126,6 +128,7 @@ def test_simple_array_cluster_level(get_processed_device_from_testfile: Callable
     assert device.peripherals[0].registers_clusters[1].registers_clusters[1].size == 32
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_array_register_level(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks the parser's ability to handle arrays defined at the register level. The `dim` element is
@@ -201,6 +204,7 @@ def test_simple_list_peripheral_level(get_processed_device_from_testfile: Callab
     get_processed_device_from_testfile("dim_handling/simple_list_peripheral_level.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_list_cluster_level(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test verifies how the parser handles `dim` lists at the cluster level. The SVD file defines multiple
@@ -254,6 +258,7 @@ def test_simple_list_cluster_level(get_processed_device_from_testfile: Callable[
     assert device.peripherals[0].registers_clusters[1].registers_clusters[1].size == 32
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_list_register_level(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test verifies the parser's ability to handle `dim` lists at the register level, covering various ways of
@@ -343,6 +348,7 @@ def test_simple_list_register_level(get_processed_device_from_testfile: Callable
     assert device.peripherals[0].registers_clusters[12].size == 32
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_list_field_level(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test ensures that the parser correctly handles `dim` lists at the field level within a register. The SVD
@@ -611,6 +617,7 @@ def test_two_dim_resulting_in_same_name(get_processed_device_from_testfile: Call
     get_processed_device_from_testfile("dim_handling/two_dim_resulting_in_same_name.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_array_displayname_with_dim(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case checks how the parser handles an array of registers where each register is assigned a distinct
@@ -646,6 +653,7 @@ def test_array_displayname_with_dim(get_processed_device_from_testfile: Callable
     assert device.peripherals[0].registers_clusters[1].display_name == "Register1"
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_list_displayname_with_dim(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case examines how the parser handles a list of registers using the `dim` element, where each

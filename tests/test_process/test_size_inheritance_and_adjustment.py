@@ -99,6 +99,7 @@ from svdsuite.process import ProcessWarning
 from svdsuite.model.process import Device, Register, Cluster
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_size_adjustment(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test evaluates how the parser handles simple size inheritance and explicit size adjustments within a
@@ -135,6 +136,7 @@ def test_simple_size_adjustment(get_processed_device_from_testfile: Callable[[st
     assert device.peripherals[0].registers_clusters[1].size == 64  # explicitly set to 64
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_complex_size_adjustment(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test examines how the parser handles more intricate scenarios of size inheritance and adjustments across
@@ -220,6 +222,7 @@ def test_complex_size_adjustment(get_processed_device_from_testfile: Callable[[s
     assert device.peripherals[0].registers_clusters[2].size == 64  # not set, ef. size results in 64 from peripheral
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_overlap_due_to_size_adjustment(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test verifies how the parser handles size adjustments that lead to register overlaps. The SVD file

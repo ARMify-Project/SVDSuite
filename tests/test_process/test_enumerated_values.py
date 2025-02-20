@@ -15,6 +15,7 @@ from svdsuite.model.process import Device, Register
 from svdsuite.model.types import EnumUsageType
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_read_write(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test verifies how the parser handles enumerated values associated with a field that has both read and
@@ -94,6 +95,7 @@ def test_three_containers(get_processed_device_from_testfile: Callable[[str], De
     get_processed_device_from_testfile("enumerated_values/three_containers.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_default_usage(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test verifies the parser's handling of `<enumeratedValues>` containers when the `<usage>` attribute is
@@ -126,8 +128,20 @@ def test_default_usage(get_processed_device_from_testfile: Callable[[str], Devic
 @pytest.mark.parametrize(
     "first_input,second_input,expected1,expected2",
     [
-        pytest.param("read", "write", EnumUsageType.READ, EnumUsageType.WRITE),
-        pytest.param("write", "read", EnumUsageType.WRITE, EnumUsageType.READ),
+        pytest.param(
+            "read",
+            "write",
+            EnumUsageType.READ,
+            EnumUsageType.WRITE,
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
+        pytest.param(
+            "write",
+            "read",
+            EnumUsageType.WRITE,
+            EnumUsageType.READ,
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
         pytest.param("read", "read", None, None, marks=pytest.mark.xfail(strict=True, raises=ProcessException)),
         pytest.param("write", "write", None, None, marks=pytest.mark.xfail(strict=True, raises=ProcessException)),
         pytest.param("read", "read-write", None, None, marks=pytest.mark.xfail(strict=True, raises=ProcessException)),
@@ -267,6 +281,7 @@ def test_multiple_isdefault(get_processed_device_from_testfile: Callable[[str], 
     get_processed_device_from_testfile("enumerated_values/multiple_isdefault.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_do_not_care_handling(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test verifies how the parser processes enumerated values when specific bits are marked as "do not care."
@@ -337,6 +352,7 @@ def test_do_not_care_handling(get_processed_device_from_testfile: Callable[[str]
     assert container.enumerated_values[7].is_default is False
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_do_not_care_and_distinct_values(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test examines the parser's ability to handle a mix of "do not care" bits and distinct values within a
@@ -407,6 +423,7 @@ def test_do_not_care_and_distinct_result_in_same_value(get_processed_device_from
     get_processed_device_from_testfile("enumerated_values/do_not_care_and_distinct_result_in_same_value.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_default_extension(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test focuses on how parsers should handle `enumeratedValue` elements marked with `isDefault=True`. In

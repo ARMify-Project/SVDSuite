@@ -3,10 +3,12 @@ TODO Add description
 """
 
 from typing import Callable
+import pytest
 
 from svdsuite.model.process import Device, Register, Cluster
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_peripheral_level(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     TODO: Add description
@@ -63,6 +65,7 @@ def test_peripheral_level(get_processed_device_from_testfile: Callable[[str], De
     assert device.peripherals[13].base_address == 0x4000E000
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_algorithm(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     TODO: Add description

@@ -11,6 +11,7 @@ from svdsuite.model.process import Device, Register, Cluster
 from svdsuite.model.types import AccessType, ProtectionStringType
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_backward_reference_same_scope(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case examines the functionality of cluster inheritance using the `derivedFrom` attribute,
@@ -57,6 +58,7 @@ def test_simple_inheritance_backward_reference_same_scope(get_processed_device_f
     assert device.peripherals[0].registers_clusters[1].registers_clusters[0].size == 32
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_forward_reference_same_scope(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case evaluates the functionality of cluster inheritance via the `derivedFrom` attribute when a
@@ -103,6 +105,7 @@ def test_simple_inheritance_forward_reference_same_scope(get_processed_device_fr
     assert device.peripherals[0].registers_clusters[1].registers_clusters[0].size == 32
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_backward_reference_different_scope(
     get_processed_device_from_testfile: Callable[[str], Device]
 ):
@@ -153,6 +156,7 @@ def test_simple_inheritance_backward_reference_different_scope(
     assert device.peripherals[1].registers_clusters[0].registers_clusters[0].size == 32
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_forward_reference_different_scope(
     get_processed_device_from_testfile: Callable[[str], Device]
 ):
@@ -204,6 +208,7 @@ def test_simple_inheritance_forward_reference_different_scope(
     assert device.peripherals[1].registers_clusters[0].registers_clusters[0].size == 32
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case focuses on the inheritance of properties within clusters when utilizing the `derivedFrom`
@@ -266,6 +271,7 @@ def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], D
     assert device.peripherals[0].registers_clusters[1].registers_clusters[0].size == 16
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_override_behavior(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case examines how derived clusters can override specific properties inherited from their base
@@ -352,6 +358,7 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     assert device.peripherals[0].registers_clusters[1].registers_clusters[1].reset_mask == 0xABABABAB
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_multiple_inheritance_backward_reference(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case evaluates how the parser handles multiple levels of inheritance using the `derivedFrom`
@@ -411,6 +418,7 @@ def test_multiple_inheritance_backward_reference(get_processed_device_from_testf
     assert device.peripherals[0].registers_clusters[2].registers_clusters[0].size == 32
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_multiple_inheritance_forward_reference(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case assesses the parser's handling of complex inheritance structures where the base cluster
@@ -742,6 +750,7 @@ def test_cluster_overlap(get_processed_device_from_testfile: Callable[[str], Dev
     assert device.peripherals[0].registers_clusters[1].registers_clusters[0].size == 8
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_cluster(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case assesses the correct handling of the `alternateCluster` feature in the SVD file, which allows
@@ -807,6 +816,7 @@ def test_derive_from_self(get_processed_device_from_testfile: Callable[[str], De
     get_processed_device_from_testfile("cluster_inheritance_via_derivedfrom/derive_from_self.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_size_inheritance(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case verifies that the `size` attribute is correctly inherited when using `derivedFrom` on clusters

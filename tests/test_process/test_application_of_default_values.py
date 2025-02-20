@@ -4,6 +4,7 @@ in the SVD file. It ensures the parser adheres to the SVD standard by assigning 
 """
 
 from typing import Callable
+import pytest
 
 from svdsuite.model.process import Device
 from svdsuite.model.types import (
@@ -12,6 +13,7 @@ from svdsuite.model.types import (
 )
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_default_register_properties_on_device_level(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     Although not stated in the SVD specification, `svdconv` assigns default values to size (32), access (read-
@@ -36,6 +38,7 @@ def test_default_register_properties_on_device_level(get_processed_device_from_t
     assert device.reset_mask == 0xFFFFFFFF
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_custom_register_properties_on_device_level(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test ensures that the default values are overwritten if custom values are specified in a processed SVD

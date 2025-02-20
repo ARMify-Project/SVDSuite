@@ -59,8 +59,14 @@ from svdsuite.model.process import Register, Cluster
 @pytest.mark.parametrize(
     "path",
     [
-        "PeripheralA.ClusterA.ClusterB.RegisterA",
-        "ClusterA.ClusterB.RegisterA",
+        pytest.param(
+            "PeripheralA.ClusterA.ClusterB.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
+        pytest.param(
+            "ClusterA.ClusterB.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
         pytest.param(
             "PeripheralAA.ClusterA.ClusterB.RegisterA",
             marks=pytest.mark.xfail(strict=True, raises=ProcessException),
@@ -160,8 +166,14 @@ def test_test_setup_1(path: str, get_test_svd_file_content: Callable[[str], byte
 @pytest.mark.parametrize(
     "path",
     [
-        "SameA.SameA.SameA.SameA",  # can't be processed with svdconv
-        "SameA.SameA.SameA",  # can't be processed with svdconv
+        pytest.param(  # can't be processed with svdconv
+            "SameA.SameA.SameA.SameA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
+        pytest.param(  # can't be processed with svdconv
+            "SameA.SameA.SameA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
         pytest.param(
             "SameA",
             marks=pytest.mark.xfail(strict=True, raises=ProcessException),
@@ -236,7 +248,10 @@ def test_test_setup_2(path: str, get_test_svd_file_content: Callable[[str], byte
 @pytest.mark.parametrize(
     "path",
     [
-        "ElementA.RegisterA",
+        pytest.param(
+            "ElementA.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
         pytest.param(
             "ElementA",
             marks=pytest.mark.xfail(strict=True, raises=ProcessException),
@@ -284,8 +299,14 @@ def test_test_setup_3(path: str, get_test_svd_file_content: Callable[[str], byte
 @pytest.mark.parametrize(
     "path",
     [
-        "ElementA.RegisterA",
-        "ElementB.RegisterA",
+        pytest.param(
+            "ElementA.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
+        pytest.param(
+            "ElementB.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
         pytest.param(
             "ElementA",
             marks=pytest.mark.xfail(strict=True, raises=ProcessException),
@@ -334,9 +355,18 @@ def test_test_setup_4(path: str, get_test_svd_file_content: Callable[[str], byte
 @pytest.mark.parametrize(
     "path",
     [
-        "PeripheralA.Cluster%s.RegisterA",
-        "PeripheralA.ClusterA.RegisterA",
-        "PeripheralA.ClusterB.RegisterA",
+        pytest.param(
+            "PeripheralA.Cluster%s.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
+        pytest.param(
+            "PeripheralA.ClusterA.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
+        pytest.param(
+            "PeripheralA.ClusterB.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
         pytest.param(
             "RegisterA",
             marks=pytest.mark.xfail(strict=True, raises=ProcessException),
@@ -379,7 +409,10 @@ def test_test_setup_5(path: str, get_test_svd_file_content: Callable[[str], byte
 @pytest.mark.parametrize(
     "path",
     [
-        "PeripheralA.ClusterA.ClusterB.RegisterA.FieldA.FieldAEnumeratedValue",
+        pytest.param(
+            "PeripheralA.ClusterA.ClusterB.RegisterA.FieldA.FieldAEnumeratedValue",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
         pytest.param(
             "ClusterA.ClusterB.RegisterA.FieldA.FieldAEnumeratedValue",
             marks=pytest.mark.xfail(strict=True, raises=ProcessException),
@@ -446,9 +479,18 @@ def test_test_setup_6(path: str, get_test_svd_file_content: Callable[[str], byte
 @pytest.mark.parametrize(
     "path",
     [
-        "PeripheralA.RegisterA",
-        "PeripheralB.RegisterA",
-        "PeripheralB.RegisterA_RegisterX",
+        pytest.param(
+            "PeripheralA.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
+        pytest.param(
+            "PeripheralB.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
+        pytest.param(
+            "PeripheralB.RegisterA_RegisterX",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
         pytest.param(
             "PeripheralC.RegisterA",
             marks=pytest.mark.xfail(strict=True, raises=ProcessException),
@@ -510,10 +552,22 @@ def test_test_setup_7(path: str, get_test_svd_file_content: Callable[[str], byte
 @pytest.mark.parametrize(
     "path",
     [
-        "ClusterA.RegisterA",
-        "ClusterB.RegisterA",
-        "PeripheralA.ClusterA.RegisterA",
-        "PeripheralA.ClusterB.RegisterA",
+        pytest.param(
+            "ClusterA.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
+        pytest.param(
+            "ClusterB.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
+        pytest.param(
+            "PeripheralA.ClusterA.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
+        pytest.param(
+            "PeripheralA.ClusterB.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
         pytest.param(
             "RegisterA",
             marks=pytest.mark.xfail(strict=True, raises=ProcessException),
@@ -553,10 +607,22 @@ def test_test_setup_8(path: str, get_test_svd_file_content: Callable[[str], byte
 @pytest.mark.parametrize(
     "path",
     [
-        "ClusterA.RegisterA",
-        "ClusterB.RegisterA",
-        "PeripheralA.ClusterA.RegisterA",
-        "PeripheralA.ClusterB.RegisterA",
+        pytest.param(
+            "ClusterA.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
+        pytest.param(
+            "ClusterB.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
+        pytest.param(
+            "PeripheralA.ClusterA.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
+        pytest.param(
+            "PeripheralA.ClusterB.RegisterA",
+            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
+        ),
         pytest.param(
             "RegisterA",
             marks=pytest.mark.xfail(strict=True, raises=ProcessException),

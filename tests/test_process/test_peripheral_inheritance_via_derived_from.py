@@ -11,6 +11,7 @@ from svdsuite.model.process import Device, Register
 from svdsuite.model.types import AccessType, ProtectionStringType, EnumeratedTokenType
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_backward_reference(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     The derived peripheral (PeripheralB) is declared **after** the base peripheral (PeripheralA), representing the
@@ -40,6 +41,7 @@ def test_simple_inheritance_backward_reference(get_processed_device_from_testfil
     assert device.peripherals[1].registers_clusters[0].name == "RegisterA"
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_forward_reference(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     The derived peripheral (PeripheralA) is declared before the base peripheral (PeripheralB), but PeripheralA
@@ -69,6 +71,7 @@ def test_simple_inheritance_forward_reference(get_processed_device_from_testfile
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test ensures that child elements from a base peripheral (PeripheralA) are correctly inherited by a
@@ -118,6 +121,7 @@ def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], D
     assert device.peripherals[1].registers_clusters[0].name == "RegisterA"
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_override_behavior(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks whether specific values of a derived peripheral can override the inherited values from a base
@@ -176,6 +180,7 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     assert device.peripherals[1].registers_clusters[1].address_offset == 0x8
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_multiple_inheritance_backward_reference(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test ensures that inheritance across multiple peripherals works as expected, where PeripheralB is derived
@@ -218,6 +223,7 @@ def test_multiple_inheritance_backward_reference(get_processed_device_from_testf
     assert device.peripherals[2].registers_clusters[0].name == "RegisterA"
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_multiple_inheritance_forward_reference(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test ensures that inheritance across multiple peripherals is correctly handled when forward references
@@ -259,6 +265,7 @@ def test_multiple_inheritance_forward_reference(get_processed_device_from_testfi
     assert device.peripherals[1].registers_clusters[0].name == "RegisterA"
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_multiple_inheritance_backward_and_forward_reference_with_value_override(
     get_processed_device_from_testfile: Callable[[str], Device]
 ):
@@ -562,6 +569,7 @@ def test_register_inheritance_oversized_field(get_processed_device_from_testfile
     assert device.peripherals[1].registers_clusters[0].fields[0].msb == 31
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_register_properties_inheritance_size_adjustment(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test evaluates how the size property is handled during inheritance. The test file contains four
@@ -698,6 +706,7 @@ def test_same_name(get_processed_device_from_testfile: Callable[[str], Device]):
     get_processed_device_from_testfile("peripheral_inheritance_via_derivedfrom/same_name.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_peripheral(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     By default, each address block in the memory space of a device is assigned to a unique peripheral. If multiple
@@ -728,6 +737,7 @@ def test_alternate_peripheral(get_processed_device_from_testfile: Callable[[str]
     assert len(device.peripherals[1].registers_clusters) == 1
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_alternate_peripheral_overlap(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     By default, each address block in the memory space of a device is assigned to a unique peripheral. If multiple
@@ -760,6 +770,7 @@ def test_alternate_peripheral_overlap(get_processed_device_from_testfile: Callab
     assert len(device.peripherals[1].registers_clusters) == 1
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_register_inheritance_alternate_group(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks how the parser handles peripheral inheritance when an alternate group is involved in a
@@ -797,6 +808,7 @@ def test_register_inheritance_alternate_group(get_processed_device_from_testfile
     assert device.peripherals[1].registers_clusters[1].alternate_group == "RegisterX"
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_register_inheritance_alternate_register(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test evaluates the parser's ability to handle peripheral inheritance when the `alternateRegister` element

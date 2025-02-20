@@ -16,6 +16,7 @@ from svdsuite.model.types import (
 )
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_backward_reference_same_scope(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case focuses on field inheritance using the `derivedFrom` attribute within the same register. Here,
@@ -80,6 +81,7 @@ def test_simple_inheritance_backward_reference_same_scope(get_processed_device_f
     assert fieldb_enum_container.enumerated_values[1].is_default is False
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_forward_reference_same_scope(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case examines field inheritance using the `derivedFrom` attribute within the same register, where
@@ -145,6 +147,7 @@ def test_simple_inheritance_forward_reference_same_scope(get_processed_device_fr
     assert fieldb_enum_container.enumerated_values[1].is_default is False
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_backward_reference_different_scope(
     get_processed_device_from_testfile: Callable[[str], Device]
 ):
@@ -217,6 +220,7 @@ def test_simple_inheritance_backward_reference_different_scope(
     assert regb_enum_container.enumerated_values[1].is_default is False
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_forward_reference_different_scope(
     get_processed_device_from_testfile: Callable[[str], Device]
 ):
@@ -285,6 +289,7 @@ def test_simple_inheritance_forward_reference_different_scope(
     assert regb_enum_container.enumerated_values[1].is_default is False
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case examines field inheritance through the `derivedFrom` attribute, ensuring that all the
@@ -367,6 +372,7 @@ def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], D
     assert fieldb_enum_container.enumerated_values[1].is_default is False
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_override_behavior(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case evaluates the behavior of field inheritance where a derived field (`FieldB`) inherits
@@ -485,6 +491,7 @@ def test_enumerated_value_inheritance_error(get_processed_device_from_testfile: 
     get_processed_device_from_testfile("field_inheritance_via_derivedfrom/enumerated_value_inheritance_error.svd")
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_multiple_inheritance_backward_reference(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case focuses on a scenario where multiple fields (`FieldB` and `FieldC`) inherit properties from a
@@ -567,6 +574,7 @@ def test_multiple_inheritance_backward_reference(get_processed_device_from_testf
     assert fieldc_enum_container.enumerated_values[1].is_default is False
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_multiple_inheritance_forward_reference(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case involves multiple fields (`FieldA`, `FieldB`, `FieldC`) where `FieldA` is derived from

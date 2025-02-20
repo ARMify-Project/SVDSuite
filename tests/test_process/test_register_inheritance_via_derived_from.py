@@ -17,6 +17,7 @@ from svdsuite.model.types import (
 )
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_backward_reference_same_scope(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case evaluates the behavior of register inheritance using the `derivedFrom` attribute within the
@@ -61,6 +62,7 @@ def test_simple_inheritance_backward_reference_same_scope(get_processed_device_f
     assert device.peripherals[0].registers_clusters[1].fields[0].msb == 2
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_forward_reference_same_scope(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case examines the handling of register inheritance using the `derivedFrom` attribute when the base
@@ -108,6 +110,7 @@ def test_simple_inheritance_forward_reference_same_scope(get_processed_device_fr
     assert device.peripherals[0].registers_clusters[1].fields[0].msb == 2
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_backward_reference_different_scope(
     get_processed_device_from_testfile: Callable[[str], Device]
 ):
@@ -155,6 +158,7 @@ def test_simple_inheritance_backward_reference_different_scope(
     assert device.peripherals[1].registers_clusters[0].fields[0].msb == 2
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_forward_reference_different_scope(
     get_processed_device_from_testfile: Callable[[str], Device]
 ):
@@ -204,6 +208,7 @@ def test_simple_inheritance_forward_reference_different_scope(
     assert device.peripherals[1].registers_clusters[0].fields[0].msb == 2
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case examines how the `derivedFrom` attribute is used to inherit register properties, focusing on a
@@ -279,6 +284,7 @@ def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], D
     assert device.peripherals[0].registers_clusters[1].fields[0].write_constraint.write_as_read is True
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_override_behavior(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case examines the use of the `derivedFrom` attribute to inherit properties from a base register
@@ -360,6 +366,7 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     assert device.peripherals[0].registers_clusters[1].fields[1].write_constraint.use_enumerated_values is True
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_multiple_inheritance_backward_reference(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case evaluates the functionality of register inheritance when multiple derived registers inherit
@@ -415,6 +422,7 @@ def test_multiple_inheritance_backward_reference(get_processed_device_from_testf
     assert device.peripherals[0].registers_clusters[2].fields[0].msb == 2
 
 
+@pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_multiple_inheritance_forward_reference(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test case examines the scenario of register inheritance using forward references. Here, `RegisterA` is
