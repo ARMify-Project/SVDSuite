@@ -812,57 +812,40 @@ class _ValidateAndFinalize:
         cluster_lookup: dict[str, Cluster],
     ):
         intervals: list[tuple[int, str]] = []
-        for register_cluster in finalized_rc:
-            if isinstance(register_cluster, Register):
-                allowed_names = self._compute_allowed_alternate_register_names(register_cluster, register_lookup)
+        for item in finalized_rc:
+            # Set type-specific variables.
+            if isinstance(item, Register):
+                allowed_names = self._compute_allowed_alternate_register_names(item, register_lookup)
+                lookup = register_lookup
+                alt_attr = "alternate_register"
+                type_label = "Register"
+                end_addr = item.base_address + _to_byte(item.size) - 1
             else:
-                allowed_names = self._compute_allowed_alternate_cluster_names(register_cluster, cluster_lookup)
+                allowed_names = self._compute_allowed_alternate_cluster_names(item, cluster_lookup)
+                lookup = cluster_lookup
+                alt_attr = "alternate_cluster"
+                type_label = "Cluster"
+                end_addr = item.end_address
 
-            # Check address overlaps.
+            # Check for overlapping intervals.
             for end, name in intervals:
-                if register_cluster.base_address <= end:
+                if item.base_address <= end:
                     if allowed_names:
                         if name not in allowed_names:
-                            if isinstance(register_cluster, Register):
-                                warnings.warn(
-                                    f"Register '{register_cluster.name}' overlaps with '{name}', "
-                                    f"which is not among the allowed alternate registers {allowed_names}",
-                                    ProcessWarning,
-                                )
-                            else:
-                                warnings.warn(
-                                    f"Cluster '{register_cluster.name}' overlaps with '{name}', "
-                                    f"which is not among the allowed alternate clusters {allowed_names}",
-                                    ProcessWarning,
-                                )
+                            warnings.warn(
+                                f"{type_label} '{item.name}' overlaps with '{name}', "
+                                f"which is not among the allowed alternate {type_label.lower()}s {allowed_names}",
+                                ProcessWarning,
+                            )
                     else:
-                        if isinstance(register_cluster, Register):
-                            if (
-                                name not in register_lookup
-                                or not register_lookup[name].alternate_register
-                                or register_lookup[name].alternate_register != register_cluster.name
-                            ):
-                                warnings.warn(
-                                    f"Register '{register_cluster.name}' overlaps with '{name}'",
-                                    ProcessWarning,
-                                )
-                        else:
-                            if (
-                                name not in cluster_lookup
-                                or not cluster_lookup[name].alternate_cluster
-                                or cluster_lookup[name].alternate_cluster != register_cluster.name
-                            ):
-                                warnings.warn(
-                                    f"Cluster '{register_cluster.name}' overlaps with '{name}'",
-                                    ProcessWarning,
-                                )
+                        alt_value = getattr(lookup.get(name, None), alt_attr, None)
+                        if alt_value != item.name:
+                            warnings.warn(
+                                f"{type_label} '{item.name}' overlaps with '{name}'",
+                                ProcessWarning,
+                            )
 
-            if isinstance(register_cluster, Register):
-                intervals.append(
-                    (register_cluster.base_address + _to_byte(register_cluster.size) - 1, register_cluster.name)
-                )
-            else:
-                intervals.append((register_cluster.end_address, register_cluster.name))
+            intervals.append((end_addr, item.name))
 
     def _compute_allowed_alternate_register_names(
         self, register: Register, register_lookup: dict[str, Register]
