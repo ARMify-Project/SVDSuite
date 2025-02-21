@@ -28,7 +28,7 @@
           <name>RegisterA</name>
           <displayName>RegisterA</displayName>
           <description>RegisterA description</description>
-          <alternateRegister>RegisterC</alternateRegister>
+          <alternateRegister>RegisterA</alternateRegister>
           <addressOffset>0x0</addressOffset>
           <size>16</size>
           <access>read-only</access>
