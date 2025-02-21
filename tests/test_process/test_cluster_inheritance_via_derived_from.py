@@ -239,7 +239,7 @@ def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], D
     assert isinstance(device.peripherals[0].registers_clusters[0], Cluster)
     assert device.peripherals[0].registers_clusters[0].name == "ClusterA"
     assert device.peripherals[0].registers_clusters[0].description == "ClusterA description"
-    assert device.peripherals[0].registers_clusters[0].alternate_cluster == "ClusterC"
+    assert device.peripherals[0].registers_clusters[0].alternate_cluster == "ClusterA"
     assert device.peripherals[0].registers_clusters[0].header_struct_name == "HeaderStructName"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 16
@@ -256,7 +256,7 @@ def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], D
     assert isinstance(device.peripherals[0].registers_clusters[1], Cluster)
     assert device.peripherals[0].registers_clusters[1].name == "ClusterB"
     assert device.peripherals[0].registers_clusters[1].description == "ClusterB description"
-    assert device.peripherals[0].registers_clusters[1].alternate_cluster == "ClusterC"
+    assert device.peripherals[0].registers_clusters[1].alternate_cluster == "ClusterA"
     assert device.peripherals[0].registers_clusters[1].header_struct_name == "HeaderStructName"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
     assert device.peripherals[0].registers_clusters[1].size == 16

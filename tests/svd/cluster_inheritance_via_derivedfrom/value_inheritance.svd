@@ -27,7 +27,7 @@
         <cluster>
           <name>ClusterA</name>
           <description>ClusterA description</description>
-          <alternateCluster>ClusterC</alternateCluster>
+          <alternateCluster>ClusterA</alternateCluster>
           <headerStructName>HeaderStructName</headerStructName>
           <addressOffset>0x0</addressOffset>
           <size>16</size>
