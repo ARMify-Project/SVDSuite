@@ -728,19 +728,25 @@ class _ValidateAndFinalize:
     def _validate_and_finalize_registers_clusters(
         self, i_registers_clusters: list[ICluster | IRegister], parent_base: int
     ) -> list[Cluster | Register]:
-        reg_cluster_lookup: dict[str, Register | Cluster] = {}
+        register_lookup: dict[str, Register] = {}
+        cluster_lookup: dict[str, Cluster] = {}
         finalized_rc: list[Cluster | Register] = []
         for i_register_cluster in i_registers_clusters:
             register_cluster = self._validate_and_finalize_register_cluster(i_register_cluster, parent_base)
             if register_cluster:
-                if register_cluster.name in reg_cluster_lookup:
+                if register_cluster.name in register_lookup or register_cluster.name in cluster_lookup:
                     raise ProcessException(f"Duplicate register/cluster name found: {register_cluster.name}")
-                reg_cluster_lookup[register_cluster.name] = register_cluster
+                if isinstance(register_cluster, Register):
+                    register_lookup[register_cluster.name] = register_cluster
+                elif isinstance(register_cluster, Cluster):  # pyright: ignore[reportUnnecessaryIsInstance]
+                    cluster_lookup[register_cluster.name] = register_cluster
+                else:
+                    raise ProcessException("Unknown register cluster type")
 
                 finalized_rc.append(register_cluster)
 
         finalized_rc.sort(key=lambda m: (m.base_address, m.name))
-        self._check_registers_clusters_address_overlaps(finalized_rc, reg_cluster_lookup)
+        self._check_registers_clusters_address_overlaps(finalized_rc, register_lookup, cluster_lookup)
 
         return finalized_rc
 
@@ -800,16 +806,111 @@ class _ValidateAndFinalize:
         raise ProcessException("Unknown register cluster type")
 
     def _check_registers_clusters_address_overlaps(
-        self, finalized_rc: list[Cluster | Register], rc_lookup: dict[str, Register | Cluster]
+        self,
+        finalized_rc: list[Cluster | Register],
+        register_lookup: dict[str, Register],
+        cluster_lookup: dict[str, Cluster],
     ):
-        # Warn if registers/clusters overlap
-        max_rc_end = -1
-        for rc in finalized_rc:
-            # Compute current element’s end address based on its type.
-            current_end = rc.base_address + (_to_byte(rc.size) if isinstance(rc, Register) else rc.cluster_size) - 1
-            if rc.base_address <= max_rc_end:
-                warnings.warn(f"Register/cluster '{rc.name}' overlaps with a previous register/cluster", ProcessWarning)
-            max_rc_end = max(max_rc_end, current_end)
+        intervals: list[tuple[int, str]] = []
+        for register_cluster in finalized_rc:
+            if isinstance(register_cluster, Register):
+                allowed_names = self._compute_allowed_alternate_register_names(register_cluster, register_lookup)
+            else:
+                allowed_names = self._compute_allowed_alternate_cluster_names(register_cluster, cluster_lookup)
+
+            # Check address overlaps.
+            for end, name in intervals:
+                if register_cluster.base_address <= end:
+                    if allowed_names:
+                        if name not in allowed_names:
+                            if isinstance(register_cluster, Register):
+                                warnings.warn(
+                                    f"Register '{register_cluster.name}' overlaps with '{name}', "
+                                    f"which is not among the allowed alternate registers {allowed_names}",
+                                    ProcessWarning,
+                                )
+                            else:
+                                warnings.warn(
+                                    f"Cluster '{register_cluster.name}' overlaps with '{name}', "
+                                    f"which is not among the allowed alternate clusters {allowed_names}",
+                                    ProcessWarning,
+                                )
+                    else:
+                        if isinstance(register_cluster, Register):
+                            if (
+                                name not in register_lookup
+                                or not register_lookup[name].alternate_register
+                                or register_lookup[name].alternate_register != register_cluster.name
+                            ):
+                                warnings.warn(
+                                    f"Register '{register_cluster.name}' overlaps with '{name}'",
+                                    ProcessWarning,
+                                )
+                        else:
+                            if (
+                                name not in cluster_lookup
+                                or not cluster_lookup[name].alternate_cluster
+                                or cluster_lookup[name].alternate_cluster != register_cluster.name
+                            ):
+                                warnings.warn(
+                                    f"Cluster '{register_cluster.name}' overlaps with '{name}'",
+                                    ProcessWarning,
+                                )
+
+            if isinstance(register_cluster, Register):
+                intervals.append(
+                    (register_cluster.base_address + _to_byte(register_cluster.size) - 1, register_cluster.name)
+                )
+            else:
+                intervals.append((register_cluster.end_address, register_cluster.name))
+
+    def _compute_allowed_alternate_register_names(
+        self, register: Register, register_lookup: dict[str, Register]
+    ) -> set[str]:
+        if register.alternate_register is None:
+            return set()
+
+        allowed: set[str] = set()
+        stack = [register.alternate_register]
+
+        while stack:
+            current = stack.pop()
+            if current in allowed:
+                continue
+
+            allowed.add(current)
+            # Add registers that have 'current' as their alternate.
+            stack.extend(name for name, p in register_lookup.items() if p.alternate_register == current)
+            # If the current register has an alternate (primary), add it.
+            primary = register_lookup[current].alternate_register
+            if primary is not None:
+                stack.append(primary)
+
+        return allowed
+
+    def _compute_allowed_alternate_cluster_names(
+        self, cluster: Cluster, cluster_lookup: dict[str, Cluster]
+    ) -> set[str]:
+        if cluster.alternate_cluster is None:
+            return set()
+
+        allowed: set[str] = set()
+        stack = [cluster.alternate_cluster]
+
+        while stack:
+            current = stack.pop()
+            if current in allowed:
+                continue
+
+            allowed.add(current)
+            # Add clusters that have 'current' as their alternate.
+            stack.extend(name for name, p in cluster_lookup.items() if p.alternate_cluster == current)
+            # If the current cluster has an alternate (primary), add it.
+            primary = cluster_lookup[current].alternate_cluster
+            if primary is not None:
+                stack.append(primary)
+
+        return allowed
 
     def _validate_and_finalize_fields(self, i_fields: list[IField], reg_size: int) -> list[Field]:
         seen_names: set[str] = set()
