@@ -350,9 +350,9 @@ class Peripheral(PeripheralBase):
     protection: ProtectionStringType
     reset_value: int
     reset_mask: int
-    end_address_specified: int  # calculated from address block(s) specification
+    end_address: int  # calculated from address block(s) specification
     end_address_effective: int  # derived by summing the defined registers and clusters
-    peripheral_size_specified: int  # calculated from address block(s) specification
+    peripheral_size: int  # calculated from address block(s) specification
     peripheral_size_effective: int  # derived by summing the defined registers and clusters
     registers_clusters: list[Register | Cluster]
     registers: list[Register]  # contains all registers in the peripheral (including those in clusters)
@@ -385,9 +385,9 @@ class Peripheral(PeripheralBase):
             protection=protection,
             reset_value=reset_value,
             reset_mask=reset_mask,
-            end_address_specified=end_address_specified,
+            end_address=end_address_specified,
             end_address_effective=end_address_effective,
-            peripheral_size_specified=peripheral_size_specified,
+            peripheral_size=peripheral_size_specified,
             peripheral_size_effective=peripheral_size_effective,
             registers_clusters=registers_clusters,
             registers=registers,

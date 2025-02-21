@@ -712,7 +712,7 @@ class _ValidateAndFinalize:
                             )
 
             effective_intervals.append((periph.end_address_effective, periph.name))
-            specified_intervals.append((periph.end_address_specified, periph.name))
+            specified_intervals.append((periph.end_address, periph.name))
 
     def _compute_allowed_alternate_peripheral_names(
         self, periph: Peripheral, peripheral_lookup: dict[str, Peripheral]
