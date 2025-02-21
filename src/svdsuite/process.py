@@ -810,6 +810,11 @@ class _ValidateAndFinalize:
                 cluster_size=cluster_size,
             )
         elif isinstance(i_reg_cluster, IRegister):  # pyright: ignore[reportUnnecessaryIsInstance]
+            if i_reg_cluster.alternate_register is not None and i_reg_cluster.alternate_group is not None:
+                raise ProcessException(
+                    f"Register '{i_reg_cluster.name}' cannot have both alternate_register and alternate_group"
+                )
+
             return Register.from_intermediate_register(
                 i_register=i_reg_cluster,
                 fields=self._validate_and_finalize_fields(i_reg_cluster.fields, i_reg_cluster.size),
