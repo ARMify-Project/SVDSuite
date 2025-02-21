@@ -315,7 +315,7 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].display_name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].description == "RegisterA description"
-    assert device.peripherals[0].registers_clusters[0].alternate_register == "RegisterC"
+    assert device.peripherals[0].registers_clusters[0].alternate_register == "RegisterB"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 16
     assert device.peripherals[0].registers_clusters[0].access == AccessType.READ_ONLY
@@ -339,7 +339,7 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].display_name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].description == "RegisterB description"
-    assert device.peripherals[0].registers_clusters[1].alternate_register == "RegisterD"
+    assert device.peripherals[0].registers_clusters[1].alternate_register == "RegisterA"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x2
     assert device.peripherals[0].registers_clusters[1].size == 8
     assert device.peripherals[0].registers_clusters[1].access == AccessType.WRITE_ONLY
