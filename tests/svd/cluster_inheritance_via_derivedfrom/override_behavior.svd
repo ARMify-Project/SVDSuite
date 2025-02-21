@@ -27,7 +27,7 @@
         <cluster>
           <name>ClusterA</name>
           <description>ClusterA description</description>
-          <alternateCluster>ClusterC</alternateCluster>
+          <alternateCluster>ClusterB</alternateCluster>
           <headerStructName>HeaderStructName</headerStructName>
           <addressOffset>0x0</addressOffset>
           <size>8</size>
@@ -43,7 +43,7 @@
         <cluster derivedFrom="ClusterA">
           <name>ClusterB</name>
           <description>ClusterB description</description>
-          <alternateCluster>ClusterD</alternateCluster>
+          <alternateCluster>ClusterA</alternateCluster>
           <headerStructName>HeaderStructName2</headerStructName>
           <addressOffset>0x2</addressOffset>
           <size>16</size>
