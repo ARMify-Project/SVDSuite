@@ -799,7 +799,11 @@ class _ValidateAndFinalize:
                     for child in children
                 )
             else:
-                cluster_effective_end = effective_base + i_reg_cluster.size - 1
+                warnings.warn(
+                    f"Cluster '{i_reg_cluster.name}' has no registers. Cluster will be ignored!",
+                    ProcessWarning,
+                )
+                return None
 
             cluster_size = cluster_effective_end - effective_base + 1
             return Cluster.from_intermediate_cluster(

@@ -1547,7 +1547,7 @@ def test_ignore_empty_peripheral(get_processed_device_from_testfile: Callable[[s
 
     **Expected Outcome:** TODO
 
-    **Processable with svdconv:** TODO
+    **Processable with svdconv:** yes
     """
 
     with pytest.warns(ProcessWarning):
@@ -1564,3 +1564,69 @@ def test_ignore_empty_peripheral(get_processed_device_from_testfile: Callable[[s
     assert len(device.peripherals[1].registers_clusters) == 1
     assert isinstance(device.peripherals[1].registers_clusters[0], Register)
     assert device.peripherals[1].registers_clusters[0].name == "RegisterA"
+
+
+def test_ignore_empty_cluster(get_processed_device_from_testfile: Callable[[str], Device]):
+    """
+    TODO: Add description
+
+    **Expected Outcome:** TODO
+
+    **Processable with svdconv:** yes
+    """
+
+    with pytest.warns(ProcessWarning):
+        device = get_processed_device_from_testfile("logical_integrity/ignore_empty_cluster.svd")
+
+    assert device.peripherals[0].name == "PeripheralA"
+    assert len(device.peripherals[0].registers_clusters) == 1
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
+    assert device.peripherals[0].registers_clusters[0].address_offset == 0x4
+
+
+def test_ignore_empty_cluster_two_level(get_processed_device_from_testfile: Callable[[str], Device]):
+    """
+    TODO: Add description
+
+    **Expected Outcome:** TODO
+
+    **Processable with svdconv:** yes
+    """
+
+    with pytest.warns(ProcessWarning):
+        device = get_processed_device_from_testfile("logical_integrity/ignore_empty_cluster_two_level.svd")
+
+    assert device.peripherals[0].name == "PeripheralA"
+    assert len(device.peripherals[0].registers_clusters) == 1
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
+    assert device.peripherals[0].registers_clusters[0].address_offset == 0x4
+
+
+def test_ignore_empty_inner_cluster(get_processed_device_from_testfile: Callable[[str], Device]):
+    """
+    TODO: Add description
+
+    **Expected Outcome:** TODO
+
+    **Processable with svdconv:** yes
+    """
+
+    with pytest.warns(ProcessWarning):
+        device = get_processed_device_from_testfile("logical_integrity/ignore_empty_inner_cluster.svd")
+
+    assert device.peripherals[0].name == "PeripheralA"
+    assert len(device.peripherals[0].registers_clusters) == 2
+
+    assert isinstance(device.peripherals[0].registers_clusters[0], Cluster)
+    assert device.peripherals[0].registers_clusters[0].name == "ClusterA"
+    assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
+    assert len(device.peripherals[0].registers_clusters[0].registers_clusters) == 1
+    assert isinstance(device.peripherals[0].registers_clusters[0].registers_clusters[0], Register)
+    assert device.peripherals[0].registers_clusters[0].registers_clusters[0].name == "RegisterA"
+    assert device.peripherals[0].registers_clusters[0].registers_clusters[0].address_offset == 0x0
+
+    assert isinstance(device.peripherals[0].registers_clusters[1], Register)
+    assert device.peripherals[0].registers_clusters[1].name == "RegisterA"
+    assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
