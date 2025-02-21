@@ -649,7 +649,7 @@ class _ValidateAndFinalize:
 
     def _check_peripheral_address_overlaps(
         self, finalized_peripherals: list[Peripheral], peripheral_lookup: dict[str, Peripheral]
-    ) -> None:
+    ):
         effective_intervals: list[tuple[int, str]] = []
         specified_intervals: list[tuple[int, str]] = []
         for periph in finalized_peripherals:
@@ -735,15 +735,7 @@ class _ValidateAndFinalize:
                 finalized_rc.append(register_cluster)
 
         finalized_rc.sort(key=lambda m: (m.base_address, m.name))
-
-        # Warn if registers/clusters overlap
-        max_rc_end = -1
-        for rc in finalized_rc:
-            # Compute current element’s end address based on its type.
-            current_end = rc.base_address + (_to_byte(rc.size) if isinstance(rc, Register) else rc.cluster_size) - 1
-            if rc.base_address <= max_rc_end:
-                warnings.warn(f"Register/cluster '{rc.name}' overlaps with a previous register/cluster", ProcessWarning)
-            max_rc_end = max(max_rc_end, current_end)
+        self._check_registers_clusters_address_overlaps(finalized_rc, reg_cluster_lookup)
 
         return finalized_rc
 
@@ -801,6 +793,18 @@ class _ValidateAndFinalize:
             )
 
         raise ProcessException("Unknown register cluster type")
+
+    def _check_registers_clusters_address_overlaps(
+        self, finalized_rc: list[Cluster | Register], rc_lookup: dict[str, Register | Cluster]
+    ):
+        # Warn if registers/clusters overlap
+        max_rc_end = -1
+        for rc in finalized_rc:
+            # Compute current element’s end address based on its type.
+            current_end = rc.base_address + (_to_byte(rc.size) if isinstance(rc, Register) else rc.cluster_size) - 1
+            if rc.base_address <= max_rc_end:
+                warnings.warn(f"Register/cluster '{rc.name}' overlaps with a previous register/cluster", ProcessWarning)
+            max_rc_end = max(max_rc_end, current_end)
 
     def _validate_and_finalize_fields(self, i_fields: list[IField], reg_size: int) -> list[Field]:
         seen_names: set[str] = set()
