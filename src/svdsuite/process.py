@@ -630,6 +630,7 @@ class _ValidateAndFinalize:
         peripheral = Peripheral.from_intermediate_peripheral(
             i_peripheral=i_peripheral,
             registers_clusters=registers_clusters,
+            registers=self._extract_registers(registers_clusters),
             end_address_effective=end_address_effective,
             end_address_specified=end_address_specified,
             peripheral_size_effective=peripheral_size_effective,
@@ -637,6 +638,18 @@ class _ValidateAndFinalize:
         )
 
         return peripheral
+
+    def _extract_registers(self, registers_clusters: list[Cluster | Register]) -> list[Register]:
+        # Recursively extract registers from clusters and registers
+        registers: list[Register] = []
+        for element in registers_clusters:
+            if isinstance(element, Register):
+                registers.append(element)
+            elif isinstance(element, Cluster):  # pyright: ignore[reportUnnecessaryIsInstance]
+                registers.extend(self._extract_registers(element.registers_clusters))
+
+        registers.sort(key=lambda r: (r.base_address, r.name))
+        return registers
 
     def _validate_address_blocks(self, i_peripheral: IPeripheral) -> None:
         for idx in range(1, len(i_peripheral.address_blocks)):

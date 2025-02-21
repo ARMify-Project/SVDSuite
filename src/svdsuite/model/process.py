@@ -355,6 +355,7 @@ class Peripheral(PeripheralBase):
     peripheral_size_specified: int  # calculated from address block(s) specification
     peripheral_size_effective: int  # derived by summing the defined registers and clusters
     registers_clusters: list[Register | Cluster]
+    registers: list[Register]  # contains all registers in the peripheral (including those in clusters)
 
     @classmethod
     def from_intermediate_peripheral(
@@ -365,6 +366,7 @@ class Peripheral(PeripheralBase):
         peripheral_size_specified: int,
         peripheral_size_effective: int,
         registers_clusters: list[Register | Cluster],
+        registers: list[Register],
     ) -> "Peripheral":
         base_kwargs = {field.name: getattr(i_peripheral, field.name) for field in dataclass_fields(PeripheralBase)}
 
@@ -388,6 +390,7 @@ class Peripheral(PeripheralBase):
             peripheral_size_specified=peripheral_size_specified,
             peripheral_size_effective=peripheral_size_effective,
             registers_clusters=registers_clusters,
+            registers=registers,
         )
 
 
