@@ -704,21 +704,26 @@ class _ValidateAndFinalize:
     def _compute_allowed_alternate_peripheral_names(
         self, periph: Peripheral, peripheral_lookup: dict[str, Peripheral]
     ) -> set[str]:
-        allowed_names: set[str] = set()
-        if periph.alternate_peripheral:
-            to_process = {periph.alternate_peripheral}
-            while to_process:
-                current = to_process.pop()
-                if current not in allowed_names:
-                    allowed_names.add(current)
-                    # Add all peripherals that are alternates of the current.
-                    to_process.update(n for n, p in peripheral_lookup.items() if p.alternate_peripheral == current)
-                    # If the current peripheral is an alternate, include its primary if set.
-                    primary_peripheral = peripheral_lookup[current].alternate_peripheral
-                    if primary_peripheral is not None:
-                        to_process.add(primary_peripheral)
+        if periph.alternate_peripheral is None:
+            return set()
 
-        return allowed_names
+        allowed: set[str] = set()
+        stack = [periph.alternate_peripheral]
+
+        while stack:
+            current = stack.pop()
+            if current in allowed:
+                continue
+
+            allowed.add(current)
+            # Add peripherals that have 'current' as their alternate.
+            stack.extend(name for name, p in peripheral_lookup.items() if p.alternate_peripheral == current)
+            # If the current peripheral has an alternate (primary), add it.
+            primary = peripheral_lookup[current].alternate_peripheral
+            if primary is not None:
+                stack.append(primary)
+
+        return allowed
 
     def _validate_and_finalize_registers_clusters(
         self, i_registers_clusters: list[ICluster | IRegister], parent_base: int
