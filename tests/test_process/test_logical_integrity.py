@@ -1630,3 +1630,20 @@ def test_ignore_empty_inner_cluster(get_processed_device_from_testfile: Callable
     assert isinstance(device.peripherals[0].registers_clusters[1], Register)
     assert device.peripherals[0].registers_clusters[1].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x4
+
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=ProcessException,
+    reason="alternateGroup and alternateRegister are mutually exclusive",
+)
+def test_alternate_register_and_alternate_group_exception(get_processed_device_from_testfile: Callable[[str], Device]):
+    """
+    TODO: Add description
+
+    **Expected Outcome:** TODO
+
+    **Processable with svdconv:** yes - but it shouldn't since it is contrary to the SVD standard
+    """
+
+    get_processed_device_from_testfile("logical_integrity/alternate_register_and_alternate_group_exception.svd")
