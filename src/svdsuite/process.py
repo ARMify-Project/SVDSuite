@@ -741,24 +741,40 @@ class _ValidateAndFinalize:
     def _validate_and_finalize_registers_clusters(
         self, i_registers_clusters: list[ICluster | IRegister], parent_base: int
     ) -> list[Cluster | Register]:
+        def sort_key(reg_cluster: Cluster | Register) -> tuple[int, tuple[int, str], str]:
+            # Get alternate_group if it exists; default to None if not (e.g. for Clusters)
+            alt = getattr(reg_cluster, "alternate_group", None)
+            # If alt is None, return (0, '') so that None sorts before any string; else (1, alt)
+            alt_key = (0, "") if alt is None else (1, alt)
+            return (reg_cluster.base_address, alt_key, reg_cluster.name)
+
         register_lookup: dict[str, Register] = {}
         cluster_lookup: dict[str, Cluster] = {}
         finalized_rc: list[Cluster | Register] = []
         for i_register_cluster in i_registers_clusters:
             register_cluster = self._validate_and_finalize_register_cluster(i_register_cluster, parent_base)
             if register_cluster:
-                if register_cluster.name in register_lookup or register_cluster.name in cluster_lookup:
-                    raise ProcessException(f"Duplicate register/cluster name found: {register_cluster.name}")
+                # If it's a register and has an alternate group, append the alternate group to a temporary name
+                if isinstance(register_cluster, Register) and register_cluster.alternate_group:
+                    name = f"{register_cluster.name}_{register_cluster.alternate_group}"
+                else:
+                    name = register_cluster.name
+
+                # Check for duplicate register/cluster names
+                if name in register_lookup or name in cluster_lookup:
+                    raise ProcessException(f"Duplicate register/cluster name found: {name}")
+
+                # Add the register/cluster to the appropriate lookup
                 if isinstance(register_cluster, Register):
-                    register_lookup[register_cluster.name] = register_cluster
+                    register_lookup[name] = register_cluster
                 elif isinstance(register_cluster, Cluster):  # pyright: ignore[reportUnnecessaryIsInstance]
-                    cluster_lookup[register_cluster.name] = register_cluster
+                    cluster_lookup[name] = register_cluster
                 else:
                     raise ProcessException("Unknown register cluster type")
 
                 finalized_rc.append(register_cluster)
 
-        finalized_rc.sort(key=lambda m: (m.base_address, m.name))
+        finalized_rc.sort(key=sort_key)
         self._check_registers_clusters_address_overlaps(finalized_rc, register_lookup, cluster_lookup)
 
         return finalized_rc
@@ -835,6 +851,9 @@ class _ValidateAndFinalize:
     ):
         intervals: list[tuple[int, str]] = []
         for item in finalized_rc:
+            if isinstance(item, Register) and item.alternate_group is not None:
+                continue
+
             # Set type-specific variables.
             if isinstance(item, Register):
                 allowed_names = self._compute_allowed_alternate_register_names(item, register_lookup)

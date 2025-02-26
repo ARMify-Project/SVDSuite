@@ -802,7 +802,7 @@ def test_register_inheritance_alternate_group(get_processed_device_from_testfile
     assert device.peripherals[1].registers_clusters[0].size == 32
     assert device.peripherals[1].registers_clusters[0].alternate_group is None
     assert isinstance(device.peripherals[1].registers_clusters[1], Register)
-    assert device.peripherals[1].registers_clusters[1].name == "RegisterA_RegisterX"
+    assert device.peripherals[1].registers_clusters[1].name == "RegisterA"
     assert device.peripherals[1].registers_clusters[1].address_offset == 0x0
     assert device.peripherals[1].registers_clusters[1].size == 32
     assert device.peripherals[1].registers_clusters[1].alternate_group == "RegisterX"

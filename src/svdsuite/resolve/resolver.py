@@ -291,6 +291,14 @@ class Resolver:
                     matches.extend(child_matches)
 
                 if len(matches) > 1:
+                    filtered_matches = [
+                        match
+                        for match in matches
+                        if isinstance(match.processed, IRegister) and match.processed.alternate_group is None
+                    ]
+                    if len(filtered_matches) == 1:
+                        return filtered_matches
+
                     # More than one match found – raise exception immediately
                     raise ResolveException(f"Multiple base nodes found for derive path '{'.'.join(path_parts)}'")
 

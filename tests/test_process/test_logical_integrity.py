@@ -1269,13 +1269,13 @@ def test_register_alternate_group(get_processed_device_from_testfile: Callable[[
     assert device.peripherals[0].registers_clusters[0].alternate_group is None
 
     assert isinstance(device.peripherals[0].registers_clusters[1], Register)
-    assert device.peripherals[0].registers_clusters[1].name == "RegisterA_RegisterX"
+    assert device.peripherals[0].registers_clusters[1].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[1].size == 32
     assert device.peripherals[0].registers_clusters[1].alternate_group == "RegisterX"
 
     assert isinstance(device.peripherals[0].registers_clusters[2], Register)
-    assert device.peripherals[0].registers_clusters[2].name == "RegisterB_RegisterX"
+    assert device.peripherals[0].registers_clusters[2].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[2].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[2].size == 32
     assert device.peripherals[0].registers_clusters[2].alternate_group == "RegisterX"
@@ -1305,22 +1305,22 @@ def test_register_alternate_group_forward_reference(get_processed_device_from_te
     assert len(device.peripherals[0].registers_clusters) == 3
 
     assert isinstance(device.peripherals[0].registers_clusters[0], Register)
-    assert device.peripherals[0].registers_clusters[0].name == "RegisterA_RegisterX"
+    assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[0].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[0].size == 32
-    assert device.peripherals[0].registers_clusters[0].alternate_group == "RegisterX"
+    assert device.peripherals[0].registers_clusters[0].alternate_group is None
 
     assert isinstance(device.peripherals[0].registers_clusters[1], Register)
-    assert device.peripherals[0].registers_clusters[1].name == "RegisterB_RegisterX"
+    assert device.peripherals[0].registers_clusters[1].name == "RegisterA"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[1].size == 32
     assert device.peripherals[0].registers_clusters[1].alternate_group == "RegisterX"
 
     assert isinstance(device.peripherals[0].registers_clusters[2], Register)
-    assert device.peripherals[0].registers_clusters[2].name == "RegisterA"
+    assert device.peripherals[0].registers_clusters[2].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[2].address_offset == 0x0
     assert device.peripherals[0].registers_clusters[2].size == 32
-    assert device.peripherals[0].registers_clusters[2].alternate_group is None
+    assert device.peripherals[0].registers_clusters[2].alternate_group == "RegisterX"
 
 
 @pytest.mark.xfail(
@@ -1379,15 +1379,15 @@ def test_register_alternate_group_overlap(get_processed_device_from_testfile: Ca
     assert device.peripherals[0].registers_clusters[0].alternate_group is None
 
     assert isinstance(device.peripherals[0].registers_clusters[1], Register)
-    assert device.peripherals[0].registers_clusters[1].name == "RegisterA_RegisterX"
+    assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
     assert device.peripherals[0].registers_clusters[1].address_offset == 0x0
-    assert device.peripherals[0].registers_clusters[1].size == 16
+    assert device.peripherals[0].registers_clusters[1].size == 32
     assert device.peripherals[0].registers_clusters[1].alternate_group == "RegisterX"
 
     assert isinstance(device.peripherals[0].registers_clusters[2], Register)
-    assert device.peripherals[0].registers_clusters[2].name == "RegisterB_RegisterX"
-    assert device.peripherals[0].registers_clusters[2].address_offset == 0x0
-    assert device.peripherals[0].registers_clusters[2].size == 32
+    assert device.peripherals[0].registers_clusters[2].name == "RegisterA"
+    assert device.peripherals[0].registers_clusters[2].address_offset == 0x2
+    assert device.peripherals[0].registers_clusters[2].size == 16
     assert device.peripherals[0].registers_clusters[2].alternate_group == "RegisterX"
 
 

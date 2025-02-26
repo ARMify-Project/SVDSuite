@@ -488,10 +488,6 @@ def test_test_setup_6(path: str, get_test_svd_file_content: Callable[[str], byte
             marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
         ),
         pytest.param(
-            "PeripheralB.RegisterA_RegisterX",
-            marks=pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning"),
-        ),
-        pytest.param(
             "PeripheralC.RegisterA",
             marks=pytest.mark.xfail(strict=True, raises=ProcessException),
         ),
@@ -542,11 +538,7 @@ def test_test_setup_7(path: str, get_test_svd_file_content: Callable[[str], byte
     assert len(device.peripherals[2].registers_clusters) == 1
     assert isinstance(device.peripherals[2].registers_clusters[0], Register)
     assert device.peripherals[2].registers_clusters[0].name == "RegisterA"
-
-    if "_RegisterX" in path:
-        assert device.peripherals[2].registers_clusters[0].description == "PeripheralB_RegisterA"
-    else:
-        assert device.peripherals[2].registers_clusters[0].description == "PeripheralA_RegisterA"
+    assert device.peripherals[2].registers_clusters[0].description == "PeripheralA_RegisterA"
 
 
 @pytest.mark.parametrize(
