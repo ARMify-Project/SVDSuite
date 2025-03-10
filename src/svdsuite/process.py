@@ -375,7 +375,7 @@ class Process:
                     offset=parsed_address_block.offset,
                     size=parsed_address_block.size,
                     usage=parsed_address_block.usage,
-                    protection=parsed_address_block.protection,
+                    protection=parsed_address_block.protection or ProtectionStringType.ANY,
                     parsed=parsed_address_block,
                 )
             )
