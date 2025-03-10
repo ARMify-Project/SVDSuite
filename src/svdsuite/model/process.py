@@ -53,6 +53,12 @@ class SauRegion:
     access: SauAccessType
     parsed: SVDSauRegion
 
+    def __repr__(self):
+        return (
+            f"SauRegion(enabled={self.enabled}, name={self.name}, base=0x{self.base:08X}, "
+            f"limit=0x{self.limit:08X}, access={self.access})"
+        )
+
 
 @dataclass
 class SauRegionsConfig:
@@ -60,6 +66,12 @@ class SauRegionsConfig:
     protection_when_disabled: ProtectionStringType
     regions: list[SauRegion]
     parsed: SVDSauRegionsConfig
+
+    def __repr__(self):
+        return (
+            f"SauRegionsConfig(enabled={self.enabled}, protection_when_disabled={self.protection_when_disabled}, "
+            f"regions={self.regions})"
+        )
 
 
 @dataclass
@@ -83,6 +95,9 @@ class CPU:
     sau_regions_config: None | SauRegionsConfig
     parsed: SVDCPU
 
+    def __repr__(self):
+        return f"CPU(name={self.name}, endian={self.endian})"
+
 
 @dataclass
 class EnumeratedValue:
@@ -92,12 +107,18 @@ class EnumeratedValue:
     is_default: bool
     parsed: SVDEnumeratedValue
 
+    def __repr__(self):
+        return f"EnumeratedValue(name={self.name}, value={self.value}, is_default={self.is_default})"
+
 
 @dataclass
 class DimArrayIndex:
     header_enum_name: None | str
     enumerated_values: list[EnumeratedValue]
     parsed: SVDDimArrayIndex
+
+    def __repr__(self):
+        return f"DimArrayIndex(header_enum_name={self.header_enum_name}, enumerated_values={self.enumerated_values})"
 
 
 @dataclass
@@ -108,6 +129,12 @@ class AddressBlock:
     protection: None | ProtectionStringType
     parsed: SVDAddressBlock
 
+    def __repr__(self):
+        return (
+            f"AddressBlock(offset=0x{self.offset:08X}, size=0x{self.size:08X}, "
+            f"usage={self.usage}, protection={self.protection})"
+        )
+
 
 @dataclass
 class Interrupt:
@@ -115,6 +142,9 @@ class Interrupt:
     description: None | str
     value: int
     parsed: SVDInterrupt
+
+    def __repr__(self):
+        return f"Interrupt(name={self.name}, value={self.value})"
 
 
 @dataclass
@@ -124,6 +154,12 @@ class WriteConstraint:
     range_: None | tuple[int, int]
     parsed: SVDWriteConstraint
 
+    def __repr__(self):
+        return (
+            f"WriteConstraint(write_as_read={self.write_as_read}, use_enumerated_values={self.use_enumerated_values}, "
+            f"range_={self.range_})"
+        )
+
 
 @dataclass
 class EnumeratedValueContainer:
@@ -132,6 +168,12 @@ class EnumeratedValueContainer:
     usage: EnumUsageType
     enumerated_values: list[EnumeratedValue]
     parsed: SVDEnumeratedValueContainer
+
+    def __repr__(self):
+        return (
+            f"EnumeratedValueContainer(name={self.name}, header_enum_name={self.header_enum_name}, "
+            f"usage={self.usage}, enumerated_values={self.enumerated_values})"
+        )
 
 
 @dataclass
@@ -161,6 +203,9 @@ class Field(FieldBase):
     bit_offset: int
     bit_width: int
     bit_range: tuple[int, int]
+
+    def __repr__(self):
+        return f"Field(name={self.name}, lsb={self.lsb}, msb={self.msb})"
 
     @classmethod
     def from_intermediate_field(cls, i_field: IField) -> "Field":
@@ -215,6 +260,9 @@ class Register(RegisterBase):
     reset_mask: int
     fields: list[Field]
     base_address: int
+
+    def __repr__(self):
+        return f"Register(name={self.name}, base_address=0x{self.base_address:08X})"
 
     @classmethod
     def from_intermediate_register(
@@ -279,6 +327,9 @@ class Cluster(ClusterBase):
     base_address: int
     end_address: int
     cluster_size: int
+
+    def __repr__(self):
+        return f"Cluster(name={self.name}, base_address=0x{self.base_address:08X})"
 
     @classmethod
     def from_intermediate_cluster(
@@ -356,6 +407,9 @@ class Peripheral(PeripheralBase):
     peripheral_size_effective: int  # derived by summing the defined registers and clusters
     registers_clusters: list[Register | Cluster]
     registers: list[Register]  # contains all registers in the peripheral (including those in clusters)
+
+    def __repr__(self):
+        return f"Peripheral(name={self.name}, base_address=0x{self.base_address:08X})"
 
     @classmethod
     def from_intermediate_peripheral(
