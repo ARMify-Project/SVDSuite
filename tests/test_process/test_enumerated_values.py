@@ -10,7 +10,7 @@ scenarios. The test cases ensure that the parser correctly handles the definitio
 from typing import Callable
 import pytest
 
-from svdsuite.process import Process, ProcessException
+from svdsuite.process import Process, ProcessException, ProcessWarning
 from svdsuite.model.process import Device, Register
 from svdsuite.model.types import EnumUsageType
 
@@ -230,18 +230,13 @@ def test_value_name_already_defined_same_container(get_processed_device_from_tes
     get_processed_device_from_testfile("enumerated_values/value_name_already_defined_same_container.svd")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=ProcessException,
-    reason="Value already defined in container",
-)
 def test_value_already_defined(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test assesses the parser's ability to handle scenarios where the same value is defined multiple times
     within an `<enumeratedValues>` container. In an SVD file, each enumerated value should represent a unique
     mapping between a numerical value and its descriptive name to avoid ambiguity. `svdconv` does allow such
-    duplicate definitions but issues a warning, and ignores the value. However, a parser implementation should
-    enforce stricter rules by treating these duplicate value definitions as an error.
+    duplicate definitions but issues a warning, and ignores the value. A parser implementation should
+    enforce the same behavior.
 
     **Expected Outcome:** The parser should identify the duplicate values within the `<enumeratedValues>` container
     and raise an error, indicating that multiple enumerations cannot share the same underlying value. Unlike
@@ -251,7 +246,24 @@ def test_value_already_defined(get_processed_device_from_testfile: Callable[[str
     **Processable with svdconv:** yes
     """
 
-    get_processed_device_from_testfile("enumerated_values/value_already_defined.svd")
+    with pytest.warns(ProcessWarning):
+        device = get_processed_device_from_testfile("enumerated_values/value_already_defined.svd")
+
+    assert len(device.peripherals) == 1
+    assert len(device.peripherals[0].registers_clusters) == 1
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert len(device.peripherals[0].registers_clusters[0].fields) == 1
+    assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 1
+    enum_container = device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers[0]
+    assert len(enum_container.enumerated_values) == 2
+    assert enum_container.enumerated_values[0].name == "0b00"
+    assert enum_container.enumerated_values[0].description == "Description for 0b00"
+    assert enum_container.enumerated_values[0].value == 0
+    assert enum_container.enumerated_values[0].is_default is False
+    assert enum_container.enumerated_values[1].name == "0b01"
+    assert enum_container.enumerated_values[1].description == "Description for 0b01"
+    assert enum_container.enumerated_values[1].value == 1
+    assert enum_container.enumerated_values[1].is_default is False
 
 
 @pytest.mark.xfail(
@@ -397,11 +409,6 @@ def test_do_not_care_and_distinct_values(get_processed_device_from_testfile: Cal
     assert container.enumerated_values[2].is_default is False
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=ProcessException,
-    reason="Value already defined in container",
-)
 def test_do_not_care_and_distinct_result_in_same_value(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test focuses on scenarios where a combination of "do not care" bits and distinct enumerated values
@@ -410,17 +417,32 @@ def test_do_not_care_and_distinct_result_in_same_value(get_processed_device_from
     enumerated value defined separately. In such cases, it is essential for the parser to correctly identify and
     handle these overlaps, avoiding unintended duplications.
 
-    **Expected Outcome:** The parser should raise an error when encountering this situation. Unlike `svdconv`, which
-    processes the configuration but issues a warning and ignores the second, duplicated value, a robust parser
-    implementation should actively prevent this ambiguity by raising an exception. This ensures that no unintended
-    behaviors occur due to overlapping definitions, maintaining clarity and consistency in the representation of
-    enumerated values. The parser should report the issue clearly, specifying that there is a conflicting value
-    already defined within the container.
+    **Expected Outcome:** The parser should have the same behavior as `svdconv`, which
+    processes the configuration but issues a warning and ignores the second, duplicated value.
 
     **Processable with svdconv:** yes
     """
 
-    get_processed_device_from_testfile("enumerated_values/do_not_care_and_distinct_result_in_same_value.svd")
+    with pytest.warns(ProcessWarning):
+        device = get_processed_device_from_testfile(
+            "enumerated_values/do_not_care_and_distinct_result_in_same_value.svd"
+        )
+
+    assert len(device.peripherals) == 1
+    assert len(device.peripherals[0].registers_clusters) == 1
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert len(device.peripherals[0].registers_clusters[0].fields) == 1
+    assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 1
+    enum_container = device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers[0]
+    assert len(enum_container.enumerated_values) == 2
+    assert enum_container.enumerated_values[0].name == "0bx0_0"
+    assert enum_container.enumerated_values[0].description == "Description for 0bx0"
+    assert enum_container.enumerated_values[0].value == 0
+    assert enum_container.enumerated_values[0].is_default is False
+    assert enum_container.enumerated_values[1].name == "0bx0_2"
+    assert enum_container.enumerated_values[1].description == "Description for 0bx0"
+    assert enum_container.enumerated_values[1].value == 2
+    assert enum_container.enumerated_values[1].is_default is False
 
 
 @pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")

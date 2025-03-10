@@ -1072,9 +1072,8 @@ class _ProcessEnumeratedValueContainer:
             processed_enumerated_values = self._process_enumerated_value_resolve_wildcard(parsed_enumerated_value)
 
             for value in processed_enumerated_values:
-                enum_value_validator.add_value(value)
-
-            enumerated_values.extend(processed_enumerated_values)
+                if enum_value_validator.is_value_valid(value):
+                    enumerated_values.append(value)
 
         if default_enumerated_value := enum_value_validator.get_default():
             enumerated_values = self._extend_enumerated_values_with_default(
@@ -1158,15 +1157,22 @@ class _ProcessEnumeratedValueContainer:
 class _EnumeratedValueValidator:
     def __init__(self):
         self._seen_names: set[str] = set()
-        self._seen_values: set[int] = set()
+        self._seen_values: dict[int, str] = {}
         self._seen_default = None
 
-    def add_value(self, value: EnumeratedValue):
+    def is_value_valid(self, value: EnumeratedValue) -> bool:
         # Ensure enumerated value names and values are unique
         if value.name in self._seen_names:
             raise ProcessException(f"Duplicate enumerated value name found: {value.name}")
         if value.value in self._seen_values:
-            raise ProcessException(f"Duplicate enumerated value value found: {value.value}")
+            warnings.warn(
+                f"Duplicate enumerated value value found for enumerated value with name "
+                f"'{value.name}' and value '{value.value}'. "
+                f"Enumerated value '{self._seen_values[value.value]}' has the same value."
+                f"Ignoring enumerated value with name '{value.name}' and value '{value.value}'.",
+                ProcessWarning,
+            )
+            return False
         if value.is_default:
             if value.value is not None:
                 raise ProcessException("Default value must not have a value")
@@ -1177,7 +1183,9 @@ class _EnumeratedValueValidator:
         # Add to seen names and values
         self._seen_names.add(value.name)
         if value.value is not None:
-            self._seen_values.add(value.value)
+            self._seen_values[value.value] = value.name
+
+        return True
 
     def get_default(self) -> None | EnumeratedValue:
         return self._seen_default
