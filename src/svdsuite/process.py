@@ -394,7 +394,7 @@ class Process:
                 )
             )
 
-        return interrupts
+        return sorted(interrupts, key=lambda i: i.value)
 
     def _process_write_constraint(self, parsed_write_constraint: None | SVDWriteConstraint) -> None | WriteConstraint:
         if parsed_write_constraint is None:
