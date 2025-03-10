@@ -1088,8 +1088,11 @@ class _ProcessEnumeratedValueContainer:
         enumerated_values: list[EnumeratedValue] = []
         for value in value_list:
             name = parsed_value.name
-            if value is not None and parsed_value.value and "x" in parsed_value.value:
-                name = f"{name}_{value}"
+
+            if value is not None and parsed_value.value:
+                substring = parsed_value.value[2:] if parsed_value.value.startswith("0x") else parsed_value.value
+                if "x" in substring:
+                    name = f"{name}_{value}"
 
             enumerated_values.append(
                 EnumeratedValue(
