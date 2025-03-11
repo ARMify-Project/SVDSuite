@@ -32,6 +32,7 @@ from svdsuite.model.types import (
     ReadActionType,
     SauAccessType,
 )
+from svdsuite.util.xml_parse import safe_fromstring
 
 
 @pytest.fixture(name="get_test_svd_file_path", scope="session", autouse=False)
@@ -56,11 +57,11 @@ def fixture_get_test_svd_file_content(get_test_svd_file_path: Callable[[str], st
 
 @pytest.fixture(scope="session", autouse=False)
 def modify_test_svd_file_and_get_content(
-    get_test_svd_file_content: Callable[[str], bytes]
+    get_test_svd_file_content: Callable[[str], bytes],
 ) -> Callable[[str, str, None | str, None | str], bytes]:
     def _(file_name: str, xpath_str: str, attribute: None | str, value: None | str):
         file_content = get_test_svd_file_content(file_name)
-        tree = lxml.etree.fromstring(file_content)
+        tree = safe_fromstring(file_content)
 
         element_list = tree.xpath(xpath_str)
 

@@ -32,12 +32,8 @@ from svdsuite.model.types import (
     ReadActionType,
     SauAccessType,
 )
-
-
-# Customize the warning format
-def custom_warning_format(message: str, category: type, _: str, __: int, ___: None | str) -> str:
-    return f"{category.__name__}: {message}\n"
-
+from svdsuite.util.parser_exception_warning import ParserException, ParserWarning, custom_warning_format
+from svdsuite.util.xml_parse import safe_parse, safe_fromstring
 
 warnings.formatwarning = custom_warning_format
 
@@ -97,18 +93,10 @@ def _to_int(value: None | str, base: int = 0) -> None | int:
         raise NotImplementedError(f"can't parse value '{value}' in function _to_int") from exc
 
 
-class ParserWarning(Warning):
-    pass
-
-
-class ParserException(Exception):
-    pass
-
-
 class Parser:
     @classmethod
     def from_svd_file(cls, path: str):
-        return cls(lxml.etree.parse(path))
+        return cls(safe_parse(path))
 
     @staticmethod
     def from_xml_str(xml_str: str):
@@ -116,7 +104,7 @@ class Parser:
 
     @classmethod
     def from_xml_content(cls, content: bytes):
-        return cls(lxml.etree.fromstring(content).getroottree())
+        return cls(safe_fromstring(content).getroottree())
 
     def __init__(self, tree: lxml.etree._ElementTree) -> None:  # pyright: ignore[reportPrivateUsage]
         self._parsed_device = self._parse_device(tree.getroot())

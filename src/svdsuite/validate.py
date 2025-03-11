@@ -3,6 +3,8 @@ from enum import Enum
 from packaging.version import Version
 import lxml.etree
 
+from svdsuite.util.xml_parse import safe_parse, safe_fromstring
+
 
 class SVDSchemaVersion(Enum):
     V1_0 = "1.0"
@@ -36,13 +38,13 @@ class Validator:
     def validate_xml_file(
         path: str, get_exception: bool = True, schema_version: SVDSchemaVersion = SVDSchemaVersion.get_latest()
     ) -> bool:
-        return Validator._validate(lxml.etree.parse(path), get_exception, schema_version)
+        return Validator._validate(safe_parse(path), get_exception, schema_version)
 
     @staticmethod
     def validate_xml_content(
         content: bytes, get_exception: bool = True, schema_version: SVDSchemaVersion = SVDSchemaVersion.get_latest()
     ) -> bool:
-        return Validator._validate(lxml.etree.fromstring(content).getroottree(), get_exception, schema_version)
+        return Validator._validate(safe_fromstring(content).getroottree(), get_exception, schema_version)
 
     @staticmethod
     def validate_xml_str(
@@ -61,7 +63,7 @@ class Validator:
             raise ValidatorException(f"Schema file not found: {xsd_path}")
 
         with open(xsd_path, "rb") as xsd_file:
-            schema = lxml.etree.XMLSchema(lxml.etree.parse(xsd_file))
+            schema = lxml.etree.XMLSchema(safe_parse(xsd_file))
             if not schema.validate(tree):
                 if get_exception:
                     schema.assertValid(tree)
