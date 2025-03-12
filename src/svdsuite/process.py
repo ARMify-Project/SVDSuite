@@ -1022,6 +1022,9 @@ class _ProcessDimension:
         elif re.match(r"[_0-9a-zA-Z]+(,\s*[_0-9a-zA-Z]+)+", dim_index):
             dim_index_no_whitespace = re.sub(r"\s+", "", dim_index)
             dim_index_list = dim_index_no_whitespace.split(",")
+        # Not supported by the XSD, but required to parse some vendor files
+        elif re.match(r"[_0-9a-zA-Z]+", dim_index):
+            dim_index_list = [dim_index]
         else:
             raise ProcessException(f"can't resolve dim index for '{dim_index}'")
 
