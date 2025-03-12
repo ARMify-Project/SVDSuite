@@ -340,7 +340,7 @@ class Process:
         access = or_if_none(parsed.access, base.access if base else None)
 
         description = or_if_none(parsed.description, base.description if base else None)
-        lsb, msb = self._process_field_msb_lsb_with_increment(parsed, dim_increment, index)
+        lsb, msb = self._process_field_msb_lsb_with_increment(parsed, dim_increment, index, base)
         modified_write_values = (
             parsed.modified_write_values
             if parsed.modified_write_values is not None
@@ -408,27 +408,42 @@ class Process:
         )
 
     def _process_field_msb_lsb_with_increment(
-        self, parsed_field: SVDField, dim_increment: None | int, index: int
+        self, parsed_field: SVDField, dim_increment: None | int, index: int, base: None | IField
     ) -> tuple[int, int]:
-        field_msb, field_lsb = self._process_field_msb_lsb(parsed_field)
+        field_msb, field_lsb = self._process_field_msb_lsb(parsed_field, base)
         lsb = field_lsb if dim_increment is None else field_lsb + dim_increment * index
         msb = field_msb if dim_increment is None else field_msb + dim_increment * index
         return lsb, msb
 
-    def _process_field_msb_lsb(self, parsed_field: SVDField) -> tuple[int, int]:
-        if parsed_field.bit_offset is not None and parsed_field.bit_width is not None:
-            field_lsb = parsed_field.bit_offset
-            field_msb = parsed_field.bit_offset + parsed_field.bit_width - 1
-        elif parsed_field.lsb is not None and parsed_field.msb is not None:
-            field_lsb = parsed_field.lsb
-            field_msb = parsed_field.msb
-        elif parsed_field.bit_range is not None:
-            match = re.match(r"\[(\d+):(\d+)\]", parsed_field.bit_range)
-            if match:
-                field_msb, field_lsb = map(int, match.groups())
-            else:
-                raise ProcessException(f"Invalid bit range format: {parsed_field.bit_range}")
-        else:
+    def _process_field_msb_lsb(self, parsed_field: SVDField, base: None | IField) -> tuple[int, int]:
+        bit_offset = or_if_none(parsed_field.bit_offset, base.lsb if base else None)
+        bit_width = or_if_none(parsed_field.bit_width, base.msb - base.lsb + 1 if base else None)
+        lsb = or_if_none(parsed_field.lsb, base.lsb if base else None)
+        msb = or_if_none(parsed_field.msb, base.msb if base else None)
+        bit_range = or_if_none(parsed_field.bit_range, f"{base.msb}:{base.lsb}" if base else None)
+
+        field_lsb = None
+        field_msb = None
+
+        if parsed_field.bit_offset is not None or parsed_field.bit_width is not None:
+            if bit_offset is not None and bit_width is not None:
+                field_lsb = bit_offset
+                field_msb = bit_offset + bit_width - 1
+
+        if parsed_field.lsb is not None or parsed_field.msb is not None:
+            if lsb is not None and msb is not None:
+                field_lsb = lsb
+                field_msb = msb
+
+        if parsed_field.bit_range is not None:
+            if bit_range is not None:
+                match = re.match(r"\[(\d+):(\d+)\]", bit_range)
+                if match:
+                    field_msb, field_lsb = map(int, match.groups())
+                else:
+                    raise ProcessException(f"Invalid bit range format: {parsed_field.bit_range}")
+
+        if field_lsb is None or field_msb is None:
             raise ProcessException("Field must have bit_offset and bit_width, lsb and msb, or bit_range")
 
         if field_msb < field_lsb:
