@@ -1104,6 +1104,13 @@ class _ProcessEnumeratedValueContainer:
         for value in value_list:
             name = parsed_value.name
 
+            if name.lower() == "reserved":
+                warnings.warn(
+                    "Enumerated value with name 'reserved' found. Enumerated values with name 'reserved' are ignored.",
+                    ProcessWarning,
+                )
+                continue
+
             if value is not None and parsed_value.value:
                 substring = parsed_value.value[2:] if parsed_value.value.startswith("0x") else parsed_value.value
                 if "x" in substring:
