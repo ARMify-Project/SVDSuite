@@ -1193,7 +1193,11 @@ class _EnumeratedValueValidator:
             return False
         if value.is_default:
             if value.value is not None:
-                raise ProcessException("Default value must not have a value")
+                warnings.warn(
+                    f"Default value '{value.name}' has a value '{value.value}'. " f"Ignoring value for default value.",
+                    ProcessWarning,
+                )
+                value.value = None
             if self._seen_default:
                 raise ProcessException("Multiple default values found")
             self._seen_default = value

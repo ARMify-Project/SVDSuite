@@ -500,23 +500,47 @@ def test_default_extension(get_processed_device_from_testfile: Callable[[str], D
     assert container.enumerated_values[3].is_default is False
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=ProcessException,
-    reason="isDefault must not have a value",
-)
 def test_isdefault_with_value(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     The CMSIS-SVD standard specifies that `enumeratedValue` should contain either `isDefault` or `value`, but not
     both simultaneously. However, `svdconv` does not enforce this rule and will not flag cases where both elements
-    are present, potentially leading to ambiguous or unintended configurations.
+    are present.
 
     **Expected Outcome:** A robust parser should detect when an `enumeratedValue` entry incorrectly includes both
-    `isDefault` and `value` and raise an error, preventing potential misinterpretations. If a field is marked as
-    `isDefault`, it should not have an explicitly defined `value`. The parser must ensure strict adherence to this
-    rule.
+    `isDefault` and `value`, should ignore the value and raise a warning.
 
     **Processable with svdconv:** yes
     """
 
-    get_processed_device_from_testfile("enumerated_values/isdefault_with_value.svd")
+    with pytest.warns(ProcessWarning):
+        device = get_processed_device_from_testfile("enumerated_values/isdefault_with_value.svd")
+
+    assert len(device.peripherals) == 1
+    assert len(device.peripherals[0].registers_clusters) == 1
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert len(device.peripherals[0].registers_clusters[0].fields) == 1
+
+    assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 1
+    container = device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers[0]
+
+    assert len(container.enumerated_values) == 4
+
+    assert container.enumerated_values[0].name == "default_0"
+    assert container.enumerated_values[0].description == "Description for default"
+    assert container.enumerated_values[0].value == 0
+    assert container.enumerated_values[0].is_default is False
+
+    assert container.enumerated_values[1].name == "default_1"
+    assert container.enumerated_values[1].description == "Description for default"
+    assert container.enumerated_values[1].value == 1
+    assert container.enumerated_values[1].is_default is False
+
+    assert container.enumerated_values[2].name == "0b10"
+    assert container.enumerated_values[2].description == "Description for 0b10"
+    assert container.enumerated_values[2].value == 2
+    assert container.enumerated_values[2].is_default is False
+
+    assert container.enumerated_values[3].name == "default_3"
+    assert container.enumerated_values[3].description == "Description for default"
+    assert container.enumerated_values[3].value == 3
+    assert container.enumerated_values[3].is_default is False
