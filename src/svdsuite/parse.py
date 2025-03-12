@@ -90,7 +90,10 @@ def _to_int(value: None | str, base: int = 0) -> None | int:
     try:
         return int(value, base)
     except ValueError as exc:
-        raise NotImplementedError(f"can't parse value '{value}' in function _to_int") from exc
+        try:
+            return int(value)
+        except ValueError:
+            raise NotImplementedError(f"can't parse value '{value}' in function _to_int") from exc
 
 
 class Parser:
