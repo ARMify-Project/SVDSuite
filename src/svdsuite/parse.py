@@ -712,7 +712,9 @@ class Parser:
     ) -> list[SVDAddressBlock]:
         address_blocks: list[SVDAddressBlock] = []
         for address_block_element in peripheral_element.findall("addressBlock"):
-            offset = _to_int(self._parse_element_text("offset", address_block_element, optional=False))
+            # dirty hack to handle the case where offset is not present
+            # (e.g. Brainchip.AKD1000_DeviceFamilyPack.1.0.2/AKD1000.svd)
+            offset = _to_int(self._parse_element_text("offset", address_block_element, optional=True)) or 0
             size = _to_int(self._parse_element_text("size", address_block_element, optional=False))
             usage = EnumeratedTokenType.from_str(
                 self._parse_element_text("usage", address_block_element, optional=False)
