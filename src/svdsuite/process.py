@@ -1153,6 +1153,9 @@ class _ProcessEnumeratedValueContainer:
         return [value for value in enumerated_values if not value.is_default]
 
     def _convert_enumerated_value(self, input_str: str) -> list[int]:
+        # transfer binary value to a string int function can handle
+        input_str = input_str.replace("#", "0b")
+
         try:
             if input_str.startswith("0b"):
                 return self._process_binary_value_with_wildcard(input_str[2:])
