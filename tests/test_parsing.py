@@ -42,7 +42,7 @@ def fixture_get_device(get_test_svd_file_content: Callable[[str], bytes]) -> Cal
 
 @pytest.fixture(name="get_device_with_element_modification", scope="session")
 def fixture_get_device_with_element_modification(
-    modify_test_svd_file_and_get_content: Callable[[str, str, None | str, None | str], bytes]
+    modify_test_svd_file_and_get_content: Callable[[str, str, None | str, None | str], bytes],
 ) -> Callable[[str, None | str], SVDDevice]:
     def _(xpath: str, test_input: None | str):
         file_content = modify_test_svd_file_and_get_content("parser_testfile.svd", xpath, None, test_input)
@@ -55,7 +55,7 @@ def fixture_get_device_with_element_modification(
 
 @pytest.fixture(name="get_device_with_attribute_modification", scope="session")
 def fixture_get_device_with_attribute_modification(
-    modify_test_svd_file_and_get_content: Callable[[str, str, None | str, None | str], bytes]
+    modify_test_svd_file_and_get_content: Callable[[str, str, None | str, None | str], bytes],
 ) -> Callable[[str, None | str, None | str], SVDDevice]:
     def _(xpath: str, attribute: None | str, test_input: None | str):
         file_content = modify_test_svd_file_and_get_content("parser_testfile.svd", xpath, attribute, test_input)
@@ -1368,7 +1368,7 @@ class TestAddressBlockParsing:
         [
             ("100", 100),
             ("0x64", 100),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
+            (None, 0),
         ],
     )
     def test_offset(
