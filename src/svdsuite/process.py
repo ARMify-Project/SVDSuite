@@ -1116,7 +1116,7 @@ class _ProcessEnumeratedValueContainer:
 
             if value is not None and parsed_value.value:
                 substring = parsed_value.value[2:] if parsed_value.value.startswith("0x") else parsed_value.value
-                if "x" in substring:
+                if "x" in substring.lower():
                     name = f"{name}_{value}"
 
             enumerated_values.append(
