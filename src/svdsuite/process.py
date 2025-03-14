@@ -1169,8 +1169,8 @@ class _ProcessEnumeratedValueContainer:
             raise ProcessException(f"Error processing input '{input_str}': {exc}") from exc
 
     def _process_binary_value_with_wildcard(self, binary_str: str) -> list[int]:
-        if "x" in binary_str:
-            return [int(b, 2) for b in self._replace_x_combinations(binary_str)]
+        if "x" in binary_str.lower():
+            return [int(b, 2) for b in self._replace_x_combinations(binary_str.lower())]
         return [int(binary_str, 2)]
 
     def _replace_x_combinations(self, binary_str: str) -> list[str]:
