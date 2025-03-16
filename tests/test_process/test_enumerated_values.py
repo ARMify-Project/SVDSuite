@@ -205,11 +205,6 @@ def test_usage_combinations(
         assert False
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=ProcessException,
-    reason="Value name already defined in container",
-)
 def test_value_name_already_defined_same_container(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test verifies the parser's ability to handle situations where duplicate enumerated value names are
@@ -227,7 +222,24 @@ def test_value_name_already_defined_same_container(get_processed_device_from_tes
     **Processable with svdconv:** yes
     """
 
-    get_processed_device_from_testfile("enumerated_values/value_name_already_defined_same_container.svd")
+    with pytest.warns(ProcessWarning):
+        device = get_processed_device_from_testfile("enumerated_values/value_name_already_defined_same_container.svd")
+
+    assert len(device.peripherals) == 1
+    assert len(device.peripherals[0].registers_clusters) == 1
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert len(device.peripherals[0].registers_clusters[0].fields) == 1
+    assert len(device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers) == 1
+    enum_container = device.peripherals[0].registers_clusters[0].fields[0].enumerated_value_containers[0]
+    assert len(enum_container.enumerated_values) == 2
+    assert enum_container.enumerated_values[0].name == "0b00"
+    assert enum_container.enumerated_values[0].description == "Description for 0b00"
+    assert enum_container.enumerated_values[0].value == 0
+    assert enum_container.enumerated_values[0].is_default is False
+    assert enum_container.enumerated_values[1].name == "0b01"
+    assert enum_container.enumerated_values[1].description == "Description for 0b01"
+    assert enum_container.enumerated_values[1].value == 1
+    assert enum_container.enumerated_values[1].is_default is False
 
 
 def test_value_already_defined(get_processed_device_from_testfile: Callable[[str], Device]):

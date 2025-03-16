@@ -1202,7 +1202,8 @@ class _EnumeratedValueValidator:
     def is_value_valid(self, value: EnumeratedValue) -> bool:
         # Ensure enumerated value names and values are unique
         if value.name in self._seen_names:
-            raise ProcessException(f"Duplicate enumerated value name found: {value.name}")
+            warnings.warn(f"Duplicate enumerated value name found: {value.name}. Ignoring value.", ProcessWarning)
+            return False
         if value.value in self._seen_values:
             warnings.warn(
                 f"Duplicate enumerated value value found for enumerated value with name "
