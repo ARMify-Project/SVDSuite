@@ -405,6 +405,9 @@ class Resolver:
             if not isinstance(node.processed, IRegister | ICluster):
                 raise ResolveException("node is not of type Register or Cluster")
 
+            if node.is_dim_template:
+                continue
+
             child_size = node.processed.size
             if child_size is None:
                 child_size = self._get_parent_size_recursively(node)
