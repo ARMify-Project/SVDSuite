@@ -161,7 +161,7 @@ def test_same_register_names_in_peripheral(get_processed_device_from_testfile: C
 
 @pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_register_and_cluster_register_same_names_in_peripheral(
-    get_processed_device_from_testfile: Callable[[str], Device]
+    get_processed_device_from_testfile: Callable[[str], Device],
 ):
     """
     This test verifies whether the parser correctly handles situations where a register and a cluster within the
@@ -234,7 +234,7 @@ def test_register_and_cluster_same_names_in_peripheral(get_processed_device_from
 
 @pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_register_and_nested_cluster_same_names_in_peripheral(
-    get_processed_device_from_testfile: Callable[[str], Device]
+    get_processed_device_from_testfile: Callable[[str], Device],
 ):
     """
     This test evaluates whether the parser can correctly handle situations where a standalone register and a
@@ -1520,25 +1520,27 @@ def test_field_wrong_string_in_bitrangepattern(get_processed_device_from_testfil
     get_processed_device_from_testfile("logical_integrity/field_wrong_string_in_bitrangepattern.svd")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=ProcessException,
-    reason="LSB > MSB",
-)
 def test_field_illogical_values_in_bitrangepattern(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks if the parser correctly handles a `bitRangePattern` where the least significant bit (LSB) is
-    greater than the most significant bit (MSB). Such a configuration is illogical and should trigger an error.
-    `svdconv` detects this issue and raises an error when encountering this scenario.
+    greater than the most significant bit (MSB).
 
-    **Expected Outcome:** The parser should raise an error indicating that the bit range is illogical because the LSB
-    is greater than the MSB. This is consistent with the behavior of `svdconv`, which also detects and flags this
-    error when processing similar cases.
+    **Expected Outcome:** The parser should raise a warning indicating that the bit range is illogical because the LSB
+    is greater than the MSB and should switch the values of LSB and MSB.
 
     **Processable with svdconv:** no
     """
 
-    get_processed_device_from_testfile("logical_integrity/field_illogical_values_in_bitrangepattern.svd")
+    with pytest.warns(ProcessWarning):
+        device = get_processed_device_from_testfile("logical_integrity/field_illogical_values_in_bitrangepattern.svd")
+
+    assert len(device.peripherals) == 1
+    assert len(device.peripherals[0].registers_clusters) == 1
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert len(device.peripherals[0].registers_clusters[0].fields) == 1
+    assert device.peripherals[0].registers_clusters[0].fields[0].name == "FieldA"
+    assert device.peripherals[0].registers_clusters[0].fields[0].lsb == 8
+    assert device.peripherals[0].registers_clusters[0].fields[0].msb == 11
 
 
 def test_ignore_empty_peripheral(get_processed_device_from_testfile: Callable[[str], Device]):

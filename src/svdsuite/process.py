@@ -440,6 +440,14 @@ class Process:
                 match = re.match(r"\[(\d+):(\d+)\]", bit_range)
                 if match:
                     field_msb, field_lsb = map(int, match.groups())
+
+                    if field_msb < field_lsb:
+                        warnings.warn(
+                            f"BitRange '{bit_range}' has a smaller MSB than LSB. "
+                            f"Switching bitRange to [{field_lsb}:{field_msb}]",
+                            ProcessWarning,
+                        )
+                        field_msb, field_lsb = field_lsb, field_msb
                 else:
                     raise ProcessException(f"Invalid bit range format: {parsed_field.bit_range}")
 
