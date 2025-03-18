@@ -104,6 +104,10 @@ class AccessType(Enum):
         if label_lower == "write":
             return cls.WRITE_ONLY
 
+        # SVDConv accepts read with warning "Deprecated: 'read' Use 'read-only' instead"
+        if label_lower == "read":
+            return cls.READ_ONLY
+
         raise NotImplementedError(f"No matching AccessType found for: {label}")
 
 
