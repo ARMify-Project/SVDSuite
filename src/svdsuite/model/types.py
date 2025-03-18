@@ -100,6 +100,10 @@ class AccessType(Enum):
             if item.value.lower() == label_lower:
                 return item
 
+        # SVDConv accepts write with warning "Deprecated: 'write' Use 'write-only' instead"
+        if label_lower == "write":
+            return cls.WRITE_ONLY
+
         raise NotImplementedError(f"No matching AccessType found for: {label}")
 
 
