@@ -221,7 +221,14 @@ class Parser:
         name = self._parse_element_text("name", device_element, optional=False)
         series = self._parse_element_text("series", device_element, optional=True)
         version = self._parse_element_text("version", device_element, optional=False)
-        description = self._parse_element_text("description", device_element, strip=False, optional=False)
+
+        # dirty hack to handle the case where description is not present although it is required
+        # (e.g. DialogSemiconductor.DA1468x_DFP.1.1.3/DA14681.svd)
+        description = self._parse_element_text("description", device_element, strip=False, optional=True)
+        if description is None:
+            warnings.warn("Mandatory description is missing in the device element. Set to empty string", ParserWarning)
+            description = ""
+
         license_text = self._parse_element_text("licenseText", device_element, strip=False, optional=True)
         cpu = self._parse_cpu(device_element)
         header_system_filename = self._parse_element_text("headerSystemFilename", device_element, optional=True)

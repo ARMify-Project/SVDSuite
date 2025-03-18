@@ -187,10 +187,7 @@ class TestDeviceParsing:
 
     @pytest.mark.parametrize(
         "test_input,expected",
-        [
-            ("This is a description", "This is a description"),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
-        ],
+        [("This is a description", "This is a description"), (None, "")],
     )
     def test_description(
         self,
