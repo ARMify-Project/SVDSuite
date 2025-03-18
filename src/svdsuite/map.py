@@ -1,6 +1,6 @@
 from svdsuite.process import Process
 from svdsuite.model.map import MapPeripheral, MapRegister
-from svdsuite.model.process import IDevice, IPeripheral, ICluster, IRegister, AddressBlock
+from svdsuite.model.process import Device, Peripheral, Cluster, Register, AddressBlock
 
 
 class PeripheralRegisterMap:
@@ -16,10 +16,10 @@ class PeripheralRegisterMap:
     def from_xml_content(cls, content: bytes, resolver_logging_file_path: None | str = None):
         return cls(Process.from_xml_content(content, resolver_logging_file_path).get_processed_device())
 
-    def __init__(self, processed_device: IDevice) -> None:
+    def __init__(self, processed_device: Device) -> None:
         self.peripheral_map = self._build_map(processed_device)
 
-    def _build_map(self, processed_device: IDevice) -> list[MapPeripheral]:
+    def _build_map(self, processed_device: Device) -> list[MapPeripheral]:
         peripheral_map_list: list[MapPeripheral] = []
         for peripheral in processed_device.peripherals:
             map_peripheral = self._build_map_peripheral(peripheral)
@@ -28,12 +28,12 @@ class PeripheralRegisterMap:
         peripheral_map_list.sort(key=lambda x: x.address)
         return peripheral_map_list
 
-    def _build_map_peripheral(self, peripheral: IPeripheral) -> MapPeripheral:
+    def _build_map_peripheral(self, peripheral: Peripheral) -> MapPeripheral:
         registers: list[MapRegister] = []
         for register_cluster in peripheral.registers_clusters:
-            if isinstance(register_cluster, IRegister):
+            if isinstance(register_cluster, Register):
                 registers.append(self._build_map_register(peripheral.base_address, register_cluster))
-            if isinstance(register_cluster, ICluster):
+            if isinstance(register_cluster, Cluster):
                 registers.extend(self._build_map_cluster(peripheral.base_address, register_cluster))
 
         map_peripheral = MapPeripheral(
@@ -46,7 +46,7 @@ class PeripheralRegisterMap:
         )
         return map_peripheral
 
-    def _build_map_register(self, container_address: int, register: IRegister) -> MapRegister:
+    def _build_map_register(self, container_address: int, register: Register) -> MapRegister:
         address = container_address + register.address_offset
 
         map_register = MapRegister(
@@ -65,14 +65,14 @@ class PeripheralRegisterMap:
 
         return map_register
 
-    def _build_map_cluster(self, container_address: int, cluster: ICluster) -> list[MapRegister]:
+    def _build_map_cluster(self, container_address: int, cluster: Cluster) -> list[MapRegister]:
         address = container_address + cluster.address_offset
 
         registers: list[MapRegister] = []
         for register_cluster in cluster.registers_clusters:
-            if isinstance(register_cluster, IRegister):
+            if isinstance(register_cluster, Register):
                 registers.append(self._build_map_register(address, register_cluster))
-            if isinstance(register_cluster, ICluster):
+            if isinstance(register_cluster, Cluster):
                 registers.extend(self._build_map_cluster(address, register_cluster))
 
         return registers
