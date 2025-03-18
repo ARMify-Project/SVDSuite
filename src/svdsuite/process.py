@@ -967,6 +967,13 @@ class _ValidateAndFinalize:
                 raise ProcessException(f"Duplicate element name found: {i_field.name}")
             seen_names.add(i_field.name)
 
+            if i_field.name.lower() == "reserved":
+                warnings.warn(
+                    "Field with name 'reserved'. Field will be ignored!",
+                    ProcessWarning,
+                )
+                continue
+
             fields.append(Field.from_intermediate_field(i_field))
 
         fields.sort(key=lambda f: f.lsb)
