@@ -929,7 +929,11 @@ class _ValidateAndFinalize:
             # Add registers that have 'current' as their alternate.
             stack.extend(name for name, p in register_lookup.items() if p.alternate_register == current)
             # If the current register has an alternate (primary), add it.
-            primary = register_lookup[current].alternate_register
+            try:
+                primary = register_lookup[current].alternate_register
+            except KeyError:
+                primary = None
+
             if primary is not None:
                 stack.append(primary)
 
