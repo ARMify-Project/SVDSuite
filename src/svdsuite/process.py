@@ -679,8 +679,10 @@ class _ValidateAndFinalize:
             prev = i_peripheral.address_blocks[idx - 1]
             curr = i_peripheral.address_blocks[idx]
             if curr.offset < prev.offset + prev.size:
-                raise ProcessException(
-                    f"Address block with offset '{curr.offset}' overlaps with address block with offset '{prev.offset}'"
+                warnings.warn(
+                    f"Address block with offset '{curr.offset}' overlaps with address block "
+                    f"with offset '{prev.offset}'",
+                    ProcessWarning,
                 )
 
     def _check_peripheral_address_overlaps(
