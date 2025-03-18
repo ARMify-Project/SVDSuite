@@ -12,10 +12,10 @@ from svdsuite.model.process import (
     ICluster,
     IRegister,
     IField,
-    EnumeratedValueContainer,
+    IEnumeratedValueContainer,
 )
 
 ParsedPeripheralTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField | SVDEnumeratedValueContainer
 ParsedDimablePeripheralTypes: TypeAlias = SVDPeripheral | SVDCluster | SVDRegister | SVDField
-IntermediatePeripheralTypes: TypeAlias = IPeripheral | ICluster | IRegister | IField | EnumeratedValueContainer
+IntermediatePeripheralTypes: TypeAlias = IPeripheral | ICluster | IRegister | IField | IEnumeratedValueContainer
 IntermediateDimablePeripheralTypes: TypeAlias = IPeripheral | ICluster | IRegister | IField

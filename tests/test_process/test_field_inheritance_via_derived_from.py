@@ -57,11 +57,9 @@ def test_simple_inheritance_backward_reference_same_scope(get_processed_device_f
     assert fielda_enum_container.enumerated_values[0].name == "0b0"
     assert fielda_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fielda_enum_container.enumerated_values[0].value == 0b0
-    assert fielda_enum_container.enumerated_values[0].is_default is False
     assert fielda_enum_container.enumerated_values[1].name == "0b1"
     assert fielda_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fielda_enum_container.enumerated_values[1].value == 0b1
-    assert fielda_enum_container.enumerated_values[1].is_default is False
 
     assert device.peripherals[0].registers_clusters[0].fields[1].name == "FieldB"
     assert device.peripherals[0].registers_clusters[0].fields[1].lsb == 1
@@ -74,11 +72,9 @@ def test_simple_inheritance_backward_reference_same_scope(get_processed_device_f
     assert fieldb_enum_container.enumerated_values[0].name == "0b0"
     assert fieldb_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fieldb_enum_container.enumerated_values[0].value == 0b0
-    assert fieldb_enum_container.enumerated_values[0].is_default is False
     assert fieldb_enum_container.enumerated_values[1].name == "0b1"
     assert fieldb_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fieldb_enum_container.enumerated_values[1].value == 0b1
-    assert fieldb_enum_container.enumerated_values[1].is_default is False
 
 
 @pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
@@ -123,11 +119,9 @@ def test_simple_inheritance_forward_reference_same_scope(get_processed_device_fr
     assert fielda_enum_container.enumerated_values[0].name == "0b0"
     assert fielda_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fielda_enum_container.enumerated_values[0].value == 0b0
-    assert fielda_enum_container.enumerated_values[0].is_default is False
     assert fielda_enum_container.enumerated_values[1].name == "0b1"
     assert fielda_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fielda_enum_container.enumerated_values[1].value == 0b1
-    assert fielda_enum_container.enumerated_values[1].is_default is False
 
     assert device.peripherals[0].registers_clusters[0].fields[1].name == "FieldB"
     assert device.peripherals[0].registers_clusters[0].fields[1].lsb == 1
@@ -140,16 +134,14 @@ def test_simple_inheritance_forward_reference_same_scope(get_processed_device_fr
     assert fieldb_enum_container.enumerated_values[0].name == "0b0"
     assert fieldb_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fieldb_enum_container.enumerated_values[0].value == 0b0
-    assert fieldb_enum_container.enumerated_values[0].is_default is False
     assert fieldb_enum_container.enumerated_values[1].name == "0b1"
     assert fieldb_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fieldb_enum_container.enumerated_values[1].value == 0b1
-    assert fieldb_enum_container.enumerated_values[1].is_default is False
 
 
 @pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_backward_reference_different_scope(
-    get_processed_device_from_testfile: Callable[[str], Device]
+    get_processed_device_from_testfile: Callable[[str], Device],
 ):
     """
     This test case examines field inheritance using the `derivedFrom` attribute, where the field being inherited
@@ -191,11 +183,9 @@ def test_simple_inheritance_backward_reference_different_scope(
     assert rega_enum_container.enumerated_values[0].name == "0b0"
     assert rega_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert rega_enum_container.enumerated_values[0].value == 0b0
-    assert rega_enum_container.enumerated_values[0].is_default is False
     assert rega_enum_container.enumerated_values[1].name == "0b1"
     assert rega_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert rega_enum_container.enumerated_values[1].value == 0b1
-    assert rega_enum_container.enumerated_values[1].is_default is False
 
     assert isinstance(device.peripherals[0].registers_clusters[1], Register)
     assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
@@ -213,16 +203,14 @@ def test_simple_inheritance_backward_reference_different_scope(
     assert regb_enum_container.enumerated_values[0].name == "0b0"
     assert regb_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert regb_enum_container.enumerated_values[0].value == 0b0
-    assert regb_enum_container.enumerated_values[0].is_default is False
     assert regb_enum_container.enumerated_values[1].name == "0b1"
     assert regb_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert regb_enum_container.enumerated_values[1].value == 0b1
-    assert regb_enum_container.enumerated_values[1].is_default is False
 
 
 @pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_simple_inheritance_forward_reference_different_scope(
-    get_processed_device_from_testfile: Callable[[str], Device]
+    get_processed_device_from_testfile: Callable[[str], Device],
 ):
     """
     This test case evaluates field inheritance using the `derivedFrom` attribute, where the field being inherited
@@ -260,11 +248,9 @@ def test_simple_inheritance_forward_reference_different_scope(
     assert rega_enum_container.enumerated_values[0].name == "0b0"
     assert rega_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert rega_enum_container.enumerated_values[0].value == 0b0
-    assert rega_enum_container.enumerated_values[0].is_default is False
     assert rega_enum_container.enumerated_values[1].name == "0b1"
     assert rega_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert rega_enum_container.enumerated_values[1].value == 0b1
-    assert rega_enum_container.enumerated_values[1].is_default is False
 
     assert isinstance(device.peripherals[0].registers_clusters[1], Register)
     assert device.peripherals[0].registers_clusters[1].name == "RegisterB"
@@ -282,11 +268,9 @@ def test_simple_inheritance_forward_reference_different_scope(
     assert regb_enum_container.enumerated_values[0].name == "0b0"
     assert regb_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert regb_enum_container.enumerated_values[0].value == 0b0
-    assert regb_enum_container.enumerated_values[0].is_default is False
     assert regb_enum_container.enumerated_values[1].name == "0b1"
     assert regb_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert regb_enum_container.enumerated_values[1].value == 0b1
-    assert regb_enum_container.enumerated_values[1].is_default is False
 
 
 @pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
@@ -339,11 +323,9 @@ def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], D
     assert fielda_enum_container.enumerated_values[0].name == "0b0"
     assert fielda_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fielda_enum_container.enumerated_values[0].value == 0b0
-    assert fielda_enum_container.enumerated_values[0].is_default is False
     assert fielda_enum_container.enumerated_values[1].name == "0b1"
     assert fielda_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fielda_enum_container.enumerated_values[1].value == 0b1
-    assert fielda_enum_container.enumerated_values[1].is_default is False
 
     assert device.peripherals[0].registers_clusters[0].fields[1].name == "FieldB"
     assert device.peripherals[0].registers_clusters[0].fields[1].description == "FieldA description"
@@ -365,11 +347,9 @@ def test_value_inheritance(get_processed_device_from_testfile: Callable[[str], D
     assert fieldb_enum_container.enumerated_values[0].name == "0b0"
     assert fieldb_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fieldb_enum_container.enumerated_values[0].value == 0b0
-    assert fieldb_enum_container.enumerated_values[0].is_default is False
     assert fieldb_enum_container.enumerated_values[1].name == "0b1"
     assert fieldb_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fieldb_enum_container.enumerated_values[1].value == 0b1
-    assert fieldb_enum_container.enumerated_values[1].is_default is False
 
 
 @pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
@@ -420,11 +400,9 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     assert fielda_enum_container.enumerated_values[0].name == "0b0"
     assert fielda_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fielda_enum_container.enumerated_values[0].value == 0b0
-    assert fielda_enum_container.enumerated_values[0].is_default is False
     assert fielda_enum_container.enumerated_values[1].name == "0b1"
     assert fielda_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fielda_enum_container.enumerated_values[1].value == 0b1
-    assert fielda_enum_container.enumerated_values[1].is_default is False
 
     assert device.peripherals[0].registers_clusters[0].fields[1].name == "FieldB"
     assert device.peripherals[0].registers_clusters[0].fields[1].description == "FieldB description"
@@ -447,11 +425,9 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     assert fieldb_enum_container1.enumerated_values[0].name == "0b0"
     assert fieldb_enum_container1.enumerated_values[0].description == "Description for 0b0"
     assert fieldb_enum_container1.enumerated_values[0].value == 0b0
-    assert fieldb_enum_container1.enumerated_values[0].is_default is False
     assert fieldb_enum_container1.enumerated_values[1].name == "0b1"
     assert fieldb_enum_container1.enumerated_values[1].description == "Description for 0b1"
     assert fieldb_enum_container1.enumerated_values[1].value == 0b1
-    assert fieldb_enum_container1.enumerated_values[1].is_default is False
 
     fieldb_enum_container2 = device.peripherals[0].registers_clusters[0].fields[1].enumerated_value_containers[1]
     assert fieldb_enum_container2.name == "FieldBEnumeratedValue"
@@ -460,11 +436,9 @@ def test_override_behavior(get_processed_device_from_testfile: Callable[[str], D
     assert fieldb_enum_container2.enumerated_values[0].name == "0b0"
     assert fieldb_enum_container2.enumerated_values[0].description == "Description for 0b0"
     assert fieldb_enum_container2.enumerated_values[0].value == 0b0
-    assert fieldb_enum_container2.enumerated_values[0].is_default is False
     assert fieldb_enum_container2.enumerated_values[1].name == "0b1"
     assert fieldb_enum_container2.enumerated_values[1].description == "Description for 0b1"
     assert fieldb_enum_container2.enumerated_values[1].value == 0b1
-    assert fieldb_enum_container2.enumerated_values[1].is_default is False
 
 
 @pytest.mark.xfail(
@@ -533,11 +507,9 @@ def test_multiple_inheritance_backward_reference(get_processed_device_from_testf
     assert fielda_enum_container.enumerated_values[0].name == "0b0"
     assert fielda_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fielda_enum_container.enumerated_values[0].value == 0b0
-    assert fielda_enum_container.enumerated_values[0].is_default is False
     assert fielda_enum_container.enumerated_values[1].name == "0b1"
     assert fielda_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fielda_enum_container.enumerated_values[1].value == 0b1
-    assert fielda_enum_container.enumerated_values[1].is_default is False
 
     assert device.peripherals[0].registers_clusters[0].fields[1].name == "FieldB"
     assert device.peripherals[0].registers_clusters[0].fields[1].lsb == 1
@@ -550,11 +522,9 @@ def test_multiple_inheritance_backward_reference(get_processed_device_from_testf
     assert fieldb_enum_container.enumerated_values[0].name == "0b0"
     assert fieldb_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fieldb_enum_container.enumerated_values[0].value == 0b0
-    assert fieldb_enum_container.enumerated_values[0].is_default is False
     assert fieldb_enum_container.enumerated_values[1].name == "0b1"
     assert fieldb_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fieldb_enum_container.enumerated_values[1].value == 0b1
-    assert fieldb_enum_container.enumerated_values[1].is_default is False
 
     assert device.peripherals[0].registers_clusters[0].fields[2].name == "FieldC"
     assert device.peripherals[0].registers_clusters[0].fields[2].lsb == 2
@@ -567,11 +537,9 @@ def test_multiple_inheritance_backward_reference(get_processed_device_from_testf
     assert fieldc_enum_container.enumerated_values[0].name == "0b0"
     assert fieldc_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fieldc_enum_container.enumerated_values[0].value == 0b0
-    assert fieldc_enum_container.enumerated_values[0].is_default is False
     assert fieldc_enum_container.enumerated_values[1].name == "0b1"
     assert fieldc_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fieldc_enum_container.enumerated_values[1].value == 0b1
-    assert fieldc_enum_container.enumerated_values[1].is_default is False
 
 
 @pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
@@ -616,11 +584,9 @@ def test_multiple_inheritance_forward_reference(get_processed_device_from_testfi
     assert fielda_enum_container.enumerated_values[0].name == "0b0"
     assert fielda_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fielda_enum_container.enumerated_values[0].value == 0b0
-    assert fielda_enum_container.enumerated_values[0].is_default is False
     assert fielda_enum_container.enumerated_values[1].name == "0b1"
     assert fielda_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fielda_enum_container.enumerated_values[1].value == 0b1
-    assert fielda_enum_container.enumerated_values[1].is_default is False
 
     assert device.peripherals[0].registers_clusters[0].fields[1].name == "FieldB"
     assert device.peripherals[0].registers_clusters[0].fields[1].lsb == 1
@@ -633,11 +599,9 @@ def test_multiple_inheritance_forward_reference(get_processed_device_from_testfi
     assert fieldb_enum_container.enumerated_values[0].name == "0b0"
     assert fieldb_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fieldb_enum_container.enumerated_values[0].value == 0b0
-    assert fieldb_enum_container.enumerated_values[0].is_default is False
     assert fieldb_enum_container.enumerated_values[1].name == "0b1"
     assert fieldb_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fieldb_enum_container.enumerated_values[1].value == 0b1
-    assert fieldb_enum_container.enumerated_values[1].is_default is False
 
     assert device.peripherals[0].registers_clusters[0].fields[2].name == "FieldC"
     assert device.peripherals[0].registers_clusters[0].fields[2].lsb == 2
@@ -650,11 +614,9 @@ def test_multiple_inheritance_forward_reference(get_processed_device_from_testfi
     assert fieldc_enum_container.enumerated_values[0].name == "0b0"
     assert fieldc_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fieldc_enum_container.enumerated_values[0].value == 0b0
-    assert fieldc_enum_container.enumerated_values[0].is_default is False
     assert fieldc_enum_container.enumerated_values[1].name == "0b1"
     assert fieldc_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fieldc_enum_container.enumerated_values[1].value == 0b1
-    assert fieldc_enum_container.enumerated_values[1].is_default is False
 
 
 @pytest.mark.xfail(strict=True, raises=ProcessException, reason="Circular inheritance is not supported")

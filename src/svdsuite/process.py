@@ -35,7 +35,9 @@ from svdsuite.model.process import (
     AddressBlock,
     Interrupt,
     WriteConstraint,
+    IEnumeratedValueContainer,
     EnumeratedValueContainer,
+    IEnumeratedValue,
     EnumeratedValue,
 )
 from svdsuite.util.process_parse_model_convert import process_parse_convert_device
@@ -461,7 +463,7 @@ class Process:
 
     def _process_enumerated_value_container(
         self, parsed_enum_container: SVDEnumeratedValueContainer, lsb: int, msb: int
-    ) -> EnumeratedValueContainer:
+    ) -> IEnumeratedValueContainer:
         return _ProcessEnumeratedValueContainer().create_enumerated_value_container(parsed_enum_container, lsb, msb)
 
     def _extract_and_process_dimension(
@@ -980,7 +982,14 @@ class _ValidateAndFinalize:
                 )
                 continue
 
-            fields.append(Field.from_intermediate_field(i_field))
+            fields.append(
+                Field.from_intermediate_field(
+                    i_field=i_field,
+                    enumerated_value_containers=self._validate_and_finalize_enum_value_containers(
+                        i_field.enumerated_value_containers
+                    ),
+                )
+            )
 
         fields.sort(key=lambda f: f.lsb)
 
@@ -994,6 +1003,32 @@ class _ValidateAndFinalize:
                 raise ProcessException(f"Field '{field.name}' overlaps with '{fields[idx - 1].name}'")
 
         return fields
+
+    def _validate_and_finalize_enum_value_containers(
+        self, i_enum_containers: list[IEnumeratedValueContainer]
+    ) -> list[EnumeratedValueContainer]:
+        enum_value_containers: list[EnumeratedValueContainer] = []
+        for i_enum_container in i_enum_containers:
+            enum_value_containers.append(
+                EnumeratedValueContainer.from_intermediate_enum_value_container(
+                    i_enum_container=i_enum_container,
+                    enumerated_values=self._validate_and_finalize_enum_values(i_enum_container.enumerated_values),
+                )
+            )
+
+        return enum_value_containers
+
+    def _validate_and_finalize_enum_values(self, i_enum_values: list[IEnumeratedValue]) -> list[EnumeratedValue]:
+        enum_values: list[EnumeratedValue] = []
+        for i_enum_value in i_enum_values:
+            if i_enum_value.value is None:
+                raise ProcessException("Enumerated value must have a value")
+
+            enum_values.append(
+                EnumeratedValue.from_intermediate_enum_value(i_enum_value=i_enum_value, value=i_enum_value.value)
+            )
+
+        return enum_values
 
 
 class _ProcessDimension:
@@ -1092,8 +1127,8 @@ class _ProcessDimension:
 class _ProcessEnumeratedValueContainer:
     def create_enumerated_value_container(
         self, parsed_enum_container: SVDEnumeratedValueContainer, lsb: int, msb: int
-    ) -> EnumeratedValueContainer:
-        return EnumeratedValueContainer(
+    ) -> IEnumeratedValueContainer:
+        return IEnumeratedValueContainer(
             name=parsed_enum_container.name,
             header_enum_name=parsed_enum_container.header_enum_name,
             usage=parsed_enum_container.usage if parsed_enum_container.usage is not None else EnumUsageType.READ_WRITE,
@@ -1103,9 +1138,9 @@ class _ProcessEnumeratedValueContainer:
 
     def _process_enumerated_values(
         self, parsed_enumerated_values: list[SVDEnumeratedValue], lsb: int, msb: int
-    ) -> list[EnumeratedValue]:
+    ) -> list[IEnumeratedValue]:
         enum_value_validator = _EnumeratedValueValidator()
-        enumerated_values: list[EnumeratedValue] = []
+        enumerated_values: list[IEnumeratedValue] = []
 
         for parsed_enumerated_value in parsed_enumerated_values:
             processed_enumerated_values = self._process_enumerated_value_resolve_wildcard(parsed_enumerated_value)
@@ -1121,10 +1156,10 @@ class _ProcessEnumeratedValueContainer:
 
         return sorted(enumerated_values, key=lambda ev: ev.value if ev.value is not None else 0)
 
-    def _process_enumerated_value_resolve_wildcard(self, parsed_value: SVDEnumeratedValue) -> list[EnumeratedValue]:
+    def _process_enumerated_value_resolve_wildcard(self, parsed_value: SVDEnumeratedValue) -> list[IEnumeratedValue]:
         value_list = self._convert_enumerated_value(parsed_value.value) if parsed_value.value else [None]
 
-        enumerated_values: list[EnumeratedValue] = []
+        enumerated_values: list[IEnumeratedValue] = []
         for value in value_list:
             name = parsed_value.name
 
@@ -1141,7 +1176,7 @@ class _ProcessEnumeratedValueContainer:
                     name = f"{name}_{value}"
 
             enumerated_values.append(
-                EnumeratedValue(
+                IEnumeratedValue(
                     name=name,
                     description=parsed_value.description,
                     value=value,
@@ -1153,8 +1188,8 @@ class _ProcessEnumeratedValueContainer:
         return enumerated_values
 
     def _extend_enumerated_values_with_default(
-        self, enumerated_values: list[EnumeratedValue], default: EnumeratedValue, lsb: int, msb: int
-    ) -> list[EnumeratedValue]:
+        self, enumerated_values: list[IEnumeratedValue], default: IEnumeratedValue, lsb: int, msb: int
+    ) -> list[IEnumeratedValue]:
         covered_values = {value.value for value in enumerated_values if value.value is not None}
         all_possible_values = set(range(pow(2, msb - lsb + 1)))
 
@@ -1162,7 +1197,7 @@ class _ProcessEnumeratedValueContainer:
 
         for value in uncovered_values:
             enumerated_values.append(
-                EnumeratedValue(
+                IEnumeratedValue(
                     name=f"{default.name}_{value}",
                     description=default.description,
                     value=value,
@@ -1212,7 +1247,7 @@ class _EnumeratedValueValidator:
         self._seen_values: dict[int, str] = {}
         self._seen_default = None
 
-    def is_value_valid(self, value: EnumeratedValue) -> bool:
+    def is_value_valid(self, value: IEnumeratedValue) -> bool:
         # Ensure enumerated value names and values are unique
         if value.name in self._seen_names:
             warnings.warn(f"Duplicate enumerated value name found: {value.name}. Ignoring value.", ProcessWarning)
@@ -1244,5 +1279,5 @@ class _EnumeratedValueValidator:
 
         return True
 
-    def get_default(self) -> None | EnumeratedValue:
+    def get_default(self) -> None | IEnumeratedValue:
         return self._seen_default

@@ -100,15 +100,30 @@ class CPU:
 
 
 @dataclass
-class EnumeratedValue:
+class EnumeratedValueBase:
     name: str
     description: None | str
-    value: None | int
-    is_default: bool
     parsed: SVDEnumeratedValue
 
+
+@dataclass
+class IEnumeratedValue(EnumeratedValueBase):
+    value: None | int
+    is_default: bool
+
+
+@dataclass
+class EnumeratedValue(EnumeratedValueBase):
+    value: int
+
     def __repr__(self):
-        return f"EnumeratedValue(name={self.name}, value={self.value}, is_default={self.is_default})"
+        return f"EnumeratedValue(name={self.name}, value={self.value})"
+
+    @classmethod
+    def from_intermediate_enum_value(cls, i_enum_value: IEnumeratedValue, value: int) -> "EnumeratedValue":
+        base_kwargs = {field.name: getattr(i_enum_value, field.name) for field in dataclass_fields(EnumeratedValueBase)}
+
+        return cls(**base_kwargs, value=value)
 
 
 @dataclass
@@ -162,17 +177,40 @@ class WriteConstraint:
 
 
 @dataclass
-class EnumeratedValueContainer:
+class EnumeratedValueContainerBase:
     name: None | str
     header_enum_name: None | str
     usage: EnumUsageType
-    enumerated_values: list[EnumeratedValue]
     parsed: SVDEnumeratedValueContainer
+
+
+@dataclass
+class IEnumeratedValueContainer(EnumeratedValueContainerBase):
+    enumerated_values: list[IEnumeratedValue]
+
+
+@dataclass
+class EnumeratedValueContainer(EnumeratedValueContainerBase):
+    enumerated_values: list[EnumeratedValue]
 
     def __repr__(self):
         return (
             f"EnumeratedValueContainer(name={self.name}, header_enum_name={self.header_enum_name}, "
             f"usage={self.usage}, enumerated_values={self.enumerated_values})"
+        )
+
+    @classmethod
+    def from_intermediate_enum_value_container(
+        cls, i_enum_container: IEnumeratedValueContainer, enumerated_values: list[EnumeratedValue]
+    ) -> "EnumeratedValueContainer":
+        base_kwargs = {
+            field.name: getattr(i_enum_container, field.name)
+            for field in dataclass_fields(EnumeratedValueContainerBase)
+        }
+
+        return cls(
+            **base_kwargs,
+            enumerated_values=enumerated_values,
         )
 
 
@@ -185,7 +223,6 @@ class FieldBase:
     modified_write_values: ModifiedWriteValuesType
     write_constraint: None | WriteConstraint
     read_action: None | ReadActionType
-    enumerated_value_containers: list[EnumeratedValueContainer]
     parsed: SVDField
 
 
@@ -195,6 +232,7 @@ class IField(FieldBase):
     dim_increment: None | int
     dim_index: None | str
     access: None | AccessType
+    enumerated_value_containers: list[IEnumeratedValueContainer]
 
 
 @dataclass
@@ -203,12 +241,15 @@ class Field(FieldBase):
     bit_offset: int
     bit_width: int
     bit_range: tuple[int, int]
+    enumerated_value_containers: list[EnumeratedValueContainer]
 
     def __repr__(self):
         return f"Field(name={self.name}, lsb={self.lsb}, msb={self.msb})"
 
     @classmethod
-    def from_intermediate_field(cls, i_field: IField) -> "Field":
+    def from_intermediate_field(
+        cls, i_field: IField, enumerated_value_containers: list[EnumeratedValueContainer]
+    ) -> "Field":
         base_kwargs = {field.name: getattr(i_field, field.name) for field in dataclass_fields(FieldBase)}
 
         if i_field.access is None:
@@ -220,6 +261,7 @@ class Field(FieldBase):
             bit_offset=i_field.lsb,
             bit_width=i_field.msb - i_field.lsb + 1,
             bit_range=(i_field.msb, i_field.lsb),
+            enumerated_value_containers=enumerated_value_containers,
         )
 
 

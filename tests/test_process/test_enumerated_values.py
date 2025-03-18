@@ -50,22 +50,18 @@ def test_simple_read_write(get_processed_device_from_testfile: Callable[[str], D
     assert container.enumerated_values[0].name == "0b00"
     assert container.enumerated_values[0].description == "Description for 0b00"
     assert container.enumerated_values[0].value == 0b00
-    assert container.enumerated_values[0].is_default is False
 
     assert container.enumerated_values[1].name == "0b01"
     assert container.enumerated_values[1].description == "Description for 0b01"
     assert container.enumerated_values[1].value == 0b01
-    assert container.enumerated_values[1].is_default is False
 
     assert container.enumerated_values[2].name == "0b10"
     assert container.enumerated_values[2].description == "Description for 0b10"
     assert container.enumerated_values[2].value == 0b10
-    assert container.enumerated_values[2].is_default is False
 
     assert container.enumerated_values[3].name == "0b11"
     assert container.enumerated_values[3].description == "Description for 0b11"
     assert container.enumerated_values[3].value == 0b11
-    assert container.enumerated_values[3].is_default is False
 
 
 @pytest.mark.xfail(
@@ -235,11 +231,9 @@ def test_value_name_already_defined_same_container(get_processed_device_from_tes
     assert enum_container.enumerated_values[0].name == "0b00"
     assert enum_container.enumerated_values[0].description == "Description for 0b00"
     assert enum_container.enumerated_values[0].value == 0
-    assert enum_container.enumerated_values[0].is_default is False
     assert enum_container.enumerated_values[1].name == "0b01"
     assert enum_container.enumerated_values[1].description == "Description for 0b01"
     assert enum_container.enumerated_values[1].value == 1
-    assert enum_container.enumerated_values[1].is_default is False
 
 
 def test_value_already_defined(get_processed_device_from_testfile: Callable[[str], Device]):
@@ -271,11 +265,9 @@ def test_value_already_defined(get_processed_device_from_testfile: Callable[[str
     assert enum_container.enumerated_values[0].name == "0b00"
     assert enum_container.enumerated_values[0].description == "Description for 0b00"
     assert enum_container.enumerated_values[0].value == 0
-    assert enum_container.enumerated_values[0].is_default is False
     assert enum_container.enumerated_values[1].name == "0b01"
     assert enum_container.enumerated_values[1].description == "Description for 0b01"
     assert enum_container.enumerated_values[1].value == 1
-    assert enum_container.enumerated_values[1].is_default is False
 
 
 @pytest.mark.xfail(
@@ -338,42 +330,34 @@ def test_do_not_care_handling(get_processed_device_from_testfile: Callable[[str]
     assert container.enumerated_values[0].name == "0bx00_0"
     assert container.enumerated_values[0].description == "Description for 0bx00"
     assert container.enumerated_values[0].value == 0
-    assert container.enumerated_values[0].is_default is False
 
     assert container.enumerated_values[1].name == "0bx01_1"
     assert container.enumerated_values[1].description == "Description for 0bx01"
     assert container.enumerated_values[1].value == 1
-    assert container.enumerated_values[1].is_default is False
 
     assert container.enumerated_values[2].name == "0bx10_2"
     assert container.enumerated_values[2].description == "Description for 0bx10"
     assert container.enumerated_values[2].value == 2
-    assert container.enumerated_values[2].is_default is False
 
     assert container.enumerated_values[3].name == "0bx11_3"
     assert container.enumerated_values[3].description == "Description for 0bx11"
     assert container.enumerated_values[3].value == 3
-    assert container.enumerated_values[3].is_default is False
 
     assert container.enumerated_values[4].name == "0bx00_4"
     assert container.enumerated_values[4].description == "Description for 0bx00"
     assert container.enumerated_values[4].value == 4
-    assert container.enumerated_values[4].is_default is False
 
     assert container.enumerated_values[5].name == "0bx01_5"
     assert container.enumerated_values[5].description == "Description for 0bx01"
     assert container.enumerated_values[5].value == 5
-    assert container.enumerated_values[5].is_default is False
 
     assert container.enumerated_values[6].name == "0bx10_6"
     assert container.enumerated_values[6].description == "Description for 0bx10"
     assert container.enumerated_values[6].value == 6
-    assert container.enumerated_values[6].is_default is False
 
     assert container.enumerated_values[7].name == "0bx11_7"
     assert container.enumerated_values[7].description == "Description for 0bx11"
     assert container.enumerated_values[7].value == 7
-    assert container.enumerated_values[7].is_default is False
 
 
 @pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
@@ -408,17 +392,14 @@ def test_do_not_care_and_distinct_values(get_processed_device_from_testfile: Cal
     assert container.enumerated_values[0].name == "0bx0_0"
     assert container.enumerated_values[0].description == "Description for 0bx0"
     assert container.enumerated_values[0].value == 0
-    assert container.enumerated_values[0].is_default is False
 
     assert container.enumerated_values[1].name == "0bx0_2"
     assert container.enumerated_values[1].description == "Description for 0bx0"
     assert container.enumerated_values[1].value == 2
-    assert container.enumerated_values[1].is_default is False
 
     assert container.enumerated_values[2].name == "0b11"
     assert container.enumerated_values[2].description == "Description for 0b11"
     assert container.enumerated_values[2].value == 3
-    assert container.enumerated_values[2].is_default is False
 
 
 def test_do_not_care_and_distinct_result_in_same_value(get_processed_device_from_testfile: Callable[[str], Device]):
@@ -450,11 +431,9 @@ def test_do_not_care_and_distinct_result_in_same_value(get_processed_device_from
     assert enum_container.enumerated_values[0].name == "0bx0_0"
     assert enum_container.enumerated_values[0].description == "Description for 0bx0"
     assert enum_container.enumerated_values[0].value == 0
-    assert enum_container.enumerated_values[0].is_default is False
     assert enum_container.enumerated_values[1].name == "0bx0_2"
     assert enum_container.enumerated_values[1].description == "Description for 0bx0"
     assert enum_container.enumerated_values[1].value == 2
-    assert enum_container.enumerated_values[1].is_default is False
 
 
 @pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
@@ -494,22 +473,18 @@ def test_default_extension(get_processed_device_from_testfile: Callable[[str], D
     assert container.enumerated_values[0].name == "default_0"
     assert container.enumerated_values[0].description == "Description for default"
     assert container.enumerated_values[0].value == 0
-    assert container.enumerated_values[0].is_default is False
 
     assert container.enumerated_values[1].name == "default_1"
     assert container.enumerated_values[1].description == "Description for default"
     assert container.enumerated_values[1].value == 1
-    assert container.enumerated_values[1].is_default is False
 
     assert container.enumerated_values[2].name == "0b10"
     assert container.enumerated_values[2].description == "Description for 0b10"
     assert container.enumerated_values[2].value == 2
-    assert container.enumerated_values[2].is_default is False
 
     assert container.enumerated_values[3].name == "default_3"
     assert container.enumerated_values[3].description == "Description for default"
     assert container.enumerated_values[3].value == 3
-    assert container.enumerated_values[3].is_default is False
 
 
 def test_isdefault_with_value(get_processed_device_from_testfile: Callable[[str], Device]):
@@ -540,19 +515,15 @@ def test_isdefault_with_value(get_processed_device_from_testfile: Callable[[str]
     assert container.enumerated_values[0].name == "default_0"
     assert container.enumerated_values[0].description == "Description for default"
     assert container.enumerated_values[0].value == 0
-    assert container.enumerated_values[0].is_default is False
 
     assert container.enumerated_values[1].name == "default_1"
     assert container.enumerated_values[1].description == "Description for default"
     assert container.enumerated_values[1].value == 1
-    assert container.enumerated_values[1].is_default is False
 
     assert container.enumerated_values[2].name == "0b10"
     assert container.enumerated_values[2].description == "Description for 0b10"
     assert container.enumerated_values[2].value == 2
-    assert container.enumerated_values[2].is_default is False
 
     assert container.enumerated_values[3].name == "default_3"
     assert container.enumerated_values[3].description == "Description for default"
     assert container.enumerated_values[3].value == 3
-    assert container.enumerated_values[3].is_default is False

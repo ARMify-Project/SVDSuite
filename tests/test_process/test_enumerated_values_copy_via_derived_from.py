@@ -77,11 +77,9 @@ def test_backward_reference_different_scope(get_processed_device_from_testfile: 
     assert fielda_enum_container.enumerated_values[0].name == "0b0"
     assert fielda_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fielda_enum_container.enumerated_values[0].value == 0b0
-    assert fielda_enum_container.enumerated_values[0].is_default is False
     assert fielda_enum_container.enumerated_values[1].name == "0b1"
     assert fielda_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fielda_enum_container.enumerated_values[1].value == 0b1
-    assert fielda_enum_container.enumerated_values[1].is_default is False
 
     assert device.peripherals[0].registers_clusters[0].fields[1].name == "FieldB"
     assert device.peripherals[0].registers_clusters[0].fields[1].lsb == 1
@@ -94,11 +92,9 @@ def test_backward_reference_different_scope(get_processed_device_from_testfile: 
     assert fieldb_enum_container.enumerated_values[0].name == "0b0"
     assert fieldb_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fieldb_enum_container.enumerated_values[0].value == 0b0
-    assert fieldb_enum_container.enumerated_values[0].is_default is False
     assert fieldb_enum_container.enumerated_values[1].name == "0b1"
     assert fieldb_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fieldb_enum_container.enumerated_values[1].value == 0b1
-    assert fieldb_enum_container.enumerated_values[1].is_default is False
 
 
 @pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
@@ -140,11 +136,9 @@ def test_forward_reference_different_scope(get_processed_device_from_testfile: C
     assert fielda_enum_container.enumerated_values[0].name == "0b0"
     assert fielda_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fielda_enum_container.enumerated_values[0].value == 0b0
-    assert fielda_enum_container.enumerated_values[0].is_default is False
     assert fielda_enum_container.enumerated_values[1].name == "0b1"
     assert fielda_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fielda_enum_container.enumerated_values[1].value == 0b1
-    assert fielda_enum_container.enumerated_values[1].is_default is False
 
     assert device.peripherals[0].registers_clusters[0].fields[1].name == "FieldB"
     assert device.peripherals[0].registers_clusters[0].fields[1].lsb == 1
@@ -157,8 +151,6 @@ def test_forward_reference_different_scope(get_processed_device_from_testfile: C
     assert fieldb_enum_container.enumerated_values[0].name == "0b0"
     assert fieldb_enum_container.enumerated_values[0].description == "Description for 0b0"
     assert fieldb_enum_container.enumerated_values[0].value == 0b0
-    assert fieldb_enum_container.enumerated_values[0].is_default is False
     assert fieldb_enum_container.enumerated_values[1].name == "0b1"
     assert fieldb_enum_container.enumerated_values[1].description == "Description for 0b1"
     assert fieldb_enum_container.enumerated_values[1].value == 0b1
-    assert fieldb_enum_container.enumerated_values[1].is_default is False

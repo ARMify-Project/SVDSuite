@@ -95,8 +95,8 @@ def process_parse_convert_enumerated_value(value: EnumeratedValue) -> SVDEnumera
     return SVDEnumeratedValue(
         name=value.name,
         description=value.description,
-        value=str(value.value) if value.value is not None else None,
-        is_default=value.is_default,
+        value=str(value.value),
+        is_default=False,
         parent=None,  # set by parent enumerated value or dim array index
     )
 
