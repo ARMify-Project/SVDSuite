@@ -140,12 +140,23 @@ class Parser:
         strip: bool = True,
         optional: bool = False,
     ) -> None | str:
-        element = parent.find(element_name)
-        if element is None:
+        elements = parent.findall(element_name)
+
+        if len(elements) > 1:
+            texts = ", ".join([x.text for x in elements])  # type: ignore[union-attr]
+            lines = ", ".join([str(x.sourceline) for x in elements])
+            warnings.warn(
+                f"Multiple elements '{element_name}' with texts '{texts}' found at svd file source lines '{lines}'. "
+                "Only the first one will be used",
+                ParserWarning,
+            )
+
+        if not elements:
             if not optional:
                 raise ParserException(f"can't get element '{element_name}'")
             return None
 
+        element = elements[0]
         if element.text is None:
             if not optional:
                 raise ParserException(f"can't get element '{element_name}'")
