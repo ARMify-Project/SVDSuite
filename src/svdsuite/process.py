@@ -986,7 +986,7 @@ class _ValidateAndFinalize:
                 Field.from_intermediate_field(
                     i_field=i_field,
                     enumerated_value_containers=self._validate_and_finalize_enum_value_containers(
-                        i_field.enumerated_value_containers
+                        i_field.enumerated_value_containers, i_field.lsb, i_field.msb
                     ),
                 )
             )
@@ -1005,24 +1005,37 @@ class _ValidateAndFinalize:
         return fields
 
     def _validate_and_finalize_enum_value_containers(
-        self, i_enum_containers: list[IEnumeratedValueContainer]
+        self, i_enum_containers: list[IEnumeratedValueContainer], lsb: int, msb: int
     ) -> list[EnumeratedValueContainer]:
         enum_value_containers: list[EnumeratedValueContainer] = []
         for i_enum_container in i_enum_containers:
             enum_value_containers.append(
                 EnumeratedValueContainer.from_intermediate_enum_value_container(
                     i_enum_container=i_enum_container,
-                    enumerated_values=self._validate_and_finalize_enum_values(i_enum_container.enumerated_values),
+                    enumerated_values=self._validate_and_finalize_enum_values(
+                        i_enum_container.enumerated_values, lsb, msb
+                    ),
                 )
             )
 
         return enum_value_containers
 
-    def _validate_and_finalize_enum_values(self, i_enum_values: list[IEnumeratedValue]) -> list[EnumeratedValue]:
+    def _validate_and_finalize_enum_values(
+        self, i_enum_values: list[IEnumeratedValue], lsb: int, msb: int
+    ) -> list[EnumeratedValue]:
         enum_values: list[EnumeratedValue] = []
         for i_enum_value in i_enum_values:
             if i_enum_value.value is None:
                 raise ProcessException("Enumerated value must have a value")
+
+            if i_enum_value.value < 0 or i_enum_value.value > (2 ** (msb - lsb + 1) - 1):
+                warnings.warn(
+                    f"Enumerated value '{i_enum_value.name}' with value '{i_enum_value.value}' is outside of the valid "
+                    f"range for a field of width {msb - lsb + 1} (0 to {2 ** (msb - lsb + 1) - 1}). "
+                    "Enumerated value will be ignored.",
+                    ProcessWarning,
+                )
+                continue
 
             enum_values.append(
                 EnumeratedValue.from_intermediate_enum_value(i_enum_value=i_enum_value, value=i_enum_value.value)
