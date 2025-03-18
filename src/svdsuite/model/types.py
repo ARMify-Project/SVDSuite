@@ -1,4 +1,7 @@
 from enum import Enum
+import warnings
+
+from svdsuite.util.parser_exception_warning import ParserWarning
 
 
 class CPUNameType(Enum):
@@ -93,7 +96,7 @@ class AccessType(Enum):
     READ_WRITE_ONCE = "read-writeOnce"
 
     @classmethod
-    def from_str(cls, label: str):
+    def from_str(cls, label: str) -> "AccessType | None":
         label_lower = label.lower()
 
         for item in cls:
@@ -108,7 +111,9 @@ class AccessType(Enum):
         if label_lower == "read":
             return cls.READ_ONLY
 
-        raise NotImplementedError(f"No matching AccessType found for: {label}")
+        warnings.warn(f"Unknown AccessType '{label}'. Setting access to 'None'.", ParserWarning)
+
+        return None
 
 
 class EnumeratedTokenType(Enum):
