@@ -147,7 +147,7 @@ class Parser:
             lines = ", ".join([str(x.sourceline) for x in elements])
             warnings.warn(
                 f"Multiple elements '{element_name}' with texts '{texts}' found at svd file source lines '{lines}'. "
-                "Only the first one will be used",
+                "To be compatible with SVDConv, only the last one will be used",
                 ParserWarning,
             )
 
@@ -156,7 +156,7 @@ class Parser:
                 raise ParserException(f"can't get element '{element_name}'")
             return None
 
-        element = elements[0]
+        element = elements[-1]
         if element.text is None:
             if not optional:
                 raise ParserException(f"can't get element '{element_name}'")
