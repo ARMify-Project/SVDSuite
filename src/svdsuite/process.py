@@ -461,7 +461,6 @@ class Process:
                 f"Field with name '{parsed_field.name}': MSB '{field_msb}' is smaller than LSB '{field_lsb}'",
                 ProcessWarning,
             )
-            raise ProcessException("Field MSB must be greater than or equal to LSB")
 
         return (field_msb, field_lsb)
 
