@@ -827,9 +827,10 @@ class _ValidateAndFinalize:
         # Check that the offset is size aligned.
         alignment = _get_alignment(_to_byte(i_reg_cluster.size))
         if i_reg_cluster.address_offset % alignment != 0:
-            raise ProcessException(
+            warnings.warn(
                 f"Register/Cluster '{i_reg_cluster.name}' offset ({hex(i_reg_cluster.address_offset)}) "
-                f"is not properly aligned to {alignment} bytes."
+                f"is not properly aligned to {alignment} bytes.",
+                ProcessWarning,
             )
 
         if isinstance(i_reg_cluster, ICluster):

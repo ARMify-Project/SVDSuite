@@ -582,30 +582,27 @@ def test_peripheral_unaligned_address(get_processed_device_from_testfile: Callab
     assert device.peripherals[0].registers_clusters[0].size == 8
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=ProcessException,
-    reason="Unaligned registers are not supported",
-)
 def test_register_unaligned_address(get_processed_device_from_testfile: Callable[[str], Device]):
     """
     This test checks whether the parser can detect and correctly handle registers that are defined with an
     unaligned address offset. The test file defines `RegisterA`, with a size of 16 bit and an address offset of
     `0x00000003`, making it unaligned in memory. If the register's size would be 8 bit, the register would be
-    aligned. Unlike peripherals, unaligned registers are not supported by `svdconv`, which results in an error
-    indicating that the register's position is not aligned properly. A parser implementation should mimic this
-    behavior by raising an error when it encounters a register with an unaligned address.
+    aligned.
 
-    **Expected Outcome:** The parser should raise an error indicating that `RegisterA` is unaligned and that unaligned
-    registers are not supported. `RegisterA` is defined with an address offset of `0x00000003` and a size of 16
-    bits, which is not properly aligned. The parser should prevent further processing of the SVD file and inform
-    the user about this issue. This behavior aligns with `svdconv`, which also raises an error for unaligned
-    register definitions.
+    **Expected Outcome:** The parser should raise a warning indicating that `RegisterA` is unaligned.
 
-    **Processable with svdconv:** no
+    **Processable with svdconv:** yes
     """
 
-    get_processed_device_from_testfile("logical_integrity/register_unaligned_address.svd")
+    with pytest.warns(ProcessWarning):
+        device = get_processed_device_from_testfile("logical_integrity/register_unaligned_address.svd")
+
+    assert len(device.peripherals) == 1
+    assert len(device.peripherals[0].registers_clusters) == 1
+    assert isinstance(device.peripherals[0].registers_clusters[0], Register)
+    assert device.peripherals[0].registers_clusters[0].name == "RegisterA"
+    assert device.peripherals[0].registers_clusters[0].address_offset == 0x3
+    assert device.peripherals[0].registers_clusters[0].size == 16
 
 
 def test_register_size_bit_width(get_processed_device_from_testfile: Callable[[str], Device]):
