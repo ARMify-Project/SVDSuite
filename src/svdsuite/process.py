@@ -972,16 +972,16 @@ class _ValidateAndFinalize:
         seen_names: set[str] = set()
         fields: list[Field] = []
         for i_field in i_fields:
-            if i_field.name in seen_names:
-                raise ProcessException(f"Duplicate element name found: {i_field.name}")
-            seen_names.add(i_field.name)
-
             if i_field.name.lower() == "reserved":
                 warnings.warn(
                     "Field with name 'reserved'. Field will be ignored!",
                     ProcessWarning,
                 )
                 continue
+
+            if i_field.name in seen_names:
+                raise ProcessException(f"Duplicate element name found: {i_field.name}")
+            seen_names.add(i_field.name)
 
             fields.append(
                 Field.from_intermediate_field(
