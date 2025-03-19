@@ -1085,7 +1085,7 @@ class _ProcessDimension:
         elif re.match(r"[0-9]+\-[0-9]+", dim_index):
             start, end = dim_index.split("-")
 
-            if int(start) >= int(end):
+            if int(start) > int(end):
                 raise ProcessException(f"dim index '{dim_index}' start value must be less than end value")
 
             dim_index_list = [str(i) for i in range(int(start), int(end) + 1)]
