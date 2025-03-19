@@ -1026,7 +1026,7 @@ class _ValidateAndFinalize:
                 )
             )
 
-        return enum_value_containers
+        return sorted(enum_value_containers, key=lambda evc: (evc.usage.value, len(evc.enumerated_values)))
 
     def _validate_and_finalize_enum_values(
         self, i_enum_values: list[IEnumeratedValue], lsb: int, msb: int
