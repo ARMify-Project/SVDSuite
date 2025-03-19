@@ -1001,14 +1001,44 @@ class _ValidateAndFinalize:
 
         fields.sort(key=lambda f: f.lsb)
 
-        for idx, field in enumerate(fields):
+        # Check for overlapping fields but difference between access types (same as in SVDConv SvdRegister::CheckFields)
+        read_fields: list[Field] = []
+        write_fields: list[Field] = []
+        for field in fields:
+            # Check if field exceeds register size
             if field.msb >= reg_size:
                 warnings.warn(
                     f"Field '{field.name}' msb {field.msb} exceeds register size limit of {reg_size} bits",
                     ProcessWarning,
                 )
-            if idx > 0 and field.lsb <= fields[idx - 1].msb:
-                raise ProcessException(f"Field '{field.name}' overlaps with '{fields[idx - 1].name}'")
+
+            # Process based on access type
+            if field.access == AccessType.READ_ONLY:
+                # Check only the read domain
+                for existing in read_fields:
+                    if field.lsb <= existing.msb and field.msb >= existing.lsb:
+                        raise ProcessException(f"Field '{field.name}' overlaps with '{existing.name}' in read access")
+                read_fields.append(field)
+
+            elif field.access == AccessType.WRITE_ONLY:
+                # Check only the write domain
+                for existing in write_fields:
+                    if field.lsb <= existing.msb and field.msb >= existing.lsb:
+                        raise ProcessException(f"Field '{field.name}' overlaps with '{existing.name}' in write access")
+                write_fields.append(field)
+
+            elif field.access in {AccessType.READ_WRITE, AccessType.WRITE_ONCE, AccessType.READ_WRITE_ONCE}:
+                # First, check the read domain.
+                for existing in read_fields:
+                    if field.lsb <= existing.msb and field.msb >= existing.lsb:
+                        raise ProcessException(f"Field '{field.name}' overlaps with '{existing.name}' in read access")
+                # If no read conflict, add to read_fields.
+                read_fields.append(field)
+                # Then, check the write domain.
+                for existing in write_fields:
+                    if field.lsb <= existing.msb and field.msb >= existing.lsb:
+                        raise ProcessException(f"Field '{field.name}' overlaps with '{existing.name}' in write access")
+                write_fields.append(field)
 
         return fields
 
