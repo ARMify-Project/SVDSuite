@@ -223,8 +223,9 @@ class Parser:
         return attr_after_strip
 
     def _parse_device(self, device_element: lxml.etree._Element) -> SVDDevice:  # pyright: ignore[reportPrivateUsage]
+        ns_key = "xs" if "xs" in device_element.nsmap else "xsi"
         xs_no_namesp = self._parse_element_attribute(
-            f"{{{device_element.nsmap['xs']}}}noNamespaceSchemaLocation", device_element, optional=False
+            f"{{{device_element.nsmap[ns_key]}}}noNamespaceSchemaLocation", device_element, optional=False
         )
         schema_version = self._parse_element_attribute("schemaVersion", device_element, optional=False)
         vendor = self._parse_element_text("vendor", device_element, optional=True)
