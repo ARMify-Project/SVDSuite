@@ -50,16 +50,16 @@ def _to_bool(value: None | str, default: None | bool = None) -> bool:
     if value is None and default is not None:
         return default
 
-    if value == "true":
+    if value is not None and value.lower() == "true":
         return True
 
-    if value == "false":
+    if value is not None and value.lower() == "false":
         return False
 
-    if value == "1":
+    if value is not None and value == "1":
         return True
 
-    if value == "0":
+    if value is not None and value == "0":
         return False
 
     raise NotImplementedError(f"can't parse value '{value}' in function _to_bool")
