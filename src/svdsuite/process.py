@@ -1192,7 +1192,11 @@ class _ProcessEnumeratedValueContainer:
                 continue
 
             if value is not None and parsed_value.value:
-                substring = parsed_value.value[2:] if parsed_value.value.startswith("0x") else parsed_value.value
+                substring = (
+                    parsed_value.value[2:]
+                    if parsed_value.value.lower().startswith("0x")
+                    else parsed_value.value.lower()
+                )
                 if "x" in substring.lower():
                     name = f"{name}_{value}"
 
@@ -1231,7 +1235,7 @@ class _ProcessEnumeratedValueContainer:
 
     def _convert_enumerated_value(self, input_str: str) -> list[int]:
         # transfer binary value to a string int function can handle
-        input_str = input_str.replace("#", "0b")
+        input_str = input_str.lower().replace("#", "0b")
 
         try:
             if input_str.startswith("0b"):
