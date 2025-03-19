@@ -484,13 +484,17 @@ class Process:
             display_name = None
 
         if dim is None and "%s" in parsed_element.name:
-            raise ProcessException("Dim is None, but name contains '%s'")
+            raise ProcessException(f"Dim is None, but name '{parsed_element.name}' contains '%s'")
 
         if dim is not None and "%s" not in parsed_element.name:
-            raise ProcessException("Dim is not None, but name does not contain '%s'")
+            warnings.warn(
+                f"Dim is not None, but name '{parsed_element.name}' does not contain '%s'. Setting dim to None",
+                ProcessWarning,
+            )
+            dim = None
 
         if display_name is not None and dim is None and "%s" in display_name:
-            raise ProcessException("Dim is None, but display_name contains '%s'")
+            raise ProcessException(f"Dim is None, but display_name '{display_name}' contains '%s'")
 
         return dim is not None, *_ProcessDimension().process_dim(
             parsed_element.name, display_name, dim, dim_index, type(parsed_element)
