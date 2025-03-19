@@ -457,6 +457,10 @@ class Process:
             raise ProcessException("Field must have bit_offset and bit_width, lsb and msb, or bit_range")
 
         if field_msb < field_lsb:
+            warnings.warn(
+                f"Field with name '{parsed_field.name}': MSB '{field_msb}' is smaller than LSB '{field_lsb}'",
+                ProcessWarning,
+            )
             raise ProcessException("Field MSB must be greater than or equal to LSB")
 
         return (field_msb, field_lsb)
