@@ -228,7 +228,7 @@ class Parser:
             xs_no_namesp = self._parse_element_attribute(
                 f"{{{device_element.nsmap[ns_key]}}}noNamespaceSchemaLocation", device_element, optional=False
             )
-        except ParserException:
+        except (ParserException, KeyError):
             warnings.warn(
                 "Can't find noNamespaceSchemaLocation attribute in the device element. Set to empty string",
                 ParserWarning,
