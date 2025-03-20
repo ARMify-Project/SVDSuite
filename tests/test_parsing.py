@@ -1488,7 +1488,7 @@ class TestInterruptParsing:
         [
             ("100", 100),
             ("0x64", 100),
-            pytest.param(None, None, marks=pytest.mark.xfail(strict=True, raises=ParserException)),
+            (None, 0),
         ],
     )
     def test_value(
