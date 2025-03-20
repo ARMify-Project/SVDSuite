@@ -223,10 +223,18 @@ class Parser:
         return attr_after_strip
 
     def _parse_device(self, device_element: lxml.etree._Element) -> SVDDevice:  # pyright: ignore[reportPrivateUsage]
-        ns_key = "xs" if "xs" in device_element.nsmap else "xsi"
-        xs_no_namesp = self._parse_element_attribute(
-            f"{{{device_element.nsmap[ns_key]}}}noNamespaceSchemaLocation", device_element, optional=False
-        )
+        try:
+            ns_key = "xs" if "xs" in device_element.nsmap else "xsi"
+            xs_no_namesp = self._parse_element_attribute(
+                f"{{{device_element.nsmap[ns_key]}}}noNamespaceSchemaLocation", device_element, optional=False
+            )
+        except ParserException:
+            warnings.warn(
+                "Can't find noNamespaceSchemaLocation attribute in the device element. Set to empty string",
+                ParserWarning,
+            )
+            xs_no_namesp = ""
+
         schema_version = self._parse_element_attribute("schemaVersion", device_element, optional=False)
         vendor = self._parse_element_text("vendor", device_element, optional=True)
         vendor_id = self._parse_element_text("vendorID", device_element, optional=True)
