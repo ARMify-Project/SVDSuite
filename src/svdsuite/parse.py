@@ -540,67 +540,71 @@ class Parser:
     def _parse_fields(
         self, register_element: lxml.etree._Element  # pyright: ignore[reportPrivateUsage]
     ) -> list[SVDField]:
-        if (fields_element := register_element.find("fields")) is None:
+        # Some svd files have multiple <fields> elements in a <register> element (not allowed by the schema)
+        # To be compatible with SVDConv, all <fields> elements are parsed
+        fields_elements = register_element.findall("fields")
+        if not fields_elements:
             return []
 
         fields: list[SVDField] = []
-        for field_element in fields_element.findall("field"):
-            derived_from = self._parse_element_attribute("derivedFrom", field_element, optional=True)
-            name = self._parse_element_text("name", field_element, optional=False)
-            description = self._parse_element_text("description", field_element, strip=False, optional=True)
-            bit_offset = _to_int(self._parse_element_text("bitOffset", field_element, optional=True))
-            bit_width = _to_int(self._parse_element_text("bitWidth", field_element, optional=True))
-            lsb = _to_int(self._parse_element_text("lsb", field_element, optional=True))
-            msb = _to_int(self._parse_element_text("msb", field_element, optional=True))
-            bit_range = self._parse_element_text("bitRange", field_element, optional=True)
-            access = self._parse_element_text("access", field_element, optional=True)
-            modified_write_values = self._parse_element_text("modifiedWriteValues", field_element, optional=True)
-            write_constraint = self._parse_write_constraint(field_element)
-            read_action = self._parse_element_text("readAction", field_element, optional=True)
-            enumerated_value_containers = self._parse_enumerated_value_containers(field_element)
+        for fields_element in fields_elements:
+            for field_element in fields_element.findall("field"):
+                derived_from = self._parse_element_attribute("derivedFrom", field_element, optional=True)
+                name = self._parse_element_text("name", field_element, optional=False)
+                description = self._parse_element_text("description", field_element, strip=False, optional=True)
+                bit_offset = _to_int(self._parse_element_text("bitOffset", field_element, optional=True))
+                bit_width = _to_int(self._parse_element_text("bitWidth", field_element, optional=True))
+                lsb = _to_int(self._parse_element_text("lsb", field_element, optional=True))
+                msb = _to_int(self._parse_element_text("msb", field_element, optional=True))
+                bit_range = self._parse_element_text("bitRange", field_element, optional=True)
+                access = self._parse_element_text("access", field_element, optional=True)
+                modified_write_values = self._parse_element_text("modifiedWriteValues", field_element, optional=True)
+                write_constraint = self._parse_write_constraint(field_element)
+                read_action = self._parse_element_text("readAction", field_element, optional=True)
+                enumerated_value_containers = self._parse_enumerated_value_containers(field_element)
 
-            dim, dim_increment, dim_index, dim_name, dim_array_index = self._parse_dim_element_group(field_element)
+                dim, dim_increment, dim_index, dim_name, dim_array_index = self._parse_dim_element_group(field_element)
 
-            if access is not None:
-                access = AccessType.from_str(access)
+                if access is not None:
+                    access = AccessType.from_str(access)
 
-            if modified_write_values is not None:
-                modified_write_values = ModifiedWriteValuesType.from_str(modified_write_values)
+                if modified_write_values is not None:
+                    modified_write_values = ModifiedWriteValuesType.from_str(modified_write_values)
 
-            if read_action is not None:
-                read_action = ReadActionType.from_str(read_action)
+                if read_action is not None:
+                    read_action = ReadActionType.from_str(read_action)
 
-            field = SVDField(
-                name=name,
-                description=description,
-                bit_offset=bit_offset,
-                bit_width=bit_width,
-                lsb=lsb,
-                msb=msb,
-                bit_range=bit_range,
-                access=access,
-                modified_write_values=modified_write_values,
-                write_constraint=write_constraint,
-                read_action=read_action,
-                enumerated_value_containers=enumerated_value_containers,
-                dim=dim,
-                dim_increment=dim_increment,
-                dim_index=dim_index,
-                dim_name=dim_name,
-                dim_array_index=dim_array_index,
-                derived_from=derived_from,
-            )
+                field = SVDField(
+                    name=name,
+                    description=description,
+                    bit_offset=bit_offset,
+                    bit_width=bit_width,
+                    lsb=lsb,
+                    msb=msb,
+                    bit_range=bit_range,
+                    access=access,
+                    modified_write_values=modified_write_values,
+                    write_constraint=write_constraint,
+                    read_action=read_action,
+                    enumerated_value_containers=enumerated_value_containers,
+                    dim=dim,
+                    dim_increment=dim_increment,
+                    dim_index=dim_index,
+                    dim_name=dim_name,
+                    dim_array_index=dim_array_index,
+                    derived_from=derived_from,
+                )
 
-            if field.write_constraint is not None:
-                field.write_constraint.parent = field
+                if field.write_constraint is not None:
+                    field.write_constraint.parent = field
 
-            for enumerated_value_container in field.enumerated_value_containers:
-                enumerated_value_container.parent = field
+                for enumerated_value_container in field.enumerated_value_containers:
+                    enumerated_value_container.parent = field
 
-            if field.dim_array_index is not None:
-                field.dim_array_index.parent = field
+                if field.dim_array_index is not None:
+                    field.dim_array_index.parent = field
 
-            fields.append(field)
+                fields.append(field)
 
         return fields
 
