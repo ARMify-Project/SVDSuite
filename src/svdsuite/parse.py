@@ -425,7 +425,12 @@ class Parser:
             base_address = _to_int(self._parse_element_text("baseAddress", peripheral_element, optional=False))
             address_blocks = self._parse_address_blocks(peripheral_element)
             interrupts = self._parse_interrupts(peripheral_element)
-            registers_clusters = self._parse_registers_clusters(peripheral_element.find("registers"))
+
+            # Some svd files have multiple <registers> elements in a <peripheral> element (not allowed by the schema)
+            # To be compatible with SVDConv, all <registers> elements are parsed
+            registers_clusters: list[SVDRegister | SVDCluster] = []
+            for registers_element in peripheral_element.findall("registers"):
+                registers_clusters.extend(self._parse_registers_clusters(registers_element))
 
             dim, dim_increment, dim_index, dim_name, dim_array_index = self._parse_dim_element_group(peripheral_element)
 
