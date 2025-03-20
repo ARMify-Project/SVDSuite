@@ -732,7 +732,17 @@ class Parser:
         for interrupt_element in peripheral_element.findall("interrupt"):
             name = self._parse_element_text("name", interrupt_element, optional=False)
             description = self._parse_element_text("description", interrupt_element, strip=False, optional=True)
-            value = _to_int(self._parse_element_text("value", interrupt_element, optional=False))
+
+            # Necessary for NSING.N32H47x_DFP.1.0.1/N32H474.svd
+            try:
+                value = _to_int(self._parse_element_text("value", interrupt_element, optional=False))
+            except ParserException:
+                warnings.warn(
+                    f"Can't find mandatory value attribute in the interrupt element with name '{name}'. "
+                    "Setting value to 0 to be compatible with SVDConv.",
+                    ParserWarning,
+                )
+                value = 0
 
             interrupts.append(SVDInterrupt(name=name, description=description, value=value))
 
