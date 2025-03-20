@@ -78,7 +78,6 @@ class Process:
         return cls(Parser.from_xml_content(content).get_parsed_device(), resolver_logging_file_path)
 
     def __init__(self, parsed_device: SVDDevice, resolver_logging_file_path: None | str) -> None:
-        # resolver_logging_file_path = "/home/fedora/resolver_logging.html"  # TODO remove (debug)
         self._resolver = Resolver(self, resolver_logging_file_path)
         self._processed_device: Device = self._process_device(parsed_device)
 
