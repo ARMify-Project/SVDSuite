@@ -409,6 +409,12 @@ class Resolver:
                 continue
 
             child_size = node.processed.size
+
+            # Elements with sizes that are not multiples of 8 will be ignored later.
+            # Therefore, we set their size to zero here to ensure correct size calculations for other elements.
+            if child_size is not None and child_size % 8 != 0:
+                child_size = 0
+
             if child_size is None:
                 child_size = self._get_parent_size_recursively(node)
 
