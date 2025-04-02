@@ -1,15 +1,27 @@
 # SVDSuite
 
-**SVDSuite** is a Python package to parse, process, manipulate, validate, and generate [CMSIS SVD](https://open-cmsis-pack.github.io/svd-spec/main/index.html) files. Currently, the suite supports CMSIS-SVD standard 1.3.10-dev11, whereas the validation supports additionally standard 1.3.9.
+**SVDSuite** is a Python package to parse, process, manipulate, validate, and generate [CMSIS SVD](https://open-cmsis-pack.github.io/svd-spec/main/index.html) files. Currently, the suite supports CMSIS-SVD standard 1.3.10-dev16, whereas the validation additionally supports all previously released standards.
 
-> The CMSIS System View Description format(CMSIS-SVD) formalizes the description of the system contained in Arm Cortex-M processor-based microcontrollers, in particular, the memory mapped registers of peripherals. The detail contained in system view descriptions is comparable to the data in device reference manuals. The information ranges from high level functional descriptions of a peripheral all the way down to the definition and purpose of an individual bit field in a memory mapped register.
+> The CMSIS System View Description format (CMSIS-SVD) formalizes the description of the system contained in Arm Cortex-M processor-based microcontrollers, in particular, the memory-mapped registers of peripherals. The detail contained in system view descriptions is comparable to the data in device reference manuals. The information ranges from high-level functional descriptions of a peripheral all the way down to the definition and purpose of an individual bit field in a memory-mapped register.
 >
->CMSIS-SVD files are developed and maintained by silicon vendors. Silicon vendors distribute their descriptions as part of CMSIS Device Family Packs. Tool vendors use CMSIS-SVD files for providing device-specific debug views of peripherals in their debugger. Last but not least, CMSIS-compliant device header files are generated from CMSIS-SVD files. [^1]
+> CMSIS-SVD files are developed and maintained by silicon vendors. Silicon vendors distribute their descriptions as part of CMSIS Device Family Packs. Tool vendors use CMSIS-SVD files for providing device-specific debug views of peripherals in their debugger. Last but not least, CMSIS-compliant device header files are generated from CMSIS-SVD files. [^1]
+
+### Compatibility with SVDConv
+
+SVDSuite was designed with a strong focus on compatibility with *SVDConv*, the official CMSIS tool for validating and processing SVD files. To ensure full compatibility, all generated and processed SVD files were tested against SVDConv ([checkout the comparison repository](https://github.com/ARMify-Project/svdsuite-svdconv-compare)). Parsing and transformation behavior is verified to match SVDConv’s output, ensuring reliable integration with existing CMSIS workflows and tooling.
+
+### Extended Functionality
+
+In addition to faithfully supporting the CMSIS-SVD specification, SVDSuite offers several enhancements beyond the standard:
+
+- **Forward references**: SVDSuite allows references to elements that are defined later in the same file, providing more flexibility in SVD authoring and structuring.
+- **Full resolution of `enumeratedValues`**: Wildcards, default values, and all inheritance scenarios within `enumeratedValues` are fully resolved, enabling consistent and complete interpretation of value definitions.
 
 [^1]: https://open-cmsis-pack.github.io/svd-spec/main/index.html
 
-> [!CAUTION]
-> This Python package is in early development. Code-breaking changes are to be expected!
+
+> [!NOTE]  
+> The long-term goal is to merge **SVDSuite** into the [cmsis-svd](https://github.com/cmsis-svd/cmsis-svd) repository and release it as version 1.0. The author of SVDSuite is also an active maintainer of the [CMSIS-SVD](https://github.com/cmsis-svd) project.
 
 ## Installation
 
@@ -21,13 +33,225 @@ Install **SVDSuite** with `pip`:
     
 ## Usage/Examples
 
+### Process
+
+To process a CMSIS-SVD file, which includes parsing, you can utilize the `Process` class.
+
+```python
+from svdsuite import Process
+from svdsuite.model import Cluster, Register
+
+svd_str = """\
+<?xml version='1.0' encoding='utf-8'?>
+<device xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd" schemaVersion="1.3">
+  <name>STM32F0</name>
+  <version>1.0</version>
+  <description>Test_Example device</description>
+  <cpu>
+  <name>CM0</name>
+  <revision>r0p0</revision>
+  <endian>little</endian>
+  <mpuPresent>false</mpuPresent>
+  <fpuPresent>false</fpuPresent>
+  <nvicPrioBits>4</nvicPrioBits>
+  <vendorSystickConfig>false</vendorSystickConfig>
+  </cpu>
+  <addressUnitBits>8</addressUnitBits>
+  <width>32</width>
+  <peripherals>
+    <peripheral>
+      <name>TimerExt</name>
+      <baseAddress>0x40000000</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x1000</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register derivedFrom="Timer0.CR1">
+          <name>CR1</name>
+          <addressOffset>0x00</addressOffset>
+        </register>
+      </registers>
+    </peripheral>
+    <peripheral>
+      <dim>2</dim>
+      <dimIncrement>0x1000</dimIncrement>
+      <name>Timer[%s]</name>
+      <baseAddress>0x40001000</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x1000</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <cluster>
+          <dim>4</dim>
+          <dimIncrement>0x20</dimIncrement>
+          <name>CC[%s]</name>
+          <description>Capture/Compare Channel</description>
+          <addressOffset>0x0</addressOffset>
+          <register>
+            <name>CCR</name>
+            <description>Capture/Compare Register</description>
+            <addressOffset>0x00</addressOffset>
+          </register>
+          <register>
+            <name>CCMR</name>
+            <description>Capture/Compare Mode Register</description>
+            <addressOffset>0x04</addressOffset>
+          </register>
+          <register>
+            <name>CCER</name>
+            <description>Capture/Compare Enable Register</description>
+            <addressOffset>0x08</addressOffset>
+          </register>
+        </cluster>
+        <register>
+          <name>CR1</name>
+          <description>Control Register 1</description>
+          <addressOffset>0x80</addressOffset>
+          <size>32</size>
+          <access>read-write</access>
+          <fields>
+            <field>
+              <name>CEN</name>
+              <description>Counter Enable</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>CEN_Values</name>
+                <enumeratedValue>
+                  <name>Disabled</name>
+                  <description>Counter disabled</description>
+                  <value>0</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>Enabled</name>
+                  <description>Counter enabled</description>
+                  <value>1</value>
+                </enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>CMS</name>
+              <description>Center-aligned Mode Selection</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>2</bitWidth>
+              <enumeratedValues>
+                <name>CMS_Values</name>
+                <enumeratedValue>
+                  <name>EdgeAligned</name>
+                  <description>Edge-aligned mode</description>
+                  <value>0b00</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>CenterAligned1</name>
+                  <description>Center-aligned mode 1</description>
+                  <value>0b01</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>CenterAligned2</name>
+                  <description>Center-aligned mode 2</description>
+                  <value>0b10</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>CenterAligned3</name>
+                  <description>Center-aligned mode 3</description>
+                  <value>0b11</value>
+                </enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>Status</name>
+              <description>Status Field with Don't Care Bits</description>
+              <bitOffset>8</bitOffset>
+              <bitWidth>8</bitWidth>
+              <access>read-only</access>
+              <enumeratedValues>
+                <name>Status_Values</name>
+                <enumeratedValue>
+                  <name>OK</name>
+                  <description>No error</description>
+                  <value>0b0xxxxxxx</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>Error</name>
+                  <description>Error condition</description>
+                  <value>0b1xxxxxxx</value>
+                </enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+  </peripherals>
+</device>
+    """
+
+# Process the SVD string. Alternatively, you can use the `from_svd_file` method to parse a SVD file
+# or the `from_xml_content` method to parse svd byte content.
+# Additionally, you can specify a resolver_logging_file_path to debug the resolver step by step.
+process = Process.from_xml_str(svd_str)
+# parser = Parser.from_svd_file("path/to/svd_file.svd")
+# parser = Parser.from_xml_content(svd_str.encode())
+
+# Get the SVDDevice object
+device = process.get_processed_device()
+
+print("Print the peripheral names and the register count for each peripheral:")
+for peripheral in device.peripherals:
+    print(f"Peripheral: {peripheral.name}, Register Count: {len(peripheral.registers)}")
+
+print("\n\nPrint the register names and their base address for each peripheral:")
+for peripheral in device.peripherals:
+    print(f"Peripheral: {peripheral.name}")
+    for register in peripheral.registers:
+        print(f"  Register: {register.name}, Base Address: 0x{register.base_address:X}")
+
+print("\n\nPrint the field names and their bit offsets for each register:")
+for peripheral in device.peripherals:
+    print(f"Peripheral: {peripheral.name}")
+    for register in peripheral.registers:
+        print(f"  Register: {register.name}")
+        for field in register.fields:
+            print(f"    Field: {field.name}, Bit Offset: {field.bit_offset}")
+
+print("\n\nPrint the enumerated values for each field:")
+for peripheral in device.peripherals:
+    print(f"Peripheral: {peripheral.name}")
+    for register in peripheral.registers:
+        print(f"  Register: {register.name}")
+        for field in register.fields:
+            print(f"    Field: {field.name}")
+            for enum_value_cont in field.enumerated_value_containers:
+                for enum_value in enum_value_cont.enumerated_values:
+                    print(f"      Enumerated Value: {enum_value.name}, Value: {enum_value.value}")
+
+print("\n\nPrint peripherals with registers but include clusters:")
+for peripheral in device.peripherals:
+    print(f"Peripheral: {peripheral.name}")
+    # We ignore that clusters could be nested here for simplicity
+    # In a real-world scenario, you would need to handle nested clusters appropriately
+    for reg_cluster in peripheral.registers_clusters:
+        if isinstance(reg_cluster, Cluster):
+            print(f"  Cluster: {reg_cluster.name}")
+            for register in reg_cluster.registers_clusters:
+                print(f"    Register: {register.name}, Base Address: 0x{register.base_address:X}")
+        elif isinstance(reg_cluster, Register):
+            print(f"  Register: {reg_cluster.name}, Base Address: 0x{reg_cluster.base_address:X}")
+```
+
+Have a look into `svdsuite/model/process.py` for all the models (dataclasses).
+
 ### Parse
 
-To parse a CMSIS-SVD file you can utilize the `SVDParser` class.
+To parse a CMSIS-SVD file you can utilize the `Parser` class.
 
 ```python
 import pprint
-from svdsuite import SVDParser
+from svdsuite import Parser
 
 svd_str = """\
     <device xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
@@ -79,11 +303,11 @@ svd_str = """\
     </device>
     """
 
-# Parse the SVD string. Alternatively, you can use the `for_xml_file` method to parse a SVD file
-# or the `for_xml_content` method to parse svd byte content.
-parser = SVDParser.for_xml_str(svd_str)
-# parser = SVDParser.for_xml_file("path/to/svd_file.svd")
-# parser = SVDParser.for_xml_content(svd_str.encode())
+# Parse the SVD string. Alternatively, you can use the `from_svd_file` method to parse a SVD file
+# or the `from_xml_content` method to parse svd byte content.
+parser = Parser.from_xml_str(svd_str)
+# parser = Parser.from_svd_file("path/to/svd_file.svd")
+# parser = Parser.from_xml_content(svd_str.encode())
 
 # Get the SVDDevice object
 device = parser.get_parsed_device()
@@ -175,18 +399,15 @@ SVDDevice(
 )
 ```
 
-Have a look into `svdsuite/svd_model.py` for all the models (dataclasses).
-
-### Process
-
-Not implemented yet!
+Have a look into `svdsuite/model/parse.py` for all the models (dataclasses).
 
 ### Create/Manipulate
 
-To create or manipulate a CMSIS-SVD file you can utilize the `SVDSerializer` class.
+To create or manipulate a CMSIS-SVD file you can utilize the `Serializer` class.
 
 ```python
-from svdsuite import (
+from svdsuite import Serializer
+from svdsuite.model import (
     SVDDevice,
     SVDCPU,
     CPUNameType,
@@ -196,7 +417,6 @@ from svdsuite import (
     SVDSauRegion,
     SauAccessType,
     SVDPeripheral,
-    SVDSerializer,
 )
 
 # Create an example device. Alternatevily, you can parse a CMSIS-SVD file and manipulate it.
@@ -239,7 +459,7 @@ device = SVDDevice(
 
 # Serialize the device object. Alternatively, you can use the `device_to_svd_file` method to serialize the device
 # object to an SVD file, or the `device_to_svd_content` method to serialize the device object to bytes string.
-svd_str = SVDSerializer.device_to_svd_str(device, pretty_print=True)
+svd_str = Serializer.device_to_svd_str(device, pretty_print=True)
 # SVDSerializer.device_to_svd_file("path/to/svd_file.svd", device)
 # svd_str = SVDSerializer.device_to_svd_content(device, pretty_print=True).decode()
 
@@ -281,10 +501,10 @@ Output:
 
 ### Validate
 
-To validate a CMSIS-SVD file you can utilize the `SVDValidator` class.
+To validate a CMSIS-SVD file you can utilize the `Validator` class.
 
 ```python
-from svdsuite import SVDValidator
+from svdsuite import Validator
 
 xml_str = """\
 <device xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
@@ -305,8 +525,8 @@ xml_str = """\
 
 # Validate the XML string. If the XML is invalid, an exception is raised, since get_exception=True.
 # If get_exception=False, the function returns False on invalid XML without an exception.
-# Alternatively, you can use the `validate_xml_file` method to validate an SVD file.
-if SVDValidator.validate_xml_str(xml_str, get_exception=True):
+# Alternatively, you can use the `validate_xml_file` or `validate_xml_content` methods.
+if Validator.validate_xml_str(xml_str, get_exception=True):
     print("SVD is valid")
 ```
 
@@ -314,14 +534,6 @@ Output:
 ```
 SVD is valid
 ```
-
-
-## Roadmap
-
-- [x] Parse svd files from XML to Python dataclasses ✅
-- [x] Serialize the Python SVD dataclasses to XML svd files ✅
-- [x] Validate svd files against the xsd schema files ✅
-- [ ] Process parsed svd files (derivedFrom, nested clusters, ...)
 
 
 ## Running Tests
