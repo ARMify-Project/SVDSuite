@@ -157,3 +157,4 @@ cython_debug/
 .devcontainer/
 
 src/svdsuite/_version.py
+resolver_tests_doc/*
