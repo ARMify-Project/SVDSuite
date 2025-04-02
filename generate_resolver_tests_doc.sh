@@ -1,11 +1,11 @@
 #!/bin/bash
 # generate_mkdocs_docs.sh
-# Run this script from /mnt/data/Temp/ARMify/svdsuite.
+#
 # It checks for required packages (mkdocs, mkdocstrings, mkdocs-material) and installs them if needed.
 # Then it generates MkDocs documentation for modules in tests/test_process (excluding files with "conftest"),
 # creates a minimal mkdocs.yml with a generated navigation, and builds the site.
 #
-# The final HTML output will be built into the "resolver_test_doc" folder.
+# The final HTML output will be built into the "resolver_tests_doc" folder.
 #
 # To use this script, ensure you have pip installed.
 set -e
@@ -26,7 +26,7 @@ BASE_DIR=$(pwd)
 export PYTHONPATH=.
 
 # Remove any existing docs, mkdocs.yml, and the build folder.
-rm -rf docs mkdocs.yml resolver_test_doc
+rm -rf docs mkdocs.yml resolver_tests_doc
 
 # Create a fresh docs folder.
 mkdir docs
@@ -151,10 +151,10 @@ def on_page_content(html: str, **_) -> str:
 EOF
 
 # Build the documentation with mkdocs.
-# The output folder is set to resolver_test_doc (change as desired).
-mkdocs build --site-dir resolver_test_doc
+# The output folder is set to resolver_tests_doc (change as desired).
+mkdocs build --site-dir resolver_tests_doc
 
 # Remove mkdocs.yml and docs folder.
 rm -rf mkdocs.yml mkdocs_hook.py docs
 
-echo "MkDocs documentation generated in the 'resolver_test_doc' folder."
+echo "MkDocs documentation generated in the 'resolver_tests_doc' folder."
