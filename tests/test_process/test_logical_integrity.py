@@ -1542,9 +1542,13 @@ def test_field_illogical_values_in_bitrangepattern(get_processed_device_from_tes
 
 def test_ignore_empty_peripheral(get_processed_device_from_testfile: Callable[[str], Device]):
     """
-    TODO: Add description
+    This test verifies that the parser correctly ignores peripheral definitions that do not contain any registers
+    or clusters. In the provided SVD file, one or more empty peripheral sections are present. These empty definitions
+    should be skipped, and only peripherals containing valid elements should be processed.
 
-    **Expected Outcome:** TODO
+    **Expected Outcome:** The parser should process the file while issuing a warning, and the resulting device should
+    contain only two peripherals (e.g. "PeripheralA" and "PeripheralC") that include valid register definitions.
+    Empty peripheral definitions are ignored.
 
     **Processable with svdconv:** yes
     """
@@ -1567,9 +1571,13 @@ def test_ignore_empty_peripheral(get_processed_device_from_testfile: Callable[[s
 
 def test_ignore_empty_cluster(get_processed_device_from_testfile: Callable[[str], Device]):
     """
-    TODO: Add description
+    This test checks that empty clusters, that do not define any registers or nested elements, are ignored
+    during parsing. The SVD file under test contains an empty cluster that should not produce any
+    registers in the final device representation.
 
-    **Expected Outcome:** TODO
+    **Expected Outcome:** The parser should process the file without errors while issuing a warning, and only valid
+    registers (with non-empty clusters) should be present. In this case, the peripheral "PeripheralA" should contain a
+    register starting at offset 0x4.
 
     **Processable with svdconv:** yes
     """
@@ -1586,9 +1594,13 @@ def test_ignore_empty_cluster(get_processed_device_from_testfile: Callable[[str]
 
 def test_ignore_empty_cluster_two_level(get_processed_device_from_testfile: Callable[[str], Device]):
     """
-    TODO: Add description
+    This test validates that the parser can handle an empty cluster at a nested (two-level) hierarchy.
+    If a cluster within a peripheral is empty (i.e. it does not contain any registers or sub-clusters), then
+    that empty inner cluster should be ignored during the processing so that only valid register definitions
+    are maintained.
 
-    **Expected Outcome:** TODO
+    **Expected Outcome:** The parser should process the file with a warning and return a device where the peripheral
+    "PeripheralA" contains one valid register with an address offset of 0x4, ignoring any empty inner clusters.
 
     **Processable with svdconv:** yes
     """
@@ -1605,9 +1617,14 @@ def test_ignore_empty_cluster_two_level(get_processed_device_from_testfile: Call
 
 def test_ignore_empty_inner_cluster(get_processed_device_from_testfile: Callable[[str], Device]):
     """
-    TODO: Add description
+    This test ensures that the parser properly ignores empty inner clusters within a non-empty cluster.
+    In the tested SVD file, the peripheral "PeripheralA" contains a valid cluster ("ClusterA") that in turn includes an
+    inner cluster without registers. The parser should discard the empty inner cluster and process only the
+    valid elements.
 
-    **Expected Outcome:** TODO
+    **Expected Outcome:** The device should contain two top-level entities under "PeripheralA": one cluster ("ClusterA")
+    that contains a valid register "RegisterA" at offset 0x0, and a standalone register "RegisterA" at offset 0x4.
+    A warning is issued regarding the ignored empty inner cluster.
 
     **Processable with svdconv:** yes
     """
@@ -1638,9 +1655,13 @@ def test_ignore_empty_inner_cluster(get_processed_device_from_testfile: Callable
 )
 def test_alternate_register_and_alternate_group_exception(get_processed_device_from_testfile: Callable[[str], Device]):
     """
-    TODO: Add description
+    This test verifies that the parser rejects SVD files where a register is defined with both an alternateRegister
+    and an alternateGroup attribute simultaneously. According to the SVD standard, these two attributes are mutually
+    exclusive, and their simultaneous presence indicates an invalid file configuration.
 
-    **Expected Outcome:** TODO
+    **Expected Outcome:** The parser should raise a ProcessException indicating that a register cannot have both an
+    alternateRegister and an alternateGroup defined. This behavior enforces the SVD standard's constraint on mutually
+    exclusive alternate definitions.
 
     **Processable with svdconv:** yes - but it shouldn't since it is contrary to the SVD standard
     """
