@@ -1,5 +1,8 @@
 # SVDSuite
 
+> [!NOTE]  
+> The long-term goal is to merge **SVDSuite** into the [cmsis-svd](https://github.com/cmsis-svd/cmsis-svd) repository and release it as version 1.0. The author of SVDSuite is also an active maintainer of the [CMSIS-SVD](https://github.com/cmsis-svd) project.
+
 **SVDSuite** is a Python package to parse, process, manipulate, validate, and generate [CMSIS SVD](https://open-cmsis-pack.github.io/svd-spec/main/index.html) files. Currently, the suite supports CMSIS-SVD standard 1.3.10-dev16, whereas the validation additionally supports all previously released standards.
 
 > The CMSIS System View Description format (CMSIS-SVD) formalizes the description of the system contained in Arm Cortex-M processor-based microcontrollers, in particular, the memory-mapped registers of peripherals. The detail contained in system view descriptions is comparable to the data in device reference manuals. The information ranges from high-level functional descriptions of a peripheral all the way down to the definition and purpose of an individual bit field in a memory-mapped register.
@@ -33,9 +36,6 @@ To ensure compatibility with these behaviors and to avoid ambiguous interpretati
 
 In addition, **SVDConv** was extended with the options `--debug-output-text` and `--debug-output-json`, allowing developers to inspect how *SVDConv* internally resolves, normalizes, and transforms SVD files. These extensions greatly improve transparency and helped align **SVDSuite**'s behavior with that of *SVDConv*, even in the presence of undocumented logic. The modified version is hosted [here](https://github.com/ARMify-Project/devtools).
 
-
-> [!NOTE]  
-> The long-term goal is to merge **SVDSuite** into the [cmsis-svd](https://github.com/cmsis-svd/cmsis-svd) repository and release it as version 1.0. The author of SVDSuite is also an active maintainer of the [CMSIS-SVD](https://github.com/cmsis-svd) project.
 
 ## Installation
 
