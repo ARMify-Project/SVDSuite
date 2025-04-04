@@ -19,6 +19,20 @@ In addition to faithfully supporting the CMSIS-SVD specification, SVDSuite offer
 
 [^1]: https://open-cmsis-pack.github.io/svd-spec/main/index.html
 
+### SVD Test Files and Test Cases
+
+During the development of **SVDSuite**, it became evident that the CMSIS-SVD standard is sometimes insufficiently documented and leaves room for interpretation. Moreover, *SVDConv*, the official tool provided by Arm for validating and processing SVD files, supports a variety of undocumented features that are not part of the written specification.
+
+These undocumented behaviors include (but are not limited to):
+
+- **Setting and resolving default values** (e.g., for access types, sizes, reset values).
+- **Propagation and adjustment of `size` attributes** across the hierarchy.
+- **Interpretation of “don’t care” bits** in `enumeratedValues` (e.g., `0b1xxxxxxx`).
+
+To ensure compatibility with these behaviors and to avoid ambiguous interpretations, over **170 comprehensive test cases** were created and are documented [here](https://armify-project.github.io/resolver-tests-documentation/index.html). Each test is based on a fully defined CMSIS-SVD file, enabling systematic validation of how *SVDConv* interprets specific constructs and edge cases. These test files may also be useful for other developers working on SVD parsers.
+
+In addition, **SVDConv** was extended with the options `--debug-output-text` and `--debug-output-json`, allowing developers to inspect how *SVDConv* internally resolves, normalizes, and transforms SVD files. These extensions greatly improve transparency and helped align **SVDSuite**'s behavior with that of *SVDConv*, even in the presence of undocumented logic. The modified version is hosted [here](https://github.com/ARMify-Project/devtools).
+
 
 > [!NOTE]  
 > The long-term goal is to merge **SVDSuite** into the [cmsis-svd](https://github.com/cmsis-svd/cmsis-svd) repository and release it as version 1.0. The author of SVDSuite is also an active maintainer of the [CMSIS-SVD](https://github.com/cmsis-svd) project.
