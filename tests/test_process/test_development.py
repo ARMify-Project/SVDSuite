@@ -1,5 +1,15 @@
 """
-TODO Add description
+This tests are designed to validate core aspects of the SVD processing and resolution algorithm and were used during
+the development of SVDSuite. They are not exhaustive and do not cover all possible edge cases or configurations.
+Instead, they focus on the fundamental functionality of the SVD processing and resolution algorithm, ensuring that the
+core features work as intended. It focuses on verifying that peripheral-level definitions and nested algorithmic
+derivations (including clusters, registers, and inherited enumerated values) are interpreted correctly.
+
+Each test evaluates different facets:
+- Peripheral level processing: verifying that each peripheral in the SVD is correctly derived and identified with the
+  proper name and base address.
+- Algorithm functionality: ensuring that nested clusters and registers are processed with the correct hierarchical
+  relationships and default/inherited properties.
 """
 
 from typing import Callable
@@ -11,11 +21,21 @@ from svdsuite.model.process import Device, Register, Cluster
 @pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_peripheral_level(get_processed_device_from_testfile: Callable[[str], Device]):
     """
-    TODO: Add description
+    Test Peripheral Level Processing
 
-    **Expected Outcome:** TODO
+    This test validates that the parser correctly processes the peripheral definitions within an SVD file.
+    It ensures that:
+    - The device object contains the expected number of peripherals.
+    - Each peripheral is assigned the correct name and base address as described in the SVD.
 
-    **Processable with svdconv:** TODO
+    This is critical to confirm that higher-level elements are correctly extracted prior to further processing of
+    registers and clusters.
+
+    **Expected Outcome:**
+    - The device should include 14 peripherals.
+    - Each peripheral must have the expected name and base address as defined.
+
+    **Processable with svdconv:** no - svdconv does not support forward references
     """
 
     device = get_processed_device_from_testfile("development/peripheral_level.svd")
@@ -68,11 +88,23 @@ def test_peripheral_level(get_processed_device_from_testfile: Callable[[str], De
 @pytest.mark.filterwarnings("error::svdsuite.process.ProcessWarning")
 def test_algorithm(get_processed_device_from_testfile: Callable[[str], Device]):
     """
-    TODO: Add description
+    Test Comprehensive SVD Processing Algorithm
 
-    **Expected Outcome:** TODO
+    This test evaluates the algorithm's ability to resolve and process nested SVD structures, including clusters,
+    registers, and fields with enumerated values. It verifies that the nested hierarchy—involving inherited properties
+    and explicit definitions—is correctly handled.
 
-    **Processable with svdconv:** TODO
+    In this scenario, the SVD file contains peripherals with embedded clusters and registers. The test ensures that:
+    - The nested elements are correctly differentiated (clusters vs. registers).
+    - Inheritance across the hierarchy is applied appropriately.
+    - Default and overridden values are processed as per the SVD standard.
+
+    **Expected Outcome:**
+    - The device should consist of 6 peripherals with proper hierarchical nesting.
+    - Clusters and registers within these peripherals are resolved correctly, with each element having its
+      inherited or explicitly defined properties.
+
+    **Processable with svdconv:** yes
     """
 
     device = get_processed_device_from_testfile("development/algorithm.svd")
