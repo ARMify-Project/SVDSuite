@@ -8,7 +8,7 @@
 
 ### Compatibility with SVDConv
 
-SVDSuite was designed with a strong focus on compatibility with *SVDConv*, the official CMSIS tool for validating and processing SVD files. To ensure full compatibility, all generated and processed SVD files were tested against SVDConv ([checkout the comparison repository](https://github.com/ARMify-Project/svdsuite-svdconv-compare)). Parsing and transformation behavior is verified to match SVDConv’s output, ensuring reliable integration with existing CMSIS workflows and tooling.
+SVDSuite was designed with a strong focus on compatibility with *SVDConv*, the official CMSIS tool for validating and processing SVD files. To ensure full compatibility, all available SVD files were tested against SVDConv ([checkout the comparison repository](https://github.com/ARMify-Project/svdsuite-svdconv-compare)).
 
 ### Extended Functionality
 
